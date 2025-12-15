@@ -1,0 +1,127 @@
+package com.kotlin.flashlearn.presentation.navigation
+
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.presentation.profile.ProfileScreen
+import com.kotlin.flashlearn.presentation.sign_in.SignInScreen
+import com.kotlin.flashlearn.presentation.sign_in.SignInUiEvent
+import com.kotlin.flashlearn.presentation.sign_in.SignInViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+/**
+ * Navigation host for the app.
+ * Extracted from MainActivity for cleaner separation.
+ * Uses type-safe routes and Hilt for ViewModel injection.
+ */
+@Composable
+fun FlashlearnNavHost(
+    navController: NavHostController,
+    authRepository: AuthRepository,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    
+    NavHost(
+        navController = navController,
+        startDestination = Route.SignIn.route,
+        modifier = modifier
+    ) {
+        composable(Route.SignIn.route) {
+            val viewModel = hiltViewModel<SignInViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            val scope = rememberCoroutineScope()
+
+            // Check if already signed in
+            LaunchedEffect(key1 = Unit) {
+                if (authRepository.getSignedInUser() != null) {
+                    navController.navigate(Route.Profile.route) {
+                        popUpTo(Route.SignIn.route) { inclusive = true }
+                    }
+                }
+            }
+
+            // Handle one-time events
+            LaunchedEffect(key1 = Unit) {
+                viewModel.uiEvent.collectLatest { event ->
+                    when (event) {
+                        is SignInUiEvent.NavigateToProfile -> {
+                            Toast.makeText(
+                                context,
+                                "Sign in successful",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            navController.navigate(Route.Profile.route) {
+                                popUpTo(Route.SignIn.route) { inclusive = true }
+                            }
+                            viewModel.resetState()
+                        }
+                        is SignInUiEvent.ShowError -> {
+                            Toast.makeText(
+                                context,
+                                event.message,
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+
+            val launcher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        result.data?.let { intent ->
+                            viewModel.onSignInResult(intent)
+                        }
+                    }
+                }
+            )
+
+            SignInScreen(
+                state = state,
+                onSignInClick = {
+                    scope.launch {
+                        viewModel.signIn()?.let { intentSender ->
+                            launcher.launch(
+                                IntentSenderRequest.Builder(intentSender).build()
+                            )
+                        }
+                    }
+                }
+            )
+        }
+        
+        composable(Route.Profile.route) {
+            val scope = rememberCoroutineScope()
+            
+            ProfileScreen(
+                userData = authRepository.getSignedInUser(),
+                onSignOut = {
+                    scope.launch {
+                        authRepository.signOut()
+                        Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
+                        navController.navigate(Route.SignIn.route) {
+                            popUpTo(Route.Profile.route) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
