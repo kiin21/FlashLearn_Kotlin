@@ -6,5 +6,6 @@ package com.kotlin.flashlearn.presentation.sign_in
  */
 sealed interface SignInUiEvent {
     data class ShowError(val message: String) : SignInUiEvent
-    data object NavigateToProfile : SignInUiEvent
+    data object NavigateToOnboarding : SignInUiEvent
+    data object NavigateToHome : SignInUiEvent
 }

@@ -17,6 +17,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.presentation.home.HomeScreen
+import com.kotlin.flashlearn.presentation.onboarding.OnboardingScreen
 import com.kotlin.flashlearn.presentation.profile.ProfileScreen
 import com.kotlin.flashlearn.presentation.sign_in.SignInScreen
 import com.kotlin.flashlearn.presentation.sign_in.SignInUiEvent
@@ -50,7 +52,7 @@ fun FlashlearnNavHost(
             // Check if already signed in
             LaunchedEffect(key1 = Unit) {
                 if (authRepository.getSignedInUser() != null) {
-                    navController.navigate(Route.Profile.route) {
+                    navController.navigate(Route.Home.route) {
                         popUpTo(Route.SignIn.route) { inclusive = true }
                     }
                 }
@@ -60,13 +62,19 @@ fun FlashlearnNavHost(
             LaunchedEffect(key1 = Unit) {
                 viewModel.uiEvent.collectLatest { event ->
                     when (event) {
-                        is SignInUiEvent.NavigateToProfile -> {
+                        is SignInUiEvent.NavigateToOnboarding -> {
+                            navController.navigate(Route.Onboarding.route) {
+                                popUpTo(Route.SignIn.route) { inclusive = true }
+                            }
+                            viewModel.resetState()
+                        }
+                        is SignInUiEvent.NavigateToHome -> {
                             Toast.makeText(
                                 context,
                                 "Sign in successful",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            navController.navigate(Route.Profile.route) {
+                            navController.navigate(Route.Home.route) {
                                 popUpTo(Route.SignIn.route) { inclusive = true }
                             }
                             viewModel.resetState()
@@ -107,6 +115,38 @@ fun FlashlearnNavHost(
             )
         }
         
+        composable(Route.Onboarding.route) {
+            OnboardingScreen(
+                onFinish = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Route.Home.route) {
+            val userData = authRepository.getSignedInUser()
+            // In a real app, we might want to fetch full user details from Firestore here
+            // using a HomeViewModel, but passing basic auth data works for now.
+            
+            // Map UserData to User domain model partially for UI
+            val user = userData?.let {
+                com.kotlin.flashlearn.domain.model.User(
+                    userId = it.userId,
+                    displayName = it.username,
+                    photoUrl = it.profilePictureUrl
+                )
+            }
+
+            HomeScreen(
+                userData = user,
+                onNavigateToProfile = {
+                    navController.navigate(Route.Profile.route)
+                }
+            )
+        }
+        
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
             
@@ -117,7 +157,7 @@ fun FlashlearnNavHost(
                         authRepository.signOut()
                         Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
                         navController.navigate(Route.SignIn.route) {
-                            popUpTo(Route.Profile.route) { inclusive = true }
+                            popUpTo(Route.Home.route) { inclusive = true }
                         }
                     }
                 }
