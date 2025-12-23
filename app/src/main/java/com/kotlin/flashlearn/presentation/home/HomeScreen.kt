@@ -57,7 +57,8 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     userData: User?,
-    onNavigateToProfile: () -> Unit // Temporarily navigate to profile
+    onNavigateToProfile: () -> Unit, // Temporarily navigate to profile
+    onNavigateToTopic: () -> Unit
 ) {
     Scaffold(
         bottomBar = {
@@ -65,6 +66,7 @@ fun HomeScreen(
                 currentRoute = "home",
                 onNavigate = { route ->
                     if (route == "profile") onNavigateToProfile()
+                    if (route == "topic") onNavigateToTopic()
                 }
             )
         }

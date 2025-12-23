@@ -25,6 +25,11 @@ import com.kotlin.flashlearn.presentation.sign_in.SignInUiEvent
 import com.kotlin.flashlearn.presentation.sign_in.SignInViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.navigation.NavType
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
+import com.kotlin.flashlearn.presentation.topic.TopicScreen
 
 /**
  * Navigation host for the app.
@@ -143,10 +148,40 @@ fun FlashlearnNavHost(
                 userData = user,
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
+                },
+                onNavigateToTopic = {
+                    navController.navigate(Route.Topic.route)
                 }
             )
         }
-        
+
+        composable(Route.Topic.route) {
+            TopicScreen(
+                onNavigateToHome = {
+                    navController.navigate(Route.Home.route)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Route.Profile.route)
+                },
+                onNavigateToTopicDetail = { topicId ->
+                    navController.navigate(
+                        Route.TopicDetail.createRoute(topicId)
+                    )
+                }
+            )
+        }
+
+        composable(
+            route = Route.TopicDetail.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType }
+            )
+        ) {
+            TopicDetailScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
             
