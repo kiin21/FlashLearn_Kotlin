@@ -3,7 +3,9 @@ package com.kotlin.flashlearn.presentation.sign_in
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.flashlearn.domain.model.User
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +24,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SignInViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignInState())
@@ -60,13 +63,46 @@ class SignInViewModel @Inject constructor(
             
             authRepository.signInWithIntent(intent).fold(
                 onSuccess = { userData ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false,
-                            isSignInSuccessful = true
-                        ) 
+                    try {
+                        // Check if user is new
+                        val isNew = userRepository.isNewUser(userData.userId)
+                        
+                        if (isNew) {
+                            // Create new user
+                            val newUser = User(
+                                userId = userData.userId,
+                                displayName = userData.username,
+                                photoUrl = userData.profilePictureUrl
+                            )
+                            userRepository.createUser(newUser)
+                            
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    isSignInSuccessful = true
+                                ) 
+                            }
+                            _uiEvent.send(SignInUiEvent.NavigateToOnboarding)
+                        } else {
+                            // Existing user
+                            _state.update { 
+                                it.copy(
+                                    isLoading = false,
+                                    isSignInSuccessful = true
+                                ) 
+                            }
+                            _uiEvent.send(SignInUiEvent.NavigateToHome)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        _state.update { 
+                            it.copy(
+                                isLoading = false,
+                                signInError = "Firestore Error: ${e.message}"
+                            ) 
+                        }
+                        _uiEvent.send(SignInUiEvent.ShowError("Database error: ${e.message}"))
                     }
-                    _uiEvent.send(SignInUiEvent.NavigateToProfile)
                 },
                 onFailure = { error ->
                     _state.update { 

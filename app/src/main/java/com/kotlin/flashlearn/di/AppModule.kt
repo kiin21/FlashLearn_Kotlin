@@ -6,8 +6,12 @@ import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
+import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,4 +44,14 @@ object AppModule {
         oneTapClient: SignInClient,
         auth: FirebaseAuth
     ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore = Firebase.firestore
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        firestore: FirebaseFirestore
+    ): UserRepository = UserRepositoryImpl(firestore)
 }
