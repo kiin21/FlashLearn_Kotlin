@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.services)
@@ -8,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.kotlin.flashlearn"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.kotlin.flashlearn"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -40,9 +41,6 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -64,6 +62,14 @@ android {
             }
             buildConfigField("String", "WEB_CLIENT_ID", "\"${webClientId}\"")
         }
+        
+        // API Configuration
+        def props = new Properties()
+        rootProject.file('local.properties').with { if (it.exists()) props.load(it.newInputStream()) }
+        
+        buildConfigField("String", "DATAMUSE_BASE_URL", "\"${props.getProperty('DATAMUSE_BASE_URL')}\"")
+        buildConfigField("String", "NEON_SQL_BASE_URL", "\"${props.getProperty('NEON_SQL_BASE_URL')}\"")
+        buildConfigField("String", "NEON_CONNECTION_STRING", "\"${props.getProperty('NEON_CONNECTION_STRING')}\"")
     }
 }
 
@@ -99,6 +105,13 @@ dependencies {
 
     // Image Loading
     implementation libs.coil.compose
+
+    // Networking
+    implementation libs.retrofit
+    implementation libs.retrofit.gson
+    implementation libs.okhttp
+    implementation libs.okhttp.logging
+    implementation libs.gson
 
     // Testing
     testImplementation libs.junit

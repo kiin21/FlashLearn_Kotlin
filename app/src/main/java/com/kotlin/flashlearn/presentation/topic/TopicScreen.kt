@@ -3,6 +3,8 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,10 +22,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.presentation.navigation.Route
 import kotlinx.coroutines.launch
 
 @Composable
@@ -32,7 +36,13 @@ fun TopicScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToTopicDetail: (String) -> Unit,
+    onNavigateToAddTopic: () -> Unit = {},
+    onNavigateToAddWord: (String?) -> Unit = {},
+    viewModel: TopicViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val topicWords by viewModel.topicWords.collectAsStateWithLifecycle()
+    
     var isFabExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -50,11 +60,11 @@ fun TopicScreen(
                 expanded = isFabExpanded,
                 onFabClick = { isFabExpanded = !isFabExpanded },
                 onAddTopic = { 
-                    showNotImplementedMessage("Add new topic")
+                    onNavigateToAddTopic()
                     isFabExpanded = false
                 },
                 onAddCard = { 
-                    showNotImplementedMessage("Add new card")
+                    onNavigateToAddWord(null)
                     isFabExpanded = false
                 }
             )
@@ -87,10 +97,53 @@ fun TopicScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // List
-            TopicList(
-                onTopicClick = onNavigateToTopicDetail
-            )
+            // Content
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = FlashRed)
+                    }
+                }
+                uiState.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = uiState.error ?: "Unknown error",
+                                color = Color.Red
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { viewModel.loadTopics() }) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+                uiState.topics.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No topics yet. Create your first topic!",
+                            color = Color.Gray
+                        )
+                    }
+                }
+                else -> {
+                    TopicList(
+                        topics = uiState.topics,
+                        topicWords = topicWords,
+                        onTopicClick = onNavigateToTopicDetail,
+                        viewModel = viewModel
+                    )
+                }
+            }
         }
     }
 }
@@ -147,33 +200,25 @@ fun TopicSearchBar(
 
 @Composable
 fun TopicList(
+    topics: List<Topic>,
+    topicWords: Map<String, List<com.kotlin.flashlearn.domain.model.VocabularyWord>>,
     onTopicClick: (String) -> Unit,
+    viewModel: TopicViewModel
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(topics) { topic ->
+            val wordCount = topicWords[topic.id]?.size ?: 0
+            TopicCard(
+                topicId = topic.id,
+                title = topic.name,
+                words = wordCount,
+                description = topic.description,
+                progress = 0f, // TODO: Calculate from user progress
+                onClick = onTopicClick
+            )
+        }
     }
 }
 
@@ -195,7 +240,7 @@ fun TopicCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
+            Text("$words ${if (words != 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },

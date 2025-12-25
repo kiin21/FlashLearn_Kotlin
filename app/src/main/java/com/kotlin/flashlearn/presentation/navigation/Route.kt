@@ -21,4 +21,8 @@ sealed class Route(val route: String) {
     
     data object SessionComplete : Route("session_complete")
     data object Community : Route("community")
+    
+    data object AddWord : Route("add_word/{topicId}") {
+        fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
+    }
 }

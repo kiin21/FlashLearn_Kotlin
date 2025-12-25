@@ -15,12 +15,6 @@ import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-/**
- * Main Activity following Google best practices:
- * - @AndroidEntryPoint for Hilt injection
- * - Minimal logic - delegates to composables
- * - Uses edge-to-edge display
- */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 

@@ -34,6 +34,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
+import com.kotlin.flashlearn.presentation.topic.AddWordScreen
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 
 /**
@@ -181,6 +182,12 @@ fun FlashlearnNavHost(
                     navController.navigate(
                         Route.TopicDetail.createRoute(topicId)
                     )
+                },
+                onNavigateToAddTopic = {
+                    // TODO: Navigate to AddTopic screen
+                },
+                onNavigateToAddWord = { topicId ->
+                    navController.navigate(Route.AddWord.createRoute(topicId))
                 }
             )
         }
@@ -191,8 +198,26 @@ fun FlashlearnNavHost(
                 navArgument("topicId") { type = NavType.StringType }
             )
         ) {
+            val topicId = it.arguments?.getString("topicId")
             TopicDetailScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onAddWord = {
+                    navController.navigate(Route.AddWord.createRoute(topicId))
+                }
+            )
+        }
+
+        composable(
+            route = Route.AddWord.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType }
+            )
+        ) {
+            val topicId = it.arguments?.getString("topicId")
+            AddWordScreen(
+                topicId = if (topicId == "new") null else topicId,
+                onBack = { navController.popBackStack() },
+                onWordAdded = { navController.popBackStack() }
             )
         }
 
