@@ -33,7 +33,10 @@ import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.AddCard
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.VolumeUp
 import com.kotlin.flashlearn.presentation.navigation.Route
 import com.kotlin.flashlearn.ui.theme.FlashBlack
 
@@ -171,15 +174,27 @@ fun TopicCard(
             .clickable { onClick(topicId) },
         shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                color = FlashRed,
-                trackColor = Color.LightGray
+        Row (
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ){
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(title, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(12.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    color = FlashRed,
+                    trackColor = Color.LightGray
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.Gray,
+                modifier = Modifier.size(28.dp).padding(end = 6.dp)
             )
         }
     }

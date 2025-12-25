@@ -131,7 +131,7 @@ fun SessionCompleteScreen(
             )
         ) {
             Text(
-                text = "Back to Home",
+                text = "Back",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

@@ -132,4 +132,16 @@ class FlashcardRepositoryImpl @Inject constructor() : FlashcardRepository {
             Result.failure(e)
         }
     }
+
+    override suspend fun getFlashcardById(cardId: String): Result<Flashcard?> {
+        return try {
+            delay(200)
+            val card = mockFlashcards.find { it.id == cardId }
+            Result.success(card)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
+    }
 }
