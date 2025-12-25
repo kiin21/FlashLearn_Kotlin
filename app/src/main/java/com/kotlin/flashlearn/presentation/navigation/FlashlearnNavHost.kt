@@ -30,10 +30,12 @@ import com.kotlin.flashlearn.presentation.sign_in.SignInViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.NavType
-import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
+import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 
 /**
@@ -161,7 +163,7 @@ fun FlashlearnNavHost(
                     navController.navigate(Route.Community.route)
                 },
                 onNavigateToLearningSession = { topicId ->
-                    navController.navigate(Route.LearningSession.createRoute(topicId))
+                    navController.navigate(Route.LearningSession.createRoute(topicId, "home"))
                 }
             )
         }
@@ -190,18 +192,56 @@ fun FlashlearnNavHost(
             arguments = listOf(
                 navArgument("topicId") { type = NavType.StringType }
             )
-        ) {
+        ) { backStackEntry ->
+            val viewModel = hiltViewModel<TopicDetailViewModel>(backStackEntry)
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
+
             TopicDetailScreen(
-                onBack = { navController.popBackStack() }
+                topicId = topicId,
+                state = state,
+                onBack = { navController.popBackStack() },
+                onNavigateToCardDetail = { cardId ->
+                    navController.navigate(
+                        Route.CardDetail.createRoute(cardId)
+                    )
+                },
+                onStudyNow = {
+                    navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
+                }
+            )
+        }
+
+        composable(
+            route = Route.CardDetail.route,
+            arguments = listOf(
+                navArgument("cardId"){ type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val viewModel = hiltViewModel<CardDetailViewModel>(backStackEntry)
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            CardDetailScreen(
+                state = state,
+                onFlip = { viewModel.flip() },
+                onBack = { navController.popBackStack() },
             )
         }
 
         composable(
             route = Route.LearningSession.route,
             arguments = listOf(
-                navArgument("topicId") { type = NavType.StringType }
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("returnTo") {
+                    type = NavType.StringType
+                    defaultValue = "home"
+                }
             )
-        ) {
+        ) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
+            val returnTo = backStackEntry.arguments?.getString("returnTo") ?: "home"
+
             val viewModel = hiltViewModel<LearningSessionViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
             val currentUserId = authRepository.getSignedInUser()?.userId ?: ""
@@ -211,12 +251,10 @@ fun FlashlearnNavHost(
                 viewModel.uiEvent.collectLatest { event ->
                     when (event) {
                         is LearningSessionUiEvent.NavigateToHome -> {
-                            navController.navigate(Route.Home.route) {
-                                popUpTo(Route.LearningSession.route) { inclusive = true }
-                            }
+                            navController.popBackStack()
                         }
                         is LearningSessionUiEvent.SessionComplete -> {
-                            navController.navigate(Route.SessionComplete.route)
+                            navController.navigate(Route.SessionComplete.createRoute(topicId, returnTo))
                         }
                         is LearningSessionUiEvent.ShowError -> {
                             Toast.makeText(
@@ -238,7 +276,19 @@ fun FlashlearnNavHost(
             )
         }
 
-        composable(Route.SessionComplete.route) {
+        composable(
+            route = Route.SessionComplete.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("returnTo") {
+                    type = NavType.StringType
+                    defaultValue = "home"
+                }
+            )
+        ) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
+            val returnTo = backStackEntry.arguments?.getString("returnTo") ?: "home"
+
             val previousBackStackEntry = navController.previousBackStackEntry
             val state = previousBackStackEntry?.let {
                 hiltViewModel<LearningSessionViewModel>(it).state.collectAsStateWithLifecycle().value
@@ -248,8 +298,15 @@ fun FlashlearnNavHost(
                 masteredCount = state?.masteredCardIds?.size ?: 0,
                 totalCount = state?.flashcards?.size ?: 0,
                 onBackToHome = {
-                    navController.navigate(Route.Home.route) {
-                        popUpTo(Route.Home.route) { inclusive = true }
+                    if (returnTo == "topic") {
+                        navController.navigate(Route.TopicDetail.createRoute(topicId)) {
+                            popUpTo(Route.TopicDetail.createRoute(topicId)) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        navController.navigate(Route.Home.route) {
+                            popUpTo(Route.Home.route) { inclusive = true }
+                        }
                     }
                 }
             )

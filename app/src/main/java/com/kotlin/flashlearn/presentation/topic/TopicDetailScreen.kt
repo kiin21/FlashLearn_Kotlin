@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.presentation.topic
 import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,7 +54,11 @@ import com.kotlin.flashlearn.ui.theme.FlashRed
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicDetailScreen(
-    onBack: () -> Unit
+    topicId: String,
+    state: TopicDetailState,
+    onBack: () -> Unit,
+    onNavigateToCardDetail: (String) -> Unit,
+    onStudyNow: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -80,39 +85,28 @@ fun TopicDetailScreen(
                 onClick = { /* Add new card */ },
                 containerColor = FlashRed,
                 shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-            }
+            ) { Icon(Icons.Default.Add, contentDescription = null) }
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Header
             Box(
                 modifier = Modifier
                     .size(60.dp)
                     .background(Color(0xFFFFEBEE), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
-            ) {
-                // use icon here
-//                Icon(
-//                    painter = painterResource(id = R.drawable.ic_layers),
-//                    contentDescription = null,
-//                    modifier = Modifier.size(40.dp),
-//                    tint = Color(0xFFC61919)
-//                )
-            }
+            ) { /* icon */ }
+
             Spacer(modifier = Modifier.height(12.dp))
+            Text("B1 Environment", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
-                text = "B1 Environment",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Essential vocabulary for nature",
+                "Essential vocabulary for nature",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 4.dp)
@@ -120,12 +114,13 @@ fun TopicDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row (
+            // Buttons row
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ){
+            ) {
                 Button(
-                    onClick = { /* Study */ },
+                    onClick = onStudyNow,
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
                     shape = RoundedCornerShape(12.dp)
@@ -148,29 +143,53 @@ fun TopicDetailScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
             Text(
                 text = "Cards in this topic",
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .align(Alignment.Start)
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
-            CardItem("Biodiversity", "noun")
-            CardItem("Sustainable", "adj")
-            CardItem("Migrate", "verb")
+            when {
+                state.isLoading -> {
+                    Text("Loading...", color = Color.Gray)
+                }
+                state.error != null -> {
+                    Text(state.error ?: "Error", color = Color.Red)
+                }
+                state.cards.isEmpty() -> {
+                    Text("No cards in this topic", color = Color.Gray)
+                }
+                else -> {
+                    androidx.compose.foundation.lazy.LazyColumn {
+                        items(state.cards.size) { index ->
+                            val card = state.cards[index]
+                            CardItem(
+                                word = card.word,
+                                type = card.partOfSpeech,
+                                onClick = { onNavigateToCardDetail(card.id) }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun CardItem(word: String, type: String) {
+fun CardItem(
+    word: String,
+    type: String,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),

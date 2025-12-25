@@ -3,71 +3,65 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddCard
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Icon
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.AddCard
+import androidx.compose.material.icons.filled.Layers
 import com.kotlin.flashlearn.presentation.navigation.Route
-import kotlinx.coroutines.launch
+import com.kotlin.flashlearn.ui.theme.FlashBlack
 
 @Composable
 fun TopicScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToCommunity: () -> Unit = {},
     onNavigateToTopicDetail: (String) -> Unit,
+    onNavigateToCommunity: () -> Unit,
 ) {
     var isFabExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    
-    val showNotImplementedMessage: (String) -> Unit = { featureName ->
-        scope.launch {
-            snackbarHostState.showSnackbar("$featureName is coming soon!")
-        }
-    }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             TopicFabMenu(
                 expanded = isFabExpanded,
                 onFabClick = { isFabExpanded = !isFabExpanded },
-                onAddTopic = { 
-                    showNotImplementedMessage("Add new topic")
-                    isFabExpanded = false
-                },
-                onAddCard = { 
-                    showNotImplementedMessage("Add new card")
-                    isFabExpanded = false
-                }
+                onAddTopic = { /* TODO */ },
+                onAddCard = { /* TODO */ }
             )
         },
         bottomBar = {
             BottomNavBar(
                 currentRoute = "topic",
                 onNavigate = { route ->
-                    when (route) {
-                        "home" -> onNavigateToHome()
-                        "profile" -> onNavigateToProfile()
-                        "community" -> onNavigateToCommunity()
-                    }
+                    if (route == "home") onNavigateToHome()
+                    else if (route == "profile") onNavigateToProfile()
+                    else if (route == "community") onNavigateToCommunity()
                 }
             )
         }
@@ -81,10 +75,8 @@ fun TopicScreen(
             TopicHeader()
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Search Bar
-            TopicSearchBar(
-                onSearchClick = { showNotImplementedMessage("Search") }
-            )
+            // Searh Bar
+            TopicSearchBar()
             Spacer(modifier = Modifier.height(16.dp))
 
             // List
@@ -107,12 +99,13 @@ fun TopicHeader() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopicSearchBar(
-    onSearchClick: () -> Unit = {}
-) {
+fun TopicSearchBar() {
+    var searchQuery by remember { mutableStateOf("") }
     TextField(
-        value = "",
-        onValueChange = {},
+        value = searchQuery,
+        onValueChange = { newValue ->
+            searchQuery = newValue
+        },
         placeholder = { Text("Search your decks...") },
         leadingIcon = {
             Icon(
@@ -120,24 +113,12 @@ fun TopicSearchBar(
                 contentDescription = null
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSearchClick() },
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        enabled = false,
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = FlashLightGrey,
-            unfocusedContainerColor = FlashLightGrey,
-            disabledContainerColor = FlashLightGrey,
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
-            disabledTextColor = Color.Gray,
-            focusedPlaceholderColor = Color.Gray,
-            unfocusedPlaceholderColor = Color.Gray,
-            disabledPlaceholderColor = Color.Gray,
-            focusedLeadingIconColor = Color.Gray,
-            unfocusedLeadingIconColor = Color.Gray,
-            disabledLeadingIconColor = Color.Gray,
+            cursorColor = FlashRed,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent

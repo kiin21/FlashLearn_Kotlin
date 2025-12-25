@@ -28,4 +28,11 @@ interface FlashcardRepository {
      * @param userId The ID of the current user.
      */
     suspend fun markFlashcardForReview(flashcardId: String, userId: String): Result<Unit>
+
+    /**
+    * Get flashcard by id.
+    * @param cardId The ID of the flashcard.
+    * @return flashcard data.
+    */
+    suspend fun getFlashcardById(cardId: String): Result<Flashcard?>
 }
