@@ -3,7 +3,6 @@ package com.kotlin.flashlearn.presentation.profile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kotlin.flashlearn.domain.model.UserData
+import com.kotlin.flashlearn.presentation.components.BottomNavBar
+import com.kotlin.flashlearn.presentation.navigation.Route
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
@@ -60,6 +61,8 @@ import com.kotlin.flashlearn.ui.theme.FlashRedLight
 fun ProfileScreen(
     userData: UserData?,
     onSignOut: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToTopic: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -71,6 +74,19 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                currentRoute = Route.Profile.route,
+                onNavigate = { route ->
+                    when (route) {
+                        Route.Home.route -> onNavigateToHome()
+                        Route.Topic.route -> onNavigateToTopic()
+                        // Không cần làm gì khi đang ở Profile
+                        Route.Profile.route -> {}
+                    }
                 }
             )
         },
@@ -97,6 +113,8 @@ fun ProfileScreen(
         }
     }
 }
+
+
 
 @Composable
 private fun UserInfoSection(userData: UserData?) {
