@@ -29,6 +29,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +58,7 @@ import com.kotlin.flashlearn.presentation.navigation.Route
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,9 +67,20 @@ fun ProfileScreen(
     onSignOut: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToTopic: () -> Unit,
+    onNavigateToCommunity: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    val showNotImplementedMessage: (String) -> Unit = { featureName ->
+        scope.launch {
+            snackbarHostState.showSnackbar("$featureName is coming soon!")
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -85,6 +100,7 @@ fun ProfileScreen(
                         Route.Home.route -> onNavigateToHome()
                         Route.Topic.route -> onNavigateToTopic()
                         Route.Profile.route -> {}
+                        "community" -> onNavigateToCommunity()
                     }
                 }
             )
@@ -99,15 +115,23 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // User Info Section
-            UserInfoSection(userData = userData)
+            UserInfoSection(
+                userData = userData,
+                onEditProfilePicture = { showNotImplementedMessage("Edit profile picture") }
+            )
             Spacer(modifier = Modifier.height(32.dp))
 
             // Preferences Section
-            PreferencesSection()
+            PreferencesSection(
+                onChangePassword = { showNotImplementedMessage("Change password") }
+            )
             Spacer(modifier = Modifier.height(32.dp))
 
             // Account Section
-            AccountSection(onSignOut = onSignOut)
+            AccountSection(
+                onSignOut = onSignOut,
+                onDeleteAccount = { showNotImplementedMessage("Delete account") }
+            )
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -116,7 +140,10 @@ fun ProfileScreen(
 
 
 @Composable
-private fun UserInfoSection(userData: UserData?) {
+private fun UserInfoSection(
+    userData: UserData?,
+    onEditProfilePicture: () -> Unit = {}
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -137,7 +164,7 @@ private fun UserInfoSection(userData: UserData?) {
                     .background(FlashRed)
                     .border(2.dp, Color.White, CircleShape)
                     .align(Alignment.BottomEnd)
-                    .clickable { /* TODO: Handle edit profile picture */ },
+                    .clickable { onEditProfilePicture() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -164,7 +191,9 @@ private fun UserInfoSection(userData: UserData?) {
 }
 
 @Composable
-private fun PreferencesSection() {
+private fun PreferencesSection(
+    onChangePassword: () -> Unit = {}
+) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var darkModeEnabled by remember { mutableStateOf(false) }
 
@@ -193,13 +222,16 @@ private fun PreferencesSection() {
         ProfileRowNavigation(
             icon = Icons.Default.LockReset,
             text = "Change Password",
-            onClick = { /* TODO: Navigate to change password screen */ }
+            onClick = onChangePassword
         )
     }
 }
 
 @Composable
-private fun AccountSection(onSignOut: () -> Unit) {
+private fun AccountSection(
+    onSignOut: () -> Unit,
+    onDeleteAccount: () -> Unit = {}
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "ACCOUNT",
@@ -220,7 +252,7 @@ private fun AccountSection(onSignOut: () -> Unit) {
             textColor = FlashRed,
             iconColor = FlashRed,
             backgroundColor = FlashRedLight,
-            onClick = { /* TODO: Handle delete account */ }
+            onClick = onDeleteAccount
         )
     }
 }
