@@ -42,6 +42,7 @@ fun TopicScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToTopicDetail: (String) -> Unit,
+    onNavigateToCommunity: () -> Unit,
 ) {
     var isFabExpanded by remember { mutableStateOf(false) }
 
@@ -60,6 +61,7 @@ fun TopicScreen(
                 onNavigate = { route ->
                     if (route == "home") onNavigateToHome()
                     else if (route == "profile") onNavigateToProfile()
+                    else if (route == "community") onNavigateToCommunity()
                 }
             )
         }
