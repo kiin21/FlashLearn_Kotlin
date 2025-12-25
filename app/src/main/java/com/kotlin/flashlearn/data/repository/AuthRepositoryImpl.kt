@@ -50,7 +50,8 @@ class AuthRepositoryImpl @Inject constructor(
                     UserData(
                         userId = it.uid,
                         username = it.displayName,
-                        profilePictureUrl = it.photoUrl?.toString()
+                        profilePictureUrl = it.photoUrl?.toString(),
+                        email = it.email
                     )
                 )
             } ?: Result.failure(Exception("User is null after sign in"))
@@ -78,7 +79,8 @@ class AuthRepositoryImpl @Inject constructor(
             UserData(
                 userId = user.uid,
                 username = user.displayName,
-                profilePictureUrl = user.photoUrl?.toString()
+                profilePictureUrl = user.photoUrl?.toString(),
+                email = user.email
             )
         }
     }
