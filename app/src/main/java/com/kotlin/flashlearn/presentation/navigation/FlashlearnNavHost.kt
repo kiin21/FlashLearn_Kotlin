@@ -251,10 +251,9 @@ fun FlashlearnNavHost(
 
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
-            
+
             ProfileScreen(
-                userData = authRepository.getSignedInUser(),
-                onSignOut = {
+                userData = authRepository.getSignedInUser(),        onSignOut = {
                     scope.launch {
                         authRepository.signOut()
                         Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
@@ -262,6 +261,12 @@ fun FlashlearnNavHost(
                             popUpTo(Route.Home.route) { inclusive = true }
                         }
                     }
+                },
+                onNavigateToHome = {
+                    navController.navigate(Route.Home.route)
+                },
+                onNavigateToTopic = {
+                    navController.navigate(Route.Topic.route)
                 }
             )
         }
