@@ -18,6 +18,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.presentation.home.HomeScreen
+import com.kotlin.flashlearn.presentation.learning_session.LearningSessionScreen
+import com.kotlin.flashlearn.presentation.learning_session.LearningSessionUiEvent
+import com.kotlin.flashlearn.presentation.learning_session.LearningSessionViewModel
+import com.kotlin.flashlearn.presentation.learning_session.SessionCompleteScreen
 import com.kotlin.flashlearn.presentation.onboarding.OnboardingScreen
 import com.kotlin.flashlearn.presentation.profile.ProfileScreen
 import com.kotlin.flashlearn.presentation.sign_in.SignInScreen
@@ -29,6 +33,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
+import com.kotlin.flashlearn.presentation.topic.TopicScreen
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
 
 /**
@@ -151,6 +156,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToTopic = {
                     navController.navigate(Route.Topic.route)
+                },
+                onNavigateToLearningSession = { topicId ->
+                    navController.navigate(Route.LearningSession.createRoute(topicId))
                 }
             )
         }
@@ -179,6 +187,65 @@ fun FlashlearnNavHost(
         ) {
             TopicDetailScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Route.LearningSession.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType }
+            )
+        ) {
+            val viewModel = hiltViewModel<LearningSessionViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            val currentUserId = authRepository.getSignedInUser()?.userId ?: ""
+
+            // Handle one-time events
+            LaunchedEffect(key1 = Unit) {
+                viewModel.uiEvent.collectLatest { event ->
+                    when (event) {
+                        is LearningSessionUiEvent.NavigateToHome -> {
+                            navController.navigate(Route.Home.route) {
+                                popUpTo(Route.LearningSession.route) { inclusive = true }
+                            }
+                        }
+                        is LearningSessionUiEvent.SessionComplete -> {
+                            navController.navigate(Route.SessionComplete.route)
+                        }
+                        is LearningSessionUiEvent.ShowError -> {
+                            Toast.makeText(
+                                context,
+                                event.message,
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            }
+
+            LearningSessionScreen(
+                state = state,
+                onFlipCard = { viewModel.flipCard() },
+                onGotIt = { viewModel.onGotIt(currentUserId) },
+                onStudyAgain = { viewModel.onStudyAgain(currentUserId) },
+                onExit = { viewModel.exitSession() }
+            )
+        }
+
+        composable(Route.SessionComplete.route) {
+            val previousBackStackEntry = navController.previousBackStackEntry
+            val state = previousBackStackEntry?.let {
+                hiltViewModel<LearningSessionViewModel>(it).state.collectAsStateWithLifecycle().value
+            }
+
+            SessionCompleteScreen(
+                masteredCount = state?.masteredCardIds?.size ?: 0,
+                totalCount = state?.flashcards?.size ?: 0,
+                onBackToHome = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Home.route) { inclusive = true }
+                    }
+                }
             )
         }
 
