@@ -38,19 +38,21 @@ data class NeonError(
 
 /**
  * DTO for Topic from database.
+ * Column order: id, name, description, icon_type, is_system_topic, is_public, created_by
  */
 data class TopicDto(
     val id: String,
     val name: String,
     val description: String? = null,
     val iconType: String? = null,
-    val isSystemTopic: Boolean = true,
+    val isSystemTopic: Boolean = false,
+    val isPublic: Boolean = true,
     val createdBy: String? = null
 ) {
     companion object {
         /**
          * Parse a row from SQL result to TopicDto.
-         * Column order: id, name, description, icon_type, is_system_topic, created_by
+         * Column order: id, name, description, icon_type, is_system_topic, is_public, created_by
          */
         fun fromRow(row: List<Any?>): TopicDto {
             return TopicDto(
@@ -58,8 +60,9 @@ data class TopicDto(
                 name = row.getOrNull(1)?.toString() ?: "",
                 description = row.getOrNull(2)?.toString(),
                 iconType = row.getOrNull(3)?.toString(),
-                isSystemTopic = (row.getOrNull(4) as? Boolean) ?: true,
-                createdBy = row.getOrNull(5)?.toString()
+                isSystemTopic = (row.getOrNull(4) as? Boolean) ?: false,
+                isPublic = (row.getOrNull(5) as? Boolean) ?: true,
+                createdBy = row.getOrNull(6)?.toString()
             )
         }
     }

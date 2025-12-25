@@ -124,7 +124,7 @@ fun TopicScreen(
                         }
                     }
                 }
-                uiState.topics.isEmpty() -> {
+                uiState.allTopics.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -137,7 +137,7 @@ fun TopicScreen(
                 }
                 else -> {
                     TopicList(
-                        topics = uiState.topics,
+                        topics = uiState.allTopics,
                         topicWords = topicWords,
                         onTopicClick = onNavigateToTopicDetail,
                         viewModel = viewModel
