@@ -31,7 +31,11 @@ import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.AddCard
+import androidx.compose.material.icons.filled.Layers
 import com.kotlin.flashlearn.presentation.navigation.Route
+import com.kotlin.flashlearn.ui.theme.FlashBlack
 
 @Composable
 fun TopicScreen(
@@ -94,19 +98,28 @@ fun TopicHeader() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicSearchBar() {
+    var searchQuery by remember { mutableStateOf("") }
     TextField(
-        value = "",
-        onValueChange = {},
-        placeholder = { Text("Search...") },
+        value = searchQuery,
+        onValueChange = { newValue ->
+            searchQuery = newValue
+        },
+        placeholder = { Text("Search your decks...") },
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null)
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null
+            )
         },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = TextFieldDefaults.textFieldColors(
-            containerColor = FlashLightGrey,
+        colors = TextFieldDefaults.colors(
+            cursorColor = FlashRed,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent
         )
     )
 }
@@ -119,21 +132,24 @@ fun TopicList(
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
@@ -144,6 +160,7 @@ fun TopicList(
 fun TopicCard(
     topicId: String,
     title: String,
+    words: Int,
     description: String,
     progress: Float,
     onClick: (String) -> Unit
@@ -157,11 +174,11 @@ fun TopicCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(description, fontSize = 12.sp, color = Color.Gray)
+            Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },
-                color = Color.Red,
+                color = FlashRed,
                 trackColor = Color.LightGray
             )
         }
@@ -181,15 +198,16 @@ fun TopicFabMenu(
     ) {
         AnimatedVisibility(visible = expanded) {
             Column(horizontalAlignment = Alignment.End) {
-                FabItem("Add new topic", Icons.Default.Add, onAddTopic)
+                FabItem("Add new topic", Icons.Default.Layers, onAddTopic)
                 Spacer(modifier = Modifier.height(8.dp))
-                FabItem("Add new card", Icons.Default.Edit, onAddCard)
+                FabItem("Add new card", Icons.Default.AddCard, onAddCard)
             }
         }
 
         FloatingActionButton(
             onClick = onFabClick,
-            containerColor = FlashRed
+            containerColor = FlashRed,
+            shape = CircleShape
         ) {
             Icon(
                 imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
