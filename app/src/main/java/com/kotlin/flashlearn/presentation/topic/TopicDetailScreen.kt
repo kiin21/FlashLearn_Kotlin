@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -181,25 +182,26 @@ fun TopicDetailScreen(
 private fun TopicHeader(name: String, description: String, wordCount: Int) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(vertical = 16.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
     ) {
+        // Stacked layers icon (matching Figma)
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(64.dp)
                 .background(Color(0xFFFFEBEE), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = name.firstOrNull()?.uppercase() ?: "?",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = FlashRed
+            Icon(
+                imageVector = Icons.Default.Layers,
+                contentDescription = null,
+                tint = FlashRed,
+                modifier = Modifier.size(32.dp)
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = name,
-            fontSize = 24.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
         if (description.isNotBlank()) {
@@ -210,12 +212,6 @@ private fun TopicHeader(name: String, description: String, wordCount: Int) {
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-        Text(
-            text = "$wordCount words",
-            fontSize = 12.sp,
-            color = FlashRed,
-            modifier = Modifier.padding(top = 4.dp)
-        )
     }
 }
 
