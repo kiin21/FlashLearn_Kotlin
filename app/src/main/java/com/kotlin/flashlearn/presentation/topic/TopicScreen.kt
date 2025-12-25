@@ -28,7 +28,6 @@ import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import kotlinx.coroutines.launch
 
 @Composable
 fun TopicScreen(
@@ -44,17 +43,8 @@ fun TopicScreen(
     val topicWords by viewModel.topicWords.collectAsStateWithLifecycle()
     
     var isFabExpanded by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    
-    val showNotImplementedMessage: (String) -> Unit = { featureName ->
-        scope.launch {
-            snackbarHostState.showSnackbar("$featureName is coming soon!")
-        }
-    }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             TopicFabMenu(
                 expanded = isFabExpanded,
@@ -92,9 +82,7 @@ fun TopicScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Search Bar
-            TopicSearchBar(
-                onSearchClick = { showNotImplementedMessage("Search") }
-            )
+            TopicSearchBar()
             Spacer(modifier = Modifier.height(16.dp))
 
             // Content
@@ -160,12 +148,13 @@ fun TopicHeader() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopicSearchBar(
-    onSearchClick: () -> Unit = {}
-) {
+fun TopicSearchBar() {
+    var searchQuery by remember { mutableStateOf("") }
     TextField(
-        value = "",
-        onValueChange = {},
+        value = searchQuery,
+        onValueChange = { newValue ->
+            searchQuery = newValue
+        },
         placeholder = { Text("Search your decks...") },
         leadingIcon = {
             Icon(
@@ -173,24 +162,12 @@ fun TopicSearchBar(
                 contentDescription = null
             )
         },
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onSearchClick() },
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        enabled = false,
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = FlashLightGrey,
-            unfocusedContainerColor = FlashLightGrey,
-            disabledContainerColor = FlashLightGrey,
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
-            disabledTextColor = Color.Gray,
-            focusedPlaceholderColor = Color.Gray,
-            unfocusedPlaceholderColor = Color.Gray,
-            disabledPlaceholderColor = Color.Gray,
-            focusedLeadingIconColor = Color.Gray,
-            unfocusedLeadingIconColor = Color.Gray,
-            disabledLeadingIconColor = Color.Gray,
+            cursorColor = FlashRed,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent

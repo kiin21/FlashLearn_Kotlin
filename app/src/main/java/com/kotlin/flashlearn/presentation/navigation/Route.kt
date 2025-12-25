@@ -14,12 +14,18 @@ sealed class Route(val route: String) {
     data object TopicDetail : Route("topic_detail/{topicId}") {
         fun createRoute(topicId: String) = "topic_detail/$topicId"
     }
-    
-    data object LearningSession : Route("learning_session/{topicId}") {
-        fun createRoute(topicId: String) = "learning_session/$topicId"
+
+    data object CardDetail : Route("card_detail/{cardId}") {
+        fun createRoute(cardId: String) = "card_detail/$cardId"
+    }
+
+    data object LearningSession : Route("learning_session/{topicId}?returnTo={returnTo}") {
+        fun createRoute(topicId: String, returnTo: String) = "learning_session/$topicId?returnTo=$returnTo"
     }
     
-    data object SessionComplete : Route("session_complete")
+    data object SessionComplete : Route("session_complete/{topicId}?returnTo={returnTo}"){
+        fun createRoute(topicId: String, returnTo: String) = "session_complete/$topicId?returnTo=$returnTo"
+    }
     data object Community : Route("community")
     
     data object AddWord : Route("add_word/{topicId}") {
