@@ -3,17 +3,18 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCard
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -112,9 +113,12 @@ fun TopicSearchBar(
     TextField(
         value = "",
         onValueChange = {},
-        placeholder = { Text("Search...") },
+        placeholder = { Text("Search your decks...") },
         leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null)
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null
+            )
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -149,21 +153,24 @@ fun TopicList(
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
         TopicCard(
             topicId = "b1_environment",
             title = "B1 Environment",
-            description = "4 words • Essential vocabulary for nature",
+            words = 4,
+            description = "Essential vocabulary for nature",
             progress = 0.7f,
             onClick = onTopicClick
         )
@@ -174,6 +181,7 @@ fun TopicList(
 fun TopicCard(
     topicId: String,
     title: String,
+    words: Int,
     description: String,
     progress: Float,
     onClick: (String) -> Unit
@@ -187,11 +195,11 @@ fun TopicCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(description, fontSize = 12.sp, color = Color.Gray)
+            Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },
-                color = Color.Red,
+                color = FlashRed,
                 trackColor = Color.LightGray
             )
         }
@@ -211,15 +219,16 @@ fun TopicFabMenu(
     ) {
         AnimatedVisibility(visible = expanded) {
             Column(horizontalAlignment = Alignment.End) {
-                FabItem("Add new topic", Icons.Default.Add, onAddTopic)
+                FabItem("Add new topic", Icons.Default.Layers, onAddTopic)
                 Spacer(modifier = Modifier.height(8.dp))
-                FabItem("Add new card", Icons.Default.Edit, onAddCard)
+                FabItem("Add new card", Icons.Default.AddCard, onAddCard)
             }
         }
 
         FloatingActionButton(
             onClick = onFabClick,
-            containerColor = FlashRed
+            containerColor = FlashRed,
+            shape = CircleShape
         ) {
             Icon(
                 imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
