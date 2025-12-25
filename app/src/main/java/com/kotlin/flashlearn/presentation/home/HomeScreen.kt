@@ -1,6 +1,7 @@
 package com.kotlin.flashlearn.presentation.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,13 +31,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +54,7 @@ import com.kotlin.flashlearn.ui.theme.FlashGrey
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,17 +62,31 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     userData: User?,
-    onNavigateToProfile: () -> Unit, // Temporarily navigate to profile
+    onNavigateToProfile: () -> Unit,
     onNavigateToTopic: () -> Unit,
-    onNavigateToLearningSession: (String) -> Unit = {} // Temporary for demo
+    onNavigateToCommunity: () -> Unit = {},
+    onNavigateToLearningSession: (String) -> Unit = {}
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    val showNotImplementedMessage: (String) -> Unit = { featureName ->
+        scope.launch {
+            snackbarHostState.showSnackbar("$featureName is coming soon!")
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             BottomNavBar(
                 currentRoute = "home",
                 onNavigate = { route ->
-                    if (route == "profile") onNavigateToProfile()
-                    if (route == "topic") onNavigateToTopic()
+                    when (route) {
+                        "profile" -> onNavigateToProfile()
+                        "topic" -> onNavigateToTopic()
+                        "community" -> onNavigateToCommunity()
+                    }
                 }
             )
         }
@@ -88,7 +107,10 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Daily Word
-            DailyWordSection()
+            DailyWordSection(
+                onViewArchive = { showNotImplementedMessage("View Archive") },
+                onPronounce = { showNotImplementedMessage("Pronunciation") }
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             // Continue Learning
@@ -98,7 +120,9 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Recommended
-            RecommendedSection()
+            RecommendedSection(
+                onCardClick = { showNotImplementedMessage("Recommended collection") }
+            )
         }
     }
 }
@@ -199,7 +223,10 @@ fun ExamDateCard(user: User?) {
 }
 
 @Composable
-fun DailyWordSection() {
+fun DailyWordSection(
+    onViewArchive: () -> Unit = {},
+    onPronounce: () -> Unit = {}
+) {
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -215,14 +242,15 @@ fun DailyWordSection() {
                 text = "View Archive",
                 color = FlashRed,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { onViewArchive() }
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
         
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FE)), // Light blueish
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FE)),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -243,7 +271,9 @@ fun DailyWordSection() {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(FlashRedLight, CircleShape),
+                            .clip(CircleShape)
+                            .background(FlashRedLight)
+                            .clickable { onPronounce() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -339,7 +369,9 @@ fun ContinueLearningSection(
 }
 
 @Composable
-fun RecommendedSection() {
+fun RecommendedSection(
+    onCardClick: () -> Unit = {}
+) {
     Column {
         Text(
             text = "Recommended for You",
@@ -352,19 +384,27 @@ fun RecommendedSection() {
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(3) { index ->
-                RecommendedCard(index)
+                RecommendedCard(
+                    index = index,
+                    onClick = onCardClick
+                )
             }
         }
     }
 }
 
 @Composable
-fun RecommendedCard(index: Int) {
+fun RecommendedCard(
+    index: Int,
+    onClick: () -> Unit = {}
+) {
     val titles = listOf("VSTEP C1 Vocab", "Listening Part 2", "Writing Task 1")
     val counts = listOf("20 words", "20 words", "20 words")
     
     Card(
-        modifier = Modifier.width(140.dp),
+        modifier = Modifier
+            .width(140.dp)
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = FlashLightGrey),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -372,7 +412,7 @@ fun RecommendedCard(index: Int) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp)), // Light Green
+                    .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
