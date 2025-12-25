@@ -58,7 +58,8 @@ import java.util.Locale
 fun HomeScreen(
     userData: User?,
     onNavigateToProfile: () -> Unit, // Temporarily navigate to profile
-    onNavigateToTopic: () -> Unit
+    onNavigateToTopic: () -> Unit,
+    onNavigateToLearningSession: (String) -> Unit = {} // Temporary for demo
 ) {
     Scaffold(
         bottomBar = {
@@ -91,7 +92,9 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Continue Learning
-            ContinueLearningSection()
+            ContinueLearningSection(
+                onStartLearning = { onNavigateToLearningSession("env_science_101") }
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             // Recommended
@@ -274,7 +277,9 @@ fun DailyWordSection() {
 }
 
 @Composable
-fun ContinueLearningSection() {
+fun ContinueLearningSection(
+    onStartLearning: () -> Unit = {}
+) {
     Column {
         Text(
             text = "Continue Learning",
@@ -322,7 +327,7 @@ fun ContinueLearningSection() {
                         trackColor = Color.LightGray
                     )
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = onStartLearning) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Continue"

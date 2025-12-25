@@ -9,8 +9,10 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
+import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
@@ -54,4 +56,8 @@ object AppModule {
     fun provideUserRepository(
         firestore: FirebaseFirestore
     ): UserRepository = UserRepositoryImpl(firestore)
+
+    @Provides
+    @Singleton
+    fun provideFlashcardRepository(): FlashcardRepository = FlashcardRepositoryImpl()
 }
