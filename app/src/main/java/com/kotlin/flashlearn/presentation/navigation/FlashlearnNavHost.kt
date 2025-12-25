@@ -36,6 +36,7 @@ import com.kotlin.flashlearn.presentation.topic.TopicScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
+import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 
 /**
  * Navigation host for the app.
@@ -158,6 +159,9 @@ fun FlashlearnNavHost(
                 onNavigateToTopic = {
                     navController.navigate(Route.Topic.route)
                 },
+                onNavigateToCommunity = {
+                    navController.navigate(Route.Community.route)
+                },
                 onNavigateToLearningSession = { topicId ->
                     navController.navigate(Route.LearningSession.createRoute(topicId, "home"))
                 }
@@ -171,6 +175,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
+                },
+                onNavigateToCommunity = {
+                    navController.navigate(Route.Community.route)
                 },
                 onNavigateToTopicDetail = { topicId ->
                     navController.navigate(
@@ -305,11 +312,26 @@ fun FlashlearnNavHost(
             )
         }
 
+        composable(Route.Community.route) {
+            NotImplementedScreen(
+                featureName = "Community",
+                currentRoute = "community",
+                onNavigate = { route ->
+                    when (route) {
+                        Route.Home.route, "home" -> navController.navigate(Route.Home.route)
+                        Route.Topic.route, "topic" -> navController.navigate(Route.Topic.route)
+                        Route.Profile.route, "profile" -> navController.navigate(Route.Profile.route)
+                    }
+                }
+            )
+        }
+
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
 
             ProfileScreen(
-                userData = authRepository.getSignedInUser(),        onSignOut = {
+                userData = authRepository.getSignedInUser(),
+                onSignOut = {
                     scope.launch {
                         authRepository.signOut()
                         Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
@@ -323,6 +345,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToTopic = {
                     navController.navigate(Route.Topic.route)
+                },
+                onNavigateToCommunity = {
+                    navController.navigate(Route.Community.route)
                 }
             )
         }

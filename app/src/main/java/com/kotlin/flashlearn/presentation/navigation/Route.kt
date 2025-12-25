@@ -18,7 +18,7 @@ sealed class Route(val route: String) {
     data object CardDetail : Route("card_detail/{cardId}") {
         fun createRoute(cardId: String) = "card_detail/$cardId"
     }
-    
+
     data object LearningSession : Route("learning_session/{topicId}?returnTo={returnTo}") {
         fun createRoute(topicId: String, returnTo: String) = "learning_session/$topicId?returnTo=$returnTo"
     }
@@ -26,4 +26,5 @@ sealed class Route(val route: String) {
     data object SessionComplete : Route("session_complete/{topicId}?returnTo={returnTo}"){
         fun createRoute(topicId: String, returnTo: String) = "session_complete/$topicId?returnTo=$returnTo"
     }
+    data object Community : Route("community")
 }
