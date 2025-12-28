@@ -70,4 +70,38 @@ object NetworkModule {
     fun provideNeonSqlApi(@Named("neon") retrofit: Retrofit): NeonSqlApi {
         return retrofit.create(NeonSqlApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    @Named("dict")
+    fun provideDictionaryRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.dictionaryapi.dev/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @Named("unsplash")
+    fun provideUnsplashRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.unsplash.com/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFreeDictionaryApi(@Named("dict") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.FreeDictionaryApi {
+        return retrofit.create(com.kotlin.flashlearn.data.remote.FreeDictionaryApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUnsplashApi(@Named("unsplash") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.UnsplashApi {
+        return retrofit.create(com.kotlin.flashlearn.data.remote.UnsplashApi::class.java)
+    }
 }

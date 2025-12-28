@@ -34,7 +34,7 @@ fun BottomNavBar(
     NavigationBar(
         containerColor = Color.White
     ) {
-        BottomNavItem.values().forEach { item ->
+        BottomNavItem.entries.forEach { item ->
             val isSelected = currentRoute == item.route
             NavigationBarItem(
                 selected = isSelected,

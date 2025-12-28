@@ -38,7 +38,8 @@ class DatamuseRepositoryImpl @Inject constructor(
             if (topic.isBlank()) {
                 return Result.success(emptyList())
             }
-            // Use 'ml=' (meaning like) instead of 'topics=' as it returns more results
+            // Use 'ml=' (meaning like) parameter as 'topics=' returns empty results
+            // ml= returns words with similar meaning, which works better for topic-based vocab
             val response = datamuseApi.getWordsByMeaning(topic)
             val words = response.mapNotNull { dto ->
                 val definitions = dto.getParsedDefinitions()

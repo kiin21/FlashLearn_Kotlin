@@ -12,5 +12,7 @@ data class Flashcard(
     val partOfSpeech: String = "", // e.g., "NOUN", "VERB", "ADJECTIVE"
     val definition: String = "",
     val exampleSentence: String = "",
+    val ipa: String = "",
+    val imageUrl: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )

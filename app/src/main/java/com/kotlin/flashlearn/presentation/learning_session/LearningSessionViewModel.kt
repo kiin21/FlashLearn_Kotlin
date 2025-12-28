@@ -39,7 +39,7 @@ class LearningSessionViewModel @Inject constructor(
     }
 
     /**
-     * Loads flashcards for the given topic.
+     * Loads flashcards for the given topic from FlashcardRepository (backed by Datamuse API).
      */
     private fun loadFlashcards() {
         viewModelScope.launch {

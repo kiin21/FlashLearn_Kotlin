@@ -9,9 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,6 +25,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.flashlearn.domain.model.Flashcard
+import com.kotlin.flashlearn.presentation.components.FlashcardBack
+import com.kotlin.flashlearn.presentation.components.FlashcardFront
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 
@@ -102,106 +102,15 @@ private fun CardFlipContent(
         contentAlignment = Alignment.Center
     ) {
         if (rotation <= 90f) {
-            CardFront(flashcard)
+            FlashcardFront(flashcard = flashcard)
         } else {
             Box(
                 modifier = Modifier.graphicsLayer { rotationY = 180f }
             ) {
-                CardBack(flashcard)
+                FlashcardBack(flashcard = flashcard)
             }
         }
     }
 }
 
-@Composable
-private fun CardFront(flashcard: Flashcard) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = flashcard.word,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color.Black,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(16.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = flashcard.partOfSpeech,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = FlashRed,
-                modifier = Modifier
-                    .background(
-                        color = Color(0xFFFFCDD2),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 12.dp, vertical = 4.dp)
-            )
 
-            Spacer(Modifier.width(12.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(
-                        color = Color(0xFFFFCDD2),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        // speak
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.VolumeUp,
-                    contentDescription = "Pronunciation",
-                    tint = FlashRed,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = flashcard.pronunciation,
-            fontSize = 14.sp,
-            fontStyle = FontStyle.Italic,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun CardBack(flashcard: Flashcard) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = flashcard.word,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = FlashRed,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = flashcard.definition,
-            fontSize = 18.sp,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            lineHeight = 24.sp
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "\"${flashcard.exampleSentence}\"",
-            fontSize = 14.sp,
-            fontStyle = FontStyle.Italic,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp
-        )
-    }
-}

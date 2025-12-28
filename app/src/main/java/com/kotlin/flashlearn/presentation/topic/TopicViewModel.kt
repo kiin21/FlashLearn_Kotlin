@@ -3,10 +3,10 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
+import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.model.TopicCategory
-import com.kotlin.flashlearn.domain.model.VocabularyWord
-import com.kotlin.flashlearn.domain.repository.DatamuseRepository
+import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,15 +21,16 @@ import javax.inject.Inject
 @HiltViewModel
 class TopicViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
-    private val datamuseRepository: DatamuseRepository,
+    private val flashcardRepository: FlashcardRepository,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(TopicUiState())
     val uiState: StateFlow<TopicUiState> = _uiState.asStateFlow()
     
-    private val _topicWords = MutableStateFlow<Map<String, List<VocabularyWord>>>(emptyMap())
-    val topicWords: StateFlow<Map<String, List<VocabularyWord>>> = _topicWords.asStateFlow()
+    // Word count for each topic (loaded from FlashcardRepository)
+    private val _topicWordCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val topicWordCounts: StateFlow<Map<String, Int>> = _topicWordCounts.asStateFlow()
     
     private val currentUserId: String?
         get() = firebaseAuth.currentUser?.uid
@@ -65,9 +66,9 @@ class TopicViewModel @Inject constructor(
                         communityTopics = communityTopics
                     )
                     
-                    // Load vocabulary for each topic from Datamuse
+                    // Load word count for each topic from FlashcardRepository
                     topics.forEach { topic ->
-                        loadWordsForTopic(topic)
+                        loadWordCountForTopic(topic.id)
                     }
                 }
                 .onFailure { e ->
@@ -79,52 +80,20 @@ class TopicViewModel @Inject constructor(
         }
     }
     
-    private fun loadWordsForTopic(topic: Topic) {
+    private fun loadWordCountForTopic(topicId: String) {
         viewModelScope.launch {
-            datamuseRepository.getWordsByTopic(topic.name)
-                .onSuccess { words ->
-                    val currentWords = _topicWords.value.toMutableMap()
-                    currentWords[topic.id] = words
-                    _topicWords.value = currentWords
+            flashcardRepository.getFlashcardsByTopicId(topicId)
+                .onSuccess { flashcards ->
+                    val currentCounts = _topicWordCounts.value.toMutableMap()
+                    currentCounts[topicId] = flashcards.size
+                    _topicWordCounts.value = currentCounts
                 }
         }
     }
     
-    fun searchTopics(query: String) {
-        if (query.isBlank()) {
-            loadTopics()
-            return
-        }
-        
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            
-            topicRepository.searchTopics(query, currentUserId)
-                .onSuccess { topics ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        allTopics = topics,
-                        systemTopics = topics.filter { it.getCategory() == TopicCategory.SYSTEM },
-                        myTopics = topics.filter { it.getCategory() == TopicCategory.PRIVATE },
-                        mySharedTopics = topics.filter { 
-                            it.getCategory() == TopicCategory.SHARED && it.createdBy == currentUserId 
-                        },
-                        communityTopics = topics.filter {
-                            it.getCategory() == TopicCategory.SHARED && it.createdBy != currentUserId
-                        }
-                    )
-                }
-                .onFailure { e ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = e.message
-                    )
-                }
-        }
-    }
-    
+
     fun getWordCountForTopic(topicId: String): Int {
-        return _topicWords.value[topicId]?.size ?: 0
+        return _topicWordCounts.value[topicId] ?: 0
     }
     
     fun isLoggedIn(): Boolean = currentUserId != null

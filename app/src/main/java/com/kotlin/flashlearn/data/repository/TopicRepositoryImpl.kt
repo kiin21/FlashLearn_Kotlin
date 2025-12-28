@@ -67,7 +67,7 @@ class TopicRepositoryImpl @Inject constructor(
                 NeonSqlRequest(
                     query = """
                         SELECT $SELECT_COLUMNS FROM topics 
-                        WHERE is_system_topic = true OR is_public = true OR created_by = $1
+                        WHERE is_system_topic = true OR is_public = true OR created_by = ${"$"}1
                         ORDER BY is_system_topic DESC, name ASC
                     """.trimIndent(),
                     params = listOf(userId)

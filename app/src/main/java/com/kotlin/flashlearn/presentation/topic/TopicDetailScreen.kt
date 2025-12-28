@@ -1,6 +1,5 @@
 package com.kotlin.flashlearn.presentation.topic
 
-import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,17 +16,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,6 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +60,7 @@ fun TopicDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("B1 Environment", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+                title = { Text(state.topicTitle, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -104,9 +101,9 @@ fun TopicDetailScreen(
             ) { /* icon */ }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text("B1 Environment", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(state.topicTitle, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
-                "Essential vocabulary for nature",
+                state.topicDescription.ifBlank { "Vocabulary collection" },
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 4.dp)
@@ -157,7 +154,7 @@ fun TopicDetailScreen(
                     Text("Loading...", color = Color.Gray)
                 }
                 state.error != null -> {
-                    Text(state.error ?: "Error", color = Color.Red)
+                    Text(state.error, color = Color.Red)
                 }
                 state.cards.isEmpty() -> {
                     Text("No cards in this topic", color = Color.Gray)
@@ -169,6 +166,8 @@ fun TopicDetailScreen(
                             CardItem(
                                 word = card.word,
                                 type = card.partOfSpeech,
+                                ipa = card.ipa,
+                                imageUrl = card.imageUrl,
                                 onClick = { onNavigateToCardDetail(card.id) }
                             )
                         }
@@ -183,6 +182,8 @@ fun TopicDetailScreen(
 fun CardItem(
     word: String,
     type: String,
+    ipa: String,
+    imageUrl: String,
     onClick: () -> Unit
 ) {
     Card(
@@ -193,18 +194,54 @@ fun CardItem(
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(word, fontWeight = FontWeight.Bold)
+            // Image Thumbnail
+            if (imageUrl.isNotBlank()) {
+                coil.compose.SubcomposeAsyncImage(
+                    model = imageUrl,
+                    loading = {
+                        Box(contentAlignment = Alignment.Center) {
+                            androidx.compose.material3.CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        }
+                    },
+                    contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(Color.LightGray, RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(com.kotlin.flashlearn.ui.theme.FlashLightGrey, RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(word.take(1).uppercase(), fontWeight = FontWeight.Bold, color = Color.Gray)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(word, fontWeight = FontWeight.Bold)
+                    if (ipa.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(ipa, fontSize = 14.sp, color = com.kotlin.flashlearn.ui.theme.FlashGrey)
+                    }
+                }
                 Text(type, fontSize = 12.sp, color = Color.Gray)
             }
+            
+            // Audio Icon (Placeholder logic)
             Icon(
                 Icons.Default.VolumeUp,
                 contentDescription = null,
                 tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
     }

@@ -34,6 +34,9 @@ import androidx.navigation.navArgument
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
 import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
+import com.kotlin.flashlearn.presentation.topic.AddWordScreen
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 
 /**
@@ -183,10 +186,7 @@ fun FlashlearnNavHost(
                     )
                 },
                 onNavigateToAddTopic = {
-                    // TODO: Navigate to AddTopic screen
-                },
-                onNavigateToAddWord = { topicId ->
-                    navController.navigate(Route.AddWord.createRoute(topicId))
+                    navController.navigate(Route.AddWord.createRoute(null))
                 }
             )
         }
@@ -210,6 +210,42 @@ fun FlashlearnNavHost(
                 },
                 onStudyNow = {
                     navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
+                }
+            )
+        }
+
+        // Card Detail Screen
+        composable(
+            route = Route.CardDetail.route,
+            arguments = listOf(
+                navArgument("cardId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val viewModel = hiltViewModel<CardDetailViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            
+            CardDetailScreen(
+                state = state,
+                onFlip = { viewModel.flip() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Add Word Screen
+        composable(
+            route = Route.AddWord.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId")
+            
+            AddWordScreen(
+                topicId = topicId,
+                onBack = { navController.popBackStack() },
+                onWordAdded = {
+                    // Refresh the topic detail screen after adding words
+                    navController.popBackStack()
                 }
             )
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -13,12 +14,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -30,12 +31,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import com.kotlin.flashlearn.ui.theme.FlashResultText
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWordScreen(
-    topicId: String?,
+    topicId: String? = null,
     onBack: () -> Unit,
     onWordAdded: () -> Unit = {},
     viewModel: AddWordViewModel = hiltViewModel()
@@ -51,7 +53,7 @@ fun AddWordScreen(
             CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        "Add Words",
+                        "Create New Topic",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -66,6 +68,52 @@ fun AddWordScreen(
                     }
                 }
             )
+        },
+        bottomBar = {
+            // Sticky Create Topic Button
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Button(
+                    onClick = {
+                        viewModel.createTopic(
+                            onSuccess = {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Topic created successfully!")
+                                }
+                                onWordAdded()
+                            },
+                            onError = { error ->
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(error)
+                                }
+                            }
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = uiState.newTopicName.isNotBlank() && 
+                              uiState.selectedWords.isNotEmpty() && 
+                              !uiState.isCreatingTopic
+                ) {
+                    if (uiState.isCreatingTopic) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create Topic (${uiState.selectedWords.size} words)")
+                    }
+                }
+            }
         }
     ) { padding ->
         LazyColumn(
@@ -75,6 +123,74 @@ fun AddWordScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Topic Name Section
+            item {
+                Text(
+                    text = "Topic Name *",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = uiState.newTopicName,
+                    onValueChange = { viewModel.onNewTopicNameChange(it) },
+                    placeholder = { Text("Enter topic name...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+            }
+            
+            // Topic Description (Optional)
+            item {
+                Text(
+                    text = "Description (Optional)",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedTextField(
+                    value = uiState.newTopicDescription,
+                    onValueChange = { viewModel.onNewTopicDescriptionChange(it) },
+                    placeholder = { Text("Add description...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    minLines = 2,
+                    maxLines = 3
+                )
+            }
+            
+            // Selected Words Preview
+            if (uiState.selectedWords.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Selected Words (${uiState.selectedWords.size})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(uiState.selectedWords.toList()) { word ->
+                            SelectedWordChip(
+                                word = word,
+                                onRemove = { viewModel.removeSelectedWord(word) }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Divider
+            item {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            
             // Search Section
             item {
                 Text(
@@ -129,7 +245,8 @@ fun AddWordScreen(
                                         .fillMaxWidth()
                                         .clickable { viewModel.onSuggestionSelected(suggestion.word) }
                                         .padding(16.dp),
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    color = FlashResultText
                                 )
                                 if (suggestion != uiState.searchSuggestions.take(8).last()) {
                                     HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
@@ -137,22 +254,6 @@ fun AddWordScreen(
                             }
                         }
                     }
-                }
-            }
-            
-            // Selected Word Details
-            if (uiState.selectedWord != null) {
-                item {
-                    SelectedWordCard(
-                        word = uiState.selectedWord!!,
-                        onAdd = {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Word added! (Save to DB coming soon)")
-                            }
-                            viewModel.clearSelectedWord()
-                        },
-                        onClear = { viewModel.clearSelectedWord() }
-                    )
                 }
             }
             
@@ -165,21 +266,75 @@ fun AddWordScreen(
                     HorizontalDivider(modifier = Modifier.weight(1f))
                     Text(
                         text = "  OR  ",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                     HorizontalDivider(modifier = Modifier.weight(1f))
                 }
             }
             
-            // Topic Suggestion Section
+            // Topic Selection Section
             item {
                 Text(
-                    text = "Get suggestions by topic",
+                    text = "Get words by topic",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                
+                // Topic Dropdown
+                if (uiState.availableTopics.isNotEmpty()) {
+                    ExposedDropdownMenuBox(
+                        expanded = uiState.showTopicDropdown,
+                        onExpandedChange = { viewModel.toggleTopicDropdown() }
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.selectedTopic?.name ?: "Choose a topic...",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.showTopicDropdown) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = if (uiState.selectedTopic != null) FlashRed.copy(alpha = 0.1f) else Color.Transparent
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = uiState.showTopicDropdown,
+                            onDismissRequest = { viewModel.toggleTopicDropdown() }
+                        ) {
+                            uiState.availableTopics.forEach { topic ->
+                                DropdownMenuItem(
+                                    text = { 
+                                        Column {
+                                            Text(topic.name, fontWeight = FontWeight.Medium)
+                                            if (topic.description.isNotBlank()) {
+                                                Text(
+                                                    topic.description,
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = { viewModel.onTopicSelected(topic) }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Text(
+                        text = "Or enter manually:",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -220,9 +375,9 @@ fun AddWordScreen(
             } else if (uiState.topicSuggestions.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Suggested Words (${uiState.topicSuggestions.size})",
+                        text = "Available Words (${uiState.topicSuggestions.size})",
                         fontWeight = FontWeight.Medium,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -234,94 +389,43 @@ fun AddWordScreen(
                         onToggle = { viewModel.toggleWordSelection(word) }
                     )
                 }
-                
-                // Add Selected Button
-                if (uiState.selectedWords.isNotEmpty()) {
-                    item {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "${uiState.selectedWords.size} words added! (Save to DB coming soon)"
-                                    )
-                                }
-                                viewModel.clearAll()
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add ${uiState.selectedWords.size} Selected Words")
-                        }
-                    }
-                }
             }
             
-            // Bottom spacing
-            item { Spacer(modifier = Modifier.height(32.dp)) }
+            // Bottom spacing for list items above the sticky button
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
-fun SelectedWordCard(
+fun SelectedWordChip(
     word: VocabularyWord,
-    onAdd: () -> Unit,
-    onClear: () -> Unit
+    onRemove: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FFF0))
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = FlashRed.copy(alpha = 0.15f)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = word.word,
+                fontWeight = FontWeight.Medium,
+                color = FlashRed
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(16.dp)
             ) {
-                Column {
-                    Text(
-                        text = word.word,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    )
-                    if (word.partOfSpeech.isNotBlank()) {
-                        Text(
-                            text = word.partOfSpeech.lowercase(),
-                            color = Color.Gray,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-                TextButton(onClick = onClear) {
-                    Text("Clear", color = Color.Gray)
-                }
-            }
-            
-            if (word.definition.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = word.definition,
-                    fontSize = 14.sp,
-                    color = Color.DarkGray
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove",
+                    tint = FlashRed,
+                    modifier = Modifier.size(14.dp)
                 )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = onAdd,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add to Collection")
             }
         }
     }
@@ -360,17 +464,18 @@ fun TopicWordCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = word.word,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) FlashRed else FlashResultText
                     )
                     if (word.partOfSpeech.isNotBlank()) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = word.partOfSpeech.lowercase(),
                             fontSize = 12.sp,
-                            color = Color.Gray,
+                            color = if (isSelected) FlashRed else FlashResultText.copy(alpha = 0.7f),
                             modifier = Modifier
                                 .background(
-                                    Color.Gray.copy(alpha = 0.2f),
+                                    if (isSelected) FlashRed.copy(alpha = 0.1f) else Color.White,
                                     RoundedCornerShape(4.dp)
                                 )
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -382,7 +487,7 @@ fun TopicWordCard(
                     Text(
                         text = word.definition,
                         fontSize = 13.sp,
-                        color = Color.DarkGray,
+                        color = if (isSelected) FlashRed else FlashResultText.copy(alpha = 0.8f),
                         maxLines = 2
                     )
                 }

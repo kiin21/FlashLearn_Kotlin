@@ -16,6 +16,13 @@ interface FlashcardRepository {
     suspend fun getFlashcardsByTopicId(topicId: String): Result<List<Flashcard>>
     
     /**
+     * Saves flashcards for a topic (used when creating a new topic with selected words).
+     * @param topicId The ID of the topic.
+     * @param flashcards List of flashcards to save.
+     */
+    suspend fun saveFlashcardsForTopic(topicId: String, flashcards: List<Flashcard>): Result<Unit>
+    
+    /**
      * Marks a flashcard as mastered (user clicked "Got It").
      * @param flashcardId The ID of the flashcard.
      * @param userId The ID of the current user.

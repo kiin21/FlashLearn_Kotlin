@@ -36,28 +36,28 @@ fun TopicScreen(
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToTopicDetail: (String) -> Unit,
     onNavigateToAddTopic: () -> Unit = {},
-    onNavigateToAddWord: (String?) -> Unit = {},
     viewModel: TopicViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val topicWords by viewModel.topicWords.collectAsStateWithLifecycle()
+    val topicWordCounts by viewModel.topicWordCounts.collectAsStateWithLifecycle()
     
-    var isFabExpanded by remember { mutableStateOf(false) }
+    // Load topics on first composition (already done in ViewModel init, but kept for clarity)
+    LaunchedEffect(Unit) {
+        viewModel.loadTopics()
+    }
 
     Scaffold(
         floatingActionButton = {
-            TopicFabMenu(
-                expanded = isFabExpanded,
-                onFabClick = { isFabExpanded = !isFabExpanded },
-                onAddTopic = { 
-                    onNavigateToAddTopic()
-                    isFabExpanded = false
-                },
-                onAddCard = { 
-                    onNavigateToAddWord(null)
-                    isFabExpanded = false
-                }
-            )
+            FloatingActionButton(
+                onClick = onNavigateToAddTopic,
+                containerColor = FlashRed,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add New Topic"
+                )
+            }
         },
         bottomBar = {
             BottomNavBar(
@@ -126,7 +126,7 @@ fun TopicScreen(
                 else -> {
                     TopicList(
                         topics = uiState.allTopics,
-                        topicWords = topicWords,
+                        topicWordCounts = topicWordCounts,
                         onTopicClick = onNavigateToTopicDetail,
                         viewModel = viewModel
                     )
@@ -178,7 +178,7 @@ fun TopicSearchBar() {
 @Composable
 fun TopicList(
     topics: List<Topic>,
-    topicWords: Map<String, List<com.kotlin.flashlearn.domain.model.VocabularyWord>>,
+    topicWordCounts: Map<String, Int>,
     onTopicClick: (String) -> Unit,
     viewModel: TopicViewModel
 ) {
@@ -186,7 +186,7 @@ fun TopicList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(topics) { topic ->
-            val wordCount = topicWords[topic.id]?.size ?: 0
+            val wordCount = topicWordCounts[topic.id] ?: 0
             TopicCard(
                 topicId = topic.id,
                 title = topic.name,
@@ -224,60 +224,6 @@ fun TopicCard(
                 color = FlashRed,
                 trackColor = Color.LightGray
             )
-        }
-    }
-}
-
-@Composable
-fun TopicFabMenu(
-    expanded: Boolean,
-    onFabClick: () -> Unit,
-    onAddTopic: () -> Unit,
-    onAddCard: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        AnimatedVisibility(visible = expanded) {
-            Column(horizontalAlignment = Alignment.End) {
-                FabItem("Add new topic", Icons.Default.Layers, onAddTopic)
-                Spacer(modifier = Modifier.height(8.dp))
-                FabItem("Add new card", Icons.Default.AddCard, onAddCard)
-            }
-        }
-
-        FloatingActionButton(
-            onClick = onFabClick,
-            containerColor = FlashRed,
-            shape = CircleShape
-        ) {
-            Icon(
-                imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
-                contentDescription = null
-            )
-        }
-    }
-}
-
-@Composable
-fun FabItem(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
-    ) {
-        Text(text, fontSize = 12.sp)
-        Spacer(modifier = Modifier.width(8.dp))
-        FloatingActionButton(
-            onClick = onClick,
-            modifier = Modifier.size(40.dp),
-            containerColor = Color.White
-        ) {
-            Icon(icon, contentDescription = null, tint = FlashRed)
         }
     }
 }
