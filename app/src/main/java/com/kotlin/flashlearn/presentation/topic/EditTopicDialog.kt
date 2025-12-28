@@ -58,19 +58,19 @@ fun EditTopicDialog(
         imageUrl = currentImageUrl
     }
 
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Topic") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.material3.OutlinedTextField(
+                OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Topic Name") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                androidx.compose.material3.OutlinedTextField(
+                OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
@@ -80,7 +80,7 @@ fun EditTopicDialog(
                 Text("Cover Image", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.OutlinedTextField(
+                    OutlinedTextField(
                         value = imageUrl,
                         onValueChange = { imageUrl = it },
                         label = { Text("Image URL") },
@@ -117,7 +117,7 @@ fun EditTopicDialog(
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }

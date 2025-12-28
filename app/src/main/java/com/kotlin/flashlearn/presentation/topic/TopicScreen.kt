@@ -143,7 +143,8 @@ fun TopicHeader() {
     Text(
         text = "My Collections",
         style = MaterialTheme.typography.headlineSmall,
-        color = MaterialTheme.colorScheme.onBackground
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
     )
 }
 
@@ -184,78 +185,22 @@ fun TopicList(
     viewModel: TopicViewModel
 ) {
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 80.dp) // Add padding for FAB
     ) {
         items(topics) { topic ->
             val wordCount = topicWordCounts[topic.id] ?: 0
             val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
             
-            TopicCard(
-                topicId = topic.id,
+            com.kotlin.flashlearn.presentation.components.TopicItem(
                 title = topic.name,
-                words = wordCount,
                 description = topic.description,
+                wordCount = wordCount,
+                imageUrl = topic.imageUrl ?: "",
                 progress = 0f, // TODO: Calculate from user progress
                 isOwner = isOwner,
-                onClick = onTopicClick,
+                onClick = { onTopicClick(topic.id) },
                 onDelete = { viewModel.deleteTopic(topic.id) }
-            )
-        }
-    }
-}
-
-@Composable
-fun TopicCard(
-    topicId: String,
-    title: String,
-    words: Int,
-    description: String,
-    progress: Float,
-    isOwner: Boolean = false,
-    onClick: (String) -> Unit,
-    onDelete: () -> Unit = {}
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick(topicId) },
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "$words ${if (words != 1) "words" else "word"}  • $description", 
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                if (isOwner) {
-                     IconButton(
-                         onClick = onDelete,
-                         modifier = Modifier.size(24.dp)
-                     ) {
-                         Icon(
-                             Icons.Default.Delete,
-                             contentDescription = "Delete Topic",
-                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                         )
-                     }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                color = FlashRed,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }

@@ -236,7 +236,8 @@ fun DailyWordSection(
             Text(
                 text = "Daily Word",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = "View Archive",
@@ -250,8 +251,11 @@ fun DailyWordSection(
         
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FE)),
-            shape = RoundedCornerShape(16.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -264,7 +268,7 @@ fun DailyWordSection(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
-                            .background(FlashRedLight, RoundedCornerShape(4.dp))
+                            .background(FlashRedLight.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                     
@@ -272,7 +276,7 @@ fun DailyWordSection(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(FlashRedLight)
+                            .background(FlashRedLight.copy(alpha = 0.3f))
                             .clickable { onPronounce() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -288,17 +292,17 @@ fun DailyWordSection(
                     text = "Resilient",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = FlashBlack
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "/rɪˈzɪl.jənt/",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = FlashGrey,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
                 Text(
                     text = "Able to withstand or recover quickly from difficult conditions.",
-                    color = FlashDarkGrey,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -314,14 +318,18 @@ fun ContinueLearningSection(
         Text(
             text = "Continue Learning",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
         
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = FlashLightGrey),
-            shape = RoundedCornerShape(16.dp)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -330,7 +338,7 @@ fun ContinueLearningSection(
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .background(FlashRedLight, CircleShape),
+                        .background(FlashRedLight.copy(alpha = 0.3f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -345,7 +353,8 @@ fun ContinueLearningSection(
                     Text(
                         text = "B1 Environment",
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
@@ -355,13 +364,14 @@ fun ContinueLearningSection(
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
                         color = FlashRed,
-                        trackColor = Color.LightGray
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
                 IconButton(onClick = onStartLearning) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Continue"
+                        contentDescription = "Continue",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -377,7 +387,8 @@ fun RecommendedSection(
         Text(
             text = "Recommended for You",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
         
@@ -406,14 +417,17 @@ fun RecommendedCard(
         modifier = Modifier
             .width(140.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = FlashLightGrey),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp)),
+                    .background(FlashGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -428,12 +442,13 @@ fun RecommendedCard(
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = counts.getOrElse(index) { "20 words" },
-                color = FlashGrey,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelSmall
             )
         }

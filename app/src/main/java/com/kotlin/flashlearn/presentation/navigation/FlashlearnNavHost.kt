@@ -345,15 +345,17 @@ fun FlashlearnNavHost(
         }
 
         composable(Route.Community.route) {
-            NotImplementedScreen(
-                featureName = "Community",
-                currentRoute = "community",
-                onNavigate = { route ->
-                    when (route) {
-                        Route.Home.route, "home" -> navController.navigate(Route.Home.route)
-                        Route.Topic.route, "topic" -> navController.navigate(Route.Topic.route)
-                        Route.Profile.route, "profile" -> navController.navigate(Route.Profile.route)
+            com.kotlin.flashlearn.presentation.community.CommunityScreen(
+                onNavigateToHome = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Home.route) { inclusive = true }
                     }
+                },
+                onNavigateToTopic = {
+                    navController.navigate(Route.Topic.route)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Route.Profile.route)
                 }
             )
         }

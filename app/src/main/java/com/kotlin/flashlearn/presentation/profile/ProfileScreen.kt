@@ -21,10 +21,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -81,17 +83,6 @@ fun ProfileScreen(
     
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Profile",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            )
-        },
         bottomBar = {
             BottomNavBar(
                 currentRoute = Route.Profile.route,
@@ -114,6 +105,14 @@ fun ProfileScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            // Header
+            Text(
+                text = "Profile",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
+            )
+
             // User Info Section
             UserInfoSection(
                 userData = userData,
@@ -200,11 +199,12 @@ private fun PreferencesSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "PREFERENCES",
-            color = Color.Gray,
-            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
+        
         ProfileRowSwitch(
             icon = Icons.Default.Notifications,
             text = "Notifications",
@@ -212,6 +212,7 @@ private fun PreferencesSection(
             onCheckedChange = { notificationsEnabled = it }
         )
         Spacer(modifier = Modifier.height(12.dp))
+        
         ProfileRowSwitch(
             icon = Icons.Default.NightsStay,
             text = "Dark Mode",
@@ -219,6 +220,7 @@ private fun PreferencesSection(
             onCheckedChange = { darkModeEnabled = it }
         )
         Spacer(modifier = Modifier.height(12.dp))
+        
         ProfileRowNavigation(
             icon = Icons.Default.LockReset,
             text = "Change Password",
@@ -235,23 +237,29 @@ private fun AccountSection(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "ACCOUNT",
-            color = Color.Gray,
-            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
+        
         ProfileRowNavigation(
-            icon = Icons.Default.ExitToApp,
+            icon = Icons.AutoMirrored.Filled.ExitToApp,
             text = "Log Out",
             onClick = onSignOut
         )
+        
         Spacer(modifier = Modifier.height(12.dp))
+
+        // Special styling for Delete Account
         ProfileRowNavigation(
             icon = Icons.Default.DeleteOutline,
             text = "Delete Account",
             textColor = FlashRed,
-            iconColor = FlashRed,
-            backgroundColor = FlashRedLight,
+            iconTint = FlashRed,
+            cardContainerColor = FlashRedLight.copy(alpha = 0.3f), // Light red background
+            iconBackgroundColor = Color.Transparent, // No circle background for this specific design if full card is colored? Or maybe keep it subtle.
+            // Actually design shows red icon, red text, light red card background.
             onClick = onDeleteAccount
         )
     }
@@ -261,33 +269,57 @@ private fun AccountSection(
 private fun ProfileRowNavigation(
     icon: ImageVector,
     text: String,
-    backgroundColor: Color = FlashLightGrey,
-    textColor: Color = Color.Black,
-    iconColor: Color = Color.Black,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    iconTint: Color = MaterialTheme.colorScheme.onSurface,
+    cardContainerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+    iconBackgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant, // Slightly darker than card
     onClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = cardContainerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = text, tint = iconColor)
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = text,
-            fontWeight = FontWeight.Medium,
-            color = textColor,
-            modifier = Modifier.weight(1f)
-        )
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = if (textColor == FlashRed) FlashRed else Color.Gray
-        )
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp) // Slightly bigger touch target
+                    .background(
+                        if (iconBackgroundColor == Color.Transparent) Color.Transparent else iconBackgroundColor, 
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon, 
+                    contentDescription = text, 
+                    tint = iconTint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor,
+                modifier = Modifier.weight(1f)
+            )
+            
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
     }
 }
 
@@ -298,31 +330,56 @@ private fun ProfileRowSwitch(
     isChecked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(FlashLightGrey)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable { onCheckedChange(!isChecked) },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = text)
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = text,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1f)
-        )
-        Switch(
-            checked = isChecked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = FlashRed,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color.LightGray,
-                uncheckedBorderColor = Color.Transparent
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon, 
+                    contentDescription = text, 
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurface
             )
-        )
+            
+            Switch(
+                checked = isChecked,
+                onCheckedChange = onCheckedChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = FlashRed,
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    uncheckedBorderColor = Color.Transparent
+                ),
+                modifier = Modifier.height(24.dp)
+            )
+        }
     }
 }
