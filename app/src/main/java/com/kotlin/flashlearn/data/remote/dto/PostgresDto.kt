@@ -3,9 +3,9 @@ package com.kotlin.flashlearn.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * Request body for Neon SQL over HTTP.
+ * Request body for Postgres SQL over HTTP.
  */
-data class NeonSqlRequest(
+data class PostgresSqlRequest(
     @SerializedName("query")
     val query: String,
     @SerializedName("params")
@@ -13,25 +13,25 @@ data class NeonSqlRequest(
 )
 
 /**
- * Response from Neon SQL query.
+ * Response from Postgres SQL query.
  */
-data class NeonSqlResponse(
+data class PostgresSqlResponse(
     @SerializedName("rows")
     val rows: List<List<Any?>>? = null,
     @SerializedName("fields")
-    val fields: List<NeonField>? = null,
+    val fields: List<PostgresField>? = null,
     @SerializedName("error")
-    val error: NeonError? = null
+    val error: PostgresError? = null
 )
 
-data class NeonField(
+data class PostgresField(
     @SerializedName("name")
     val name: String,
     @SerializedName("dataTypeID")
     val dataTypeId: Int? = null
 )
 
-data class NeonError(
+data class PostgresError(
     @SerializedName("message")
     val message: String
 )

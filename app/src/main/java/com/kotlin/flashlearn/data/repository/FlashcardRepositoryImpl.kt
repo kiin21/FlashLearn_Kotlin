@@ -2,9 +2,9 @@ package com.kotlin.flashlearn.data.repository
 
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.DatamuseApi
-import com.kotlin.flashlearn.data.remote.NeonSqlApi
+import com.kotlin.flashlearn.data.remote.PostgresApi
 import com.kotlin.flashlearn.data.remote.dto.FlashcardDto
-import com.kotlin.flashlearn.data.remote.dto.NeonSqlRequest
+import com.kotlin.flashlearn.data.remote.dto.PostgresSqlRequest
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
@@ -25,7 +25,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 @Singleton
 class FlashcardRepositoryImpl @Inject constructor(
-    private val neonSqlApi: NeonSqlApi,
+    private val postgresApi: PostgresApi,
     private val datamuseApi: DatamuseApi,
     private val topicRepository: TopicRepository,
     private val freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
@@ -83,12 +83,12 @@ class FlashcardRepositoryImpl @Inject constructor(
     
     private suspend fun getFlashcardsFromDatabase(topicId: String): List<Flashcard> {
         return try {
-            val request = NeonSqlRequest(
+            val request = PostgresSqlRequest(
                 query = "SELECT $SELECT_COLUMNS FROM flashcards WHERE topic_id = \$1 ORDER BY word ASC",
                 params = listOf(topicId)
             )
             
-            val response = neonSqlApi.executeQuery(
+            val response = postgresApi.executeQuery(
                 connectionString = CONNECTION_STRING,
                 request = request
             )
@@ -174,12 +174,12 @@ class FlashcardRepositoryImpl @Inject constructor(
             }
             
             // Try database
-            val request = NeonSqlRequest(
+            val request = PostgresSqlRequest(
                 query = "SELECT $SELECT_COLUMNS FROM flashcards WHERE id = \$1",
                 params = listOf(cardId)
             )
             
-            val response = neonSqlApi.executeQuery(
+            val response = postgresApi.executeQuery(
                 connectionString = CONNECTION_STRING,
                 request = request
             )
@@ -296,7 +296,7 @@ class FlashcardRepositoryImpl @Inject constructor(
     }
 
     private suspend fun saveFlashcardToDb(flashcard: Flashcard, topicId: String) {
-        val request = NeonSqlRequest(
+        val request = PostgresSqlRequest(
             query = """
                 INSERT INTO flashcards (id, topic_id, word, pronunciation, part_of_speech, definition, example_sentence, ipa, image_url)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -322,7 +322,7 @@ class FlashcardRepositoryImpl @Inject constructor(
             )
         )
         
-        neonSqlApi.executeQuery(
+        postgresApi.executeQuery(
             connectionString = CONNECTION_STRING,
             request = request
         )
@@ -339,12 +339,12 @@ class FlashcardRepositoryImpl @Inject constructor(
             // Optimization: Construct "unrolled" IN clause: WHERE id IN ('id1', 'id2', ...)
             
             val idsString = flashcardIds.joinToString(",") { "'$it'" }
-            val request = NeonSqlRequest(
+            val request = PostgresSqlRequest(
                 query = "DELETE FROM flashcards WHERE id IN ($idsString)",
                 params = emptyList() // Parameters embedded directly for list
             )
             
-            val response = neonSqlApi.executeQuery(
+            val response = postgresApi.executeQuery(
                 connectionString = CONNECTION_STRING,
                 request = request
             )

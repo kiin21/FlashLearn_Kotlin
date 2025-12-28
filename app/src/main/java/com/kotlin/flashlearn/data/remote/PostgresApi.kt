@@ -1,17 +1,17 @@
 package com.kotlin.flashlearn.data.remote
 
-import com.kotlin.flashlearn.data.remote.dto.NeonSqlRequest
-import com.kotlin.flashlearn.data.remote.dto.NeonSqlResponse
+import com.kotlin.flashlearn.data.remote.dto.PostgresSqlRequest
+import com.kotlin.flashlearn.data.remote.dto.PostgresSqlResponse
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
 
 /**
- * Neon SQL over HTTP API.
+ * Postgres SQL over HTTP API.
  * Uses database credentials for authentication.
  * Base URL: https://ep-lively-frost-a1zoz3tj.ap-southeast-1.aws.neon.tech/
  */
-interface NeonSqlApi {
+interface PostgresApi {
     
     /**
      * Execute SQL query.
@@ -22,6 +22,6 @@ interface NeonSqlApi {
         @Header("Neon-Connection-String") connectionString: String,
         @Header("Content-Type") contentType: String = "application/json",
         @Header("Neon-Array-Mode") arrayMode: String = "true",
-        @Body request: NeonSqlRequest
-    ): NeonSqlResponse
+        @Body request: PostgresSqlRequest
+    ): PostgresSqlResponse
 }

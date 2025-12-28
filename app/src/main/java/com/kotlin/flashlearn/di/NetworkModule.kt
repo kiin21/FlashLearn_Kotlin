@@ -2,7 +2,7 @@ package com.kotlin.flashlearn.di
 
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.DatamuseApi
-import com.kotlin.flashlearn.data.remote.NeonSqlApi
+import com.kotlin.flashlearn.data.remote.PostgresApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,25 +50,25 @@ object NetworkModule {
     
     @Provides
     @Singleton
-    @Named("neon")
-    fun provideNeonRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @Named("postgres")
+    fun providePostgresRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.NEON_SQL_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-    
+
+    @Provides
+    @Singleton
+    fun providePostgresApi(@Named("postgres") retrofit: Retrofit): PostgresApi {
+        return retrofit.create(PostgresApi::class.java)
+    }
+
     @Provides
     @Singleton
     fun provideDatamuseApi(@Named("datamuse") retrofit: Retrofit): DatamuseApi {
         return retrofit.create(DatamuseApi::class.java)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideNeonSqlApi(@Named("neon") retrofit: Retrofit): NeonSqlApi {
-        return retrofit.create(NeonSqlApi::class.java)
     }
 
     @Provides

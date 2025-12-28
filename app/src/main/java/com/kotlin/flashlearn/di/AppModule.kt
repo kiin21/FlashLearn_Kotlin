@@ -9,7 +9,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.kotlin.flashlearn.data.remote.DatamuseApi
-import com.kotlin.flashlearn.data.remote.NeonSqlApi
+import com.kotlin.flashlearn.data.remote.PostgresApi
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
@@ -66,18 +66,18 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFlashcardRepository(
-        neonSqlApi: NeonSqlApi,
+        postgresApi: PostgresApi,
         datamuseApi: DatamuseApi,
         topicRepository: TopicRepository,
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
         pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
-    ): FlashcardRepository = FlashcardRepositoryImpl(neonSqlApi, datamuseApi, topicRepository, freeDictionaryApi, pixabayApi)
+    ): FlashcardRepository = FlashcardRepositoryImpl(postgresApi, datamuseApi, topicRepository, freeDictionaryApi, pixabayApi)
     
     @Provides
     @Singleton
     fun provideTopicRepository(
-        neonSqlApi: NeonSqlApi
-    ): TopicRepository = TopicRepositoryImpl(neonSqlApi)
+        postgresApi: PostgresApi
+    ): TopicRepository = TopicRepositoryImpl(postgresApi)
     
     @Provides
     @Singleton
