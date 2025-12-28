@@ -2,20 +2,38 @@ package com.kotlin.flashlearn.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// PREMIUN BRAND COLORS
+val BrandRed = Color(0xFFE11D48)        // Electric Crimson
+val BrandRedDark = Color(0xFFBE123C)    // Darker shade
+val BrandRedContainer = Color(0xFF3F1622) // Subtle red tint
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// BACKGROUNDS - DARK MODE
+val CryptoBlack = Color(0xFF0F1115)     // Deep Space
+val Gunmetal = Color(0xFF1C1E24)        // Cool Charcoal Cards
+val Charcoal = Color(0xFF2D3039)        // Borders/Input fields
 
-// FlashLearn Brand Colors
-val FlashRed = Color(0xFFB71C1C) // Primary Red
-val FlashRedLight = Color(0xFFFFEBEE) // Secondary/Background Red
-val FlashGreen = Color(0xFF4CAF50) // Success Green
-val FlashWhite = Color(0xFFFFFFFF)
-val FlashBlack = Color(0xFF000000)
-val FlashDarkGrey = Color(0xFF1E1E1E) // For dark cards
-val FlashGrey = Color(0xFF757575) // For secondary text
-val FlashLightGrey = Color(0xFFF5F5F5) // For backgrounds
+// BACKGROUNDS - LIGHT MODE
+val PaperWhite = Color(0xFFFFFFFF)      // Pure White
+val MistGrey = Color(0xFFF4F4F5)        // Zinc 100 Cards
+
+// TEXT COLORS
+val TextWhitePrimary = Color(0xFFFAFAFA)
+val TextBlackPrimary = Color(0xFF09090B) // Zinc 950
+val TextGreySecondaryDark = Color(0xFFA1A1AA) // Zinc 400
+val TextGreySecondaryLight = Color(0xFF71717A) // Zinc 500
+
+// COMPATIBILITY ALIASES (To satisfy existing code while transitioning)
+val FlashRed = BrandRed
+val FlashRedLight = BrandRedContainer
+val FlashGreen = Color(0xFF10B981) // Emerald 500 - more modern green
+val FlashBlack = CryptoBlack
+val FlashDarkGrey = Gunmetal
+val FlashGrey = TextGreySecondaryDark
+val FlashLightGrey = MistGrey
+val FlashResultText = TextBlackPrimary
+val Purple80 = BrandRed // Fallback for deprecated Material templates
+val PurpleGrey80 = TextGreySecondaryDark
+val Pink80 = BrandRed
+val Purple40 = BrandRed
+val PurpleGrey40 = TextGreySecondaryLight
+val Pink40 = BrandRed

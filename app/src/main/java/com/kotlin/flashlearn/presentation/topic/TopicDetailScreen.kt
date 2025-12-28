@@ -1,6 +1,5 @@
 package com.kotlin.flashlearn.presentation.topic
 
-import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,32 +21,51 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.kotlin.flashlearn.ui.theme.FlashRed
 
 
@@ -58,27 +76,112 @@ fun TopicDetailScreen(
     state: TopicDetailState,
     onBack: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
-    onStudyNow: () -> Unit
+    onStudyNow: () -> Unit,
+    onToggleSelectionMode: () -> Unit,
+    onToggleCardSelection: (String) -> Unit,
+    onSelectAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onDeleteTopic: () -> Unit,
+    onUpdateTopic: (String, String, String) -> Unit,
+    onRegenerateImage: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditTopicDialog(
+            currentName = state.topicTitle,
+            currentDescription = state.topicDescription,
+            currentImageUrl = state.imageUrl,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { name, desc, imgUrl -> 
+                onUpdateTopic(name, desc, imgUrl)
+                showEditDialog = false
+            },
+            onRegenerateImage = onRegenerateImage
+        )
+    }
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("B1 Environment", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ChevronLeft,
-                            tint = FlashRed,
-                            contentDescription = "Back"
-                        )
+            if (state.isSelectionMode) {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Text(
+                            "${state.selectedCardIds.size} Selected", 
+                            style = MaterialTheme.typography.titleMedium,
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onToggleSelectionMode) {
+                            Icon(Icons.Default.Close, contentDescription = "Close Selection")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onSelectAll) { 
+                             Icon(
+                                 imageVector = Icons.Default.CheckCircle, 
+                                 contentDescription = "Select All", 
+                                 tint = FlashRed
+                             )
+                        }
+                        IconButton(onClick = onDeleteSelected) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = FlashRed)
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { /* Share */ }) {
-                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.LightGray)
+                )
+            } else {
+                CenterAlignedTopAppBar(
+                    title = { Text(state.topicTitle, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                tint = FlashRed,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        if (state.isOwner) {
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Edit Topic") },
+                                        onClick = {
+                                            showMenu = false
+                                            showEditDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Edit, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            showMenu = false
+                                            onDeleteTopic()
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                        }
+                                    )
+                                }
+                            }
+                        } else {
+                            IconButton(onClick = { /* Share */ }) {
+                                Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -96,56 +199,73 @@ fun TopicDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(Color(0xFFFFEBEE), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) { /* icon */ }
+            // Header
+            if (!state.imageUrl.isBlank()) {
+                AsyncImage(
+                    model = state.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                     Icon(
+                         painter = painterResource(id = android.R.drawable.ic_menu_agenda), // Placeholder if we don't have nice icon res
+                         contentDescription = null,
+                         tint = MaterialTheme.colorScheme.onPrimaryContainer
+                     )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text("B1 Environment", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(state.topicTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
             Text(
-                "Essential vocabulary for nature",
-                fontSize = 14.sp,
-                color = Color.Gray,
+                state.topicDescription.ifBlank { "Vocabulary collection" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Buttons row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 Button(
                     onClick = onStudyNow,
-                    modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(50.dp)
                 ) {
-                    Icon(Icons.Default.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Study Now")
+                    Text("Study Now", style = MaterialTheme.typography.labelLarge)
                 }
-
+                Spacer(Modifier.width(16.dp))
                 OutlinedButton(
                     onClick = { /* Quiz */ },
-                    modifier = Modifier.weight(1f).height(48.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = FlashRed),
+                    border = BorderStroke(1.dp, FlashRed.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, FlashRed)
+                    modifier = Modifier.weight(1f).height(50.dp)
                 ) {
-                    Icon(Icons.Default.Assignment, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF9E0000))
+                    Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF9E0000))
                     Spacer(Modifier.width(8.dp))
-                    Text("Take Quiz", color = FlashRed)
+                    Text("Take Quiz", style = MaterialTheme.typography.labelLarge, color = FlashRed)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Cards in this topic",
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Start)
@@ -154,10 +274,15 @@ fun TopicDetailScreen(
 
             when {
                 state.isLoading -> {
-                    Text("Loading...", color = Color.Gray)
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = FlashRed)
+                    }
                 }
                 state.error != null -> {
-                    Text(state.error ?: "Error", color = Color.Red)
+                    Text(state.error, color = Color.Red)
                 }
                 state.cards.isEmpty() -> {
                     Text("No cards in this topic", color = Color.Gray)
@@ -169,7 +294,23 @@ fun TopicDetailScreen(
                             CardItem(
                                 word = card.word,
                                 type = card.partOfSpeech,
-                                onClick = { onNavigateToCardDetail(card.id) }
+                                ipa = card.ipa,
+                                imageUrl = card.imageUrl,
+                                isSelectionMode = state.isSelectionMode,
+                                isSelected = state.selectedCardIds.contains(card.id),
+                                onClick = { 
+                                    if (state.isSelectionMode) {
+                                        onToggleCardSelection(card.id)
+                                    } else {
+                                        onNavigateToCardDetail(card.id)
+                                    }
+                                },
+                                onLongClick = {
+                                    if (!state.isSelectionMode && state.isOwner) {
+                                        onToggleSelectionMode()
+                                        onToggleCardSelection(card.id)
+                                    }
+                                }
                             )
                         }
                     }
@@ -179,33 +320,91 @@ fun TopicDetailScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun CardItem(
     word: String,
     type: String,
-    onClick: () -> Unit
+    ipa: String,
+    imageUrl: String,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onClick() }
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        colors = if (isSelected) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        } else {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        }
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(word, fontWeight = FontWeight.Bold)
-                Text(type, fontSize = 12.sp, color = Color.Gray)
+            // Selection Checkbox
+            if (isSelectionMode) {
+                IconButton(onClick = onClick) {
+                    Icon(
+                        imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                        contentDescription = if (isSelected) "Selected" else "Select",
+                        tint = if (isSelected) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
             }
-            Icon(
-                Icons.Default.VolumeUp,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
-            )
+
+            // Image Thumbnail
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    word.take(1).uppercase(), 
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(word, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    if (ipa.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(ipa, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Text(type, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            
+            if (!isSelectionMode) {
+                // Audio Icon
+                Icon(
+                    Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

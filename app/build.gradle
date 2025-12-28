@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+
+
 android {
     namespace = "com.kotlin.flashlearn"
     compileSdk = 34
@@ -64,6 +66,27 @@ android {
             }
             buildConfigField("String", "WEB_CLIENT_ID", "\"${webClientId}\"")
         }
+        
+        // API Configuration
+        def props = new Properties()
+        rootProject.file('local.properties').with { if (it.exists()) props.load(it.newInputStream()) }
+        
+        def neonConnectionString = props.getProperty('NEON_CONNECTION_STRING')
+        def neonSqlBaseUrl = props.getProperty('NEON_SQL_BASE_URL')
+        
+        // Auto-extract hostname from connection string if available
+        if (neonConnectionString) {
+             // Extract hostname between '@' and next '/' or ':'
+             def matcher = (neonConnectionString =~ /@([^:\/]+)/)
+             if (matcher.find()) {
+                 neonSqlBaseUrl = "https://${matcher.group(1)}/"
+             }
+        }
+
+        buildConfigField("String", "DATAMUSE_BASE_URL", "\"${props.getProperty('DATAMUSE_BASE_URL')}\"")
+        buildConfigField("String", "NEON_SQL_BASE_URL", "\"${neonSqlBaseUrl}\"")
+        buildConfigField("String", "NEON_CONNECTION_STRING", "\"${neonConnectionString}\"")
+        buildConfigField("String", "PIXABAY_API_KEY", "\"${props.getProperty('PIXABAY_API_KEY')}\"")
     }
 }
 
@@ -99,6 +122,23 @@ dependencies {
 
     // Image Loading
     implementation libs.coil.compose
+
+    // Networking
+    implementation libs.retrofit
+    implementation libs.retrofit.gson
+    implementation libs.okhttp
+    implementation libs.okhttp.logging
+    implementation libs.gson
+
+    // Room Database
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
+
+    // WorkManager
+    implementation libs.workmanager.runtime
+    implementation libs.hilt.work
+    ksp libs.hilt.work.compiler
 
     // Testing
     testImplementation libs.junit

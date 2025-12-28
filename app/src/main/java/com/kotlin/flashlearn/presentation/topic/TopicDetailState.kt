@@ -7,5 +7,9 @@ data class TopicDetailState(
     val error: String? = null,
     val topicTitle: String = "",
     val topicDescription: String = "",
-    val cards: List<Flashcard> = emptyList()
+    val cards: List<Flashcard> = emptyList(),
+    val isSelectionMode: Boolean = false,
+    val selectedCardIds: Set<String> = emptySet(),
+    val isOwner: Boolean = false,
+    val imageUrl: String = ""
 )

@@ -3,65 +3,72 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCard
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Card
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.Icon
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.AddCard
-import androidx.compose.material.icons.filled.Layers
-import com.kotlin.flashlearn.presentation.navigation.Route
-import com.kotlin.flashlearn.ui.theme.FlashBlack
 
 @Composable
 fun TopicScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToCommunity: () -> Unit = {},
     onNavigateToTopicDetail: (String) -> Unit,
-    onNavigateToCommunity: () -> Unit,
+    onNavigateToAddTopic: () -> Unit = {},
+    viewModel: TopicViewModel = hiltViewModel()
 ) {
-    var isFabExpanded by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val topicWordCounts by viewModel.topicWordCounts.collectAsStateWithLifecycle()
+    
+    // Load topics on first composition (already done in ViewModel init, but kept for clarity)
+    LaunchedEffect(Unit) {
+        viewModel.loadTopics()
+    }
 
     Scaffold(
         floatingActionButton = {
-            TopicFabMenu(
-                expanded = isFabExpanded,
-                onFabClick = { isFabExpanded = !isFabExpanded },
-                onAddTopic = { /* TODO */ },
-                onAddCard = { /* TODO */ }
-            )
+            FloatingActionButton(
+                onClick = onNavigateToAddTopic,
+                containerColor = FlashRed,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add New Topic"
+                )
+            }
         },
         bottomBar = {
             BottomNavBar(
                 currentRoute = "topic",
                 onNavigate = { route ->
-                    if (route == "home") onNavigateToHome()
-                    else if (route == "profile") onNavigateToProfile()
-                    else if (route == "community") onNavigateToCommunity()
+                    when (route) {
+                        "home" -> onNavigateToHome()
+                        "profile" -> onNavigateToProfile()
+                        "community" -> onNavigateToCommunity()
+                    }
                 }
             )
         }
@@ -75,14 +82,57 @@ fun TopicScreen(
             TopicHeader()
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Searh Bar
+            // Search Bar
             TopicSearchBar()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // List
-            TopicList(
-                onTopicClick = onNavigateToTopicDetail
-            )
+            // Content
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = FlashRed)
+                    }
+                }
+                uiState.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = uiState.error ?: "Unknown error",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { viewModel.loadTopics() }) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+                uiState.allTopics.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No topics yet. Create your first topic!",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                else -> {
+                    TopicList(
+                        topics = uiState.allTopics,
+                        topicWordCounts = topicWordCounts,
+                        onTopicClick = onNavigateToTopicDetail,
+                        viewModel = viewModel
+                    )
+                }
+            }
         }
     }
 }
@@ -92,8 +142,9 @@ fun TopicScreen(
 fun TopicHeader() {
     Text(
         text = "My Collections",
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold
+        style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
     )
 }
 
@@ -128,115 +179,29 @@ fun TopicSearchBar() {
 
 @Composable
 fun TopicList(
+    topics: List<Topic>,
+    topicWordCounts: Map<String, Int>,
     onTopicClick: (String) -> Unit,
+    viewModel: TopicViewModel
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
-        TopicCard(
-            topicId = "b1_environment",
-            title = "B1 Environment",
-            words = 4,
-            description = "Essential vocabulary for nature",
-            progress = 0.7f,
-            onClick = onTopicClick
-        )
-    }
-}
-
-@Composable
-fun TopicCard(
-    topicId: String,
-    title: String,
-    words: Int,
-    description: String,
-    progress: Float,
-    onClick: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick(topicId) },
-        shape = RoundedCornerShape(16.dp)
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(bottom = 80.dp) // Add padding for FAB
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("$words ${if (words > 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { progress },
-                color = FlashRed,
-                trackColor = Color.LightGray
+        items(topics) { topic ->
+            val wordCount = topicWordCounts[topic.id] ?: 0
+            val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
+            
+            com.kotlin.flashlearn.presentation.components.TopicItem(
+                title = topic.name,
+                description = topic.description,
+                wordCount = wordCount,
+                imageUrl = topic.imageUrl ?: "",
+                progress = 0f, // TODO: Calculate from user progress
+                isOwner = isOwner,
+                onClick = { onTopicClick(topic.id) },
+                onDelete = { viewModel.deleteTopic(topic.id) }
             )
-        }
-    }
-}
-
-@Composable
-fun TopicFabMenu(
-    expanded: Boolean,
-    onFabClick: () -> Unit,
-    onAddTopic: () -> Unit,
-    onAddCard: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        AnimatedVisibility(visible = expanded) {
-            Column(horizontalAlignment = Alignment.End) {
-                FabItem("Add new topic", Icons.Default.Layers, onAddTopic)
-                Spacer(modifier = Modifier.height(8.dp))
-                FabItem("Add new card", Icons.Default.AddCard, onAddCard)
-            }
-        }
-
-        FloatingActionButton(
-            onClick = onFabClick,
-            containerColor = FlashRed,
-            shape = CircleShape
-        ) {
-            Icon(
-                imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
-                contentDescription = null
-            )
-        }
-    }
-}
-
-@Composable
-fun FabItem(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
-    ) {
-        Text(text, fontSize = 12.sp)
-        Spacer(modifier = Modifier.width(8.dp))
-        FloatingActionButton(
-            onClick = onClick,
-            modifier = Modifier.size(40.dp),
-            containerColor = Color.White
-        ) {
-            Icon(icon, contentDescription = null, tint = FlashRed)
         }
     }
 }

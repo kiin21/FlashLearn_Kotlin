@@ -40,6 +40,7 @@ class CardDetailViewModel @Inject constructor(
                             flashcard = card,
                             error = null
                         )
+                        enrichCard(card)
                     } else {
                         _state.value = _state.value.copy(
                             isLoading = false,
@@ -56,6 +57,21 @@ class CardDetailViewModel @Inject constructor(
                     )
                 }
             )
+        }
+    }
+
+
+
+    private fun enrichCard(card: com.kotlin.flashlearn.domain.model.Flashcard) {
+        if (card.imageUrl.isBlank() || card.ipa.isBlank()) {
+            viewModelScope.launch {
+                try {
+                    val enrichedCard = (flashcardRepository as com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl).enrichFlashcard(card)
+                    _state.value = _state.value.copy(flashcard = enrichedCard)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 

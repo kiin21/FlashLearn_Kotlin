@@ -32,10 +32,11 @@ import kotlinx.coroutines.launch
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
+import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
-import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
+import com.kotlin.flashlearn.presentation.topic.AddWordScreen
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 
 /**
@@ -183,6 +184,9 @@ fun FlashlearnNavHost(
                     navController.navigate(
                         Route.TopicDetail.createRoute(topicId)
                     )
+                },
+                onNavigateToAddTopic = {
+                    navController.navigate(Route.AddWord.createRoute(null))
                 }
             )
         }
@@ -195,7 +199,6 @@ fun FlashlearnNavHost(
         ) { backStackEntry ->
             val viewModel = hiltViewModel<TopicDetailViewModel>(backStackEntry)
             val state by viewModel.state.collectAsStateWithLifecycle()
-
             val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
 
             TopicDetailScreen(
@@ -203,29 +206,58 @@ fun FlashlearnNavHost(
                 state = state,
                 onBack = { navController.popBackStack() },
                 onNavigateToCardDetail = { cardId ->
-                    navController.navigate(
-                        Route.CardDetail.createRoute(cardId)
-                    )
+                    navController.navigate(Route.CardDetail.createRoute(cardId))
                 },
                 onStudyNow = {
                     navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
-                }
+                },
+                onToggleSelectionMode = viewModel::toggleSelectionMode,
+                onToggleCardSelection = viewModel::toggleCardSelection,
+                onSelectAll = viewModel::selectAllCards,
+                onDeleteSelected = viewModel::deleteSelectedCards,
+                onDeleteTopic = {
+                    viewModel.deleteTopic {
+                        navController.popBackStack()
+                    }
+                },
+                onUpdateTopic = viewModel::updateTopic,
+                onRegenerateImage = viewModel::regenerateImage
             )
         }
 
+        // Card Detail Screen
         composable(
             route = Route.CardDetail.route,
             arguments = listOf(
-                navArgument("cardId"){ type = NavType.StringType }
+                navArgument("cardId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val viewModel = hiltViewModel<CardDetailViewModel>(backStackEntry)
+            val viewModel = hiltViewModel<CardDetailViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
-
+            
             CardDetailScreen(
                 state = state,
                 onFlip = { viewModel.flip() },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Add Word Screen
+        composable(
+            route = Route.AddWord.route,
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val topicId = backStackEntry.arguments?.getString("topicId")
+            
+            AddWordScreen(
+                topicId = topicId,
                 onBack = { navController.popBackStack() },
+                onWordAdded = {
+                    // Refresh the topic detail screen after adding words
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -313,15 +345,17 @@ fun FlashlearnNavHost(
         }
 
         composable(Route.Community.route) {
-            NotImplementedScreen(
-                featureName = "Community",
-                currentRoute = "community",
-                onNavigate = { route ->
-                    when (route) {
-                        Route.Home.route, "home" -> navController.navigate(Route.Home.route)
-                        Route.Topic.route, "topic" -> navController.navigate(Route.Topic.route)
-                        Route.Profile.route, "profile" -> navController.navigate(Route.Profile.route)
+            com.kotlin.flashlearn.presentation.community.CommunityScreen(
+                onNavigateToHome = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Home.route) { inclusive = true }
                     }
+                },
+                onNavigateToTopic = {
+                    navController.navigate(Route.Topic.route)
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Route.Profile.route)
                 }
             )
         }

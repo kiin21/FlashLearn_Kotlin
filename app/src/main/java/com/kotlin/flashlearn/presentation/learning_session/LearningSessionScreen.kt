@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kotlin.flashlearn.domain.model.Flashcard
+import com.kotlin.flashlearn.presentation.components.FlashcardBack
+import com.kotlin.flashlearn.presentation.components.FlashcardFront
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
@@ -280,131 +282,17 @@ private fun FlashcardContent(
                 FlashcardFront(flashcard = flashcard)
             } else {
                 // Back side - Definition
-                FlashcardBack(
-                    flashcard = flashcard,
-                    modifier = Modifier.graphicsLayer {
-                        rotationY = 180f
-                    }
-                )
+                Box(
+                    modifier = Modifier.graphicsLayer { rotationY = 180f }
+                ) {
+                    FlashcardBack(flashcard = flashcard)
+                }
             }
         }
     }
 }
 
-@Composable
-private fun FlashcardFront(
-    flashcard: Flashcard,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Word
-        Text(
-            text = flashcard.word,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = Color.Black,
-            textAlign = TextAlign.Center
-        )
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Part of speech and pronunciation
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Part of speech badge
-            Text(
-                text = flashcard.partOfSpeech,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(FlashRedLight)
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                color = FlashRed,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.size(12.dp))
-
-            // Pronunciation with speaker icon
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(FlashRedLight)
-                    .padding(6.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.VolumeUp,
-                    contentDescription = "Pronunciation",
-                    modifier = Modifier.size(20.dp),
-                    tint = FlashRed
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlashcardBack(
-    flashcard: Flashcard,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Word (smaller)
-        Text(
-            text = flashcard.word,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = FlashRed,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Pronunciation
-        Text(
-            text = flashcard.pronunciation,
-            fontSize = 14.sp,
-            fontStyle = FontStyle.Italic,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Definition
-        Text(
-            text = flashcard.definition,
-            fontSize = 18.sp,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            lineHeight = 24.sp
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Example sentence
-        Text(
-            text = "\"${flashcard.exampleSentence}\"",
-            fontSize = 14.sp,
-            fontStyle = FontStyle.Italic,
-            color = Color.Gray,
-            textAlign = TextAlign.Center,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-    }
-}
 
 @Composable
 private fun BottomActionButtons(
