@@ -213,6 +213,7 @@ fun FlashlearnNavHost(
                 },
                 onToggleSelectionMode = viewModel::toggleSelectionMode,
                 onToggleCardSelection = viewModel::toggleCardSelection,
+                onSelectAll = viewModel::selectAllCards,
                 onDeleteSelected = viewModel::deleteSelectedCards,
                 onDeleteTopic = {
                     viewModel.deleteTopic {

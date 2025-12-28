@@ -75,6 +75,7 @@ fun TopicDetailScreen(
     onStudyNow: () -> Unit,
     onToggleSelectionMode: () -> Unit,
     onToggleCardSelection: (String) -> Unit,
+    onSelectAll: () -> Unit,
     onDeleteSelected: () -> Unit,
     onDeleteTopic: () -> Unit
 ) {
@@ -96,6 +97,13 @@ fun TopicDetailScreen(
                         }
                     },
                     actions = {
+                        IconButton(onClick = onSelectAll) { 
+                             Icon(
+                                 imageVector = Icons.Default.CheckCircle, 
+                                 contentDescription = "Select All", 
+                                 tint = FlashRed
+                             )
+                        }
                         IconButton(onClick = onDeleteSelected) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = FlashRed)
                         }

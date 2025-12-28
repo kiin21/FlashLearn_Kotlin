@@ -120,6 +120,11 @@ class TopicDetailViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedCardIds = currentSelected)
     }
     
+    fun selectAllCards() {
+        val allIds = _state.value.cards.map { it.id }.toSet()
+        _state.value = _state.value.copy(selectedCardIds = allIds)
+    }
+
     fun deleteSelectedCards() {
         viewModelScope.launch {
             val selectedIds = _state.value.selectedCardIds.toList()
