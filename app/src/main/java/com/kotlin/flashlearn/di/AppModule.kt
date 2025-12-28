@@ -20,6 +20,7 @@ import com.kotlin.flashlearn.domain.repository.DatamuseRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
+import com.kotlin.flashlearn.data.local.dao.UserProgressDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -70,8 +71,16 @@ object AppModule {
         datamuseApi: DatamuseApi,
         topicRepository: TopicRepository,
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
-        pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
-    ): FlashcardRepository = FlashcardRepositoryImpl(postgresApi, datamuseApi, topicRepository, freeDictionaryApi, pixabayApi)
+        pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi,
+        userProgressDao: UserProgressDao
+    ): FlashcardRepository = FlashcardRepositoryImpl(
+        postgresApi, 
+        datamuseApi, 
+        topicRepository, 
+        freeDictionaryApi, 
+        pixabayApi,
+        userProgressDao
+    )
     
     @Provides
     @Singleton

@@ -130,6 +130,16 @@ dependencies {
     implementation libs.okhttp.logging
     implementation libs.gson
 
+    // Room Database
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.room.compiler
+
+    // WorkManager
+    implementation libs.workmanager.runtime
+    implementation libs.hilt.work
+    ksp libs.hilt.work.compiler
+
     // Testing
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

@@ -1,6 +1,9 @@
 package com.kotlin.flashlearn.data.repository
 
 import com.kotlin.flashlearn.BuildConfig
+import com.kotlin.flashlearn.data.local.dao.UserProgressDao
+import com.kotlin.flashlearn.data.local.entity.ProgressStatus
+import com.kotlin.flashlearn.data.local.entity.UserProgressEntity
 import com.kotlin.flashlearn.data.remote.DatamuseApi
 import com.kotlin.flashlearn.data.remote.PostgresApi
 import com.kotlin.flashlearn.data.remote.dto.FlashcardDto
@@ -13,6 +16,12 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import android.util.Log
 
 /**
  * Implementation of FlashcardRepository using PostgreSQL database for persistence
@@ -29,10 +38,12 @@ class FlashcardRepositoryImpl @Inject constructor(
     private val datamuseApi: DatamuseApi,
     private val topicRepository: TopicRepository,
     private val freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
-    private val pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
+    private val pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi,
+    private val userProgressDao: UserProgressDao  // Room DAO for persistent progress
 ) : FlashcardRepository {
     
     companion object {
+        private const val TAG = "FlashcardRepo"
         private val CONNECTION_STRING = BuildConfig.NEON_CONNECTION_STRING
         private const val SELECT_COLUMNS = "id, topic_id, word, pronunciation, part_of_speech, definition, example_sentence, ipa, image_url"
     }
@@ -40,9 +51,8 @@ class FlashcardRepositoryImpl @Inject constructor(
     // In-memory cache for loaded flashcards (by topicId)
     private val flashcardCache = ConcurrentHashMap<String, List<Flashcard>>()
     
-    // Track mastered/review status in memory
-    private val masteredCards = ConcurrentHashMap<String, MutableSet<String>>()
-    private val reviewCards = ConcurrentHashMap<String, MutableSet<String>>()
+    // Semaphore to limit concurrent API calls (prevents rate limiting 429 errors)
+    private val enrichmentSemaphore = Semaphore(5)
     
     override suspend fun getFlashcardsByTopicId(topicId: String): Result<List<Flashcard>> {
         return try {
@@ -202,9 +212,16 @@ class FlashcardRepositoryImpl @Inject constructor(
     
     override suspend fun markFlashcardAsMastered(flashcardId: String, userId: String): Result<Unit> {
         return try {
-            val userMastered = masteredCards.getOrPut(userId) { mutableSetOf() }
-            userMastered.add(flashcardId)
-            reviewCards[userId]?.remove(flashcardId)
+            // Persist to Room Database (survives app restart)
+            val progress = UserProgressEntity(
+                id = "${userId}_${flashcardId}",
+                userId = userId,
+                flashcardId = flashcardId,
+                status = ProgressStatus.MASTERED,
+                updatedAt = System.currentTimeMillis(),
+                syncedToRemote = false
+            )
+            userProgressDao.upsert(progress)
             Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -215,8 +232,16 @@ class FlashcardRepositoryImpl @Inject constructor(
     
     override suspend fun markFlashcardForReview(flashcardId: String, userId: String): Result<Unit> {
         return try {
-            val userReview = reviewCards.getOrPut(userId) { mutableSetOf() }
-            userReview.add(flashcardId)
+            // Persist to Room Database
+            val progress = UserProgressEntity(
+                id = "${userId}_${flashcardId}",
+                userId = userId,
+                flashcardId = flashcardId,
+                status = ProgressStatus.REVIEW,
+                updatedAt = System.currentTimeMillis(),
+                syncedToRemote = false
+            )
+            userProgressDao.upsert(progress)
             Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -252,6 +277,27 @@ class FlashcardRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * Enriches multiple flashcards in parallel with throttling.
+     * Uses Semaphore to limit concurrent API calls (max 5) to prevent rate limiting (429 errors).
+     */
+    suspend fun enrichFlashcardsParallel(cards: List<Flashcard>): List<Flashcard> {
+        return coroutineScope {
+            cards.map { card ->
+                async {
+                    enrichmentSemaphore.withPermit {
+                        try {
+                            enrichFlashcardData(card)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Enrichment failed for ${card.word}: ${e.message}")
+                            card
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+    }
+
     private suspend fun enrichFlashcardData(card: Flashcard): Flashcard {
         var ipa = card.ipa
         var imageUrl = card.imageUrl
@@ -259,36 +305,26 @@ class FlashcardRepositoryImpl @Inject constructor(
         // Fetch IPA if missing
         if (ipa.isBlank()) {
             try {
-                println("FlashLearn: Fetching IPA for ${card.word}...")
                 val response = freeDictionaryApi.getWordDetails(card.word)
                 val entry = response.firstOrNull()
-                
-                // Try to find IPA in phonetics list first, then fallback to top-level phonetic
                 ipa = entry?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text
                     ?: entry?.phonetic
                     ?: ""
-                    
-                println("FlashLearn: IPA found: $ipa")
             } catch (e: Exception) {
-                println("FlashLearn: IPA fetch error: ${e.message}")
-                e.printStackTrace()
+                Log.w(TAG, "IPA fetch error for ${card.word}: ${e.message}")
             }
         }
         
-        // Fetch Image if missing (Pixabay)
+        // Fetch Image if missing
         if (imageUrl.isBlank()) {
             try {
-                println("FlashLearn: Fetching image for ${card.word} from Pixabay...")
                 val response = pixabayApi.searchImages(
                     apiKey = BuildConfig.PIXABAY_API_KEY,
                     query = card.word
                 )
-                println("FlashLearn: Pixabay hits: ${response.hits.size}")
                 imageUrl = response.hits.firstOrNull()?.webformatUrl ?: ""
-                println("FlashLearn: Image URL found: $imageUrl")
             } catch (e: Exception) {
-                println("FlashLearn: Pixabay error: ${e.message}")
-                e.printStackTrace()
+                Log.w(TAG, "Pixabay error for ${card.word}: ${e.message}")
             }
         }
         
