@@ -84,10 +84,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @Named("unsplash")
-    fun provideUnsplashRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @Named("pixabay")
+    fun providePixabayRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.unsplash.com/")
+            .baseUrl("https://pixabay.com/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -95,13 +95,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideFreeDictionaryApi(@Named("dict") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.FreeDictionaryApi {
-        return retrofit.create(com.kotlin.flashlearn.data.remote.FreeDictionaryApi::class.java)
+    fun providePixabayApi(@Named("pixabay") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.PixabayApi {
+        return retrofit.create(com.kotlin.flashlearn.data.remote.PixabayApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideUnsplashApi(@Named("unsplash") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.UnsplashApi {
-        return retrofit.create(com.kotlin.flashlearn.data.remote.UnsplashApi::class.java)
+    fun provideFreeDictionaryApi(@Named("dict") retrofit: Retrofit): com.kotlin.flashlearn.data.remote.FreeDictionaryApi {
+        return retrofit.create(com.kotlin.flashlearn.data.remote.FreeDictionaryApi::class.java)
     }
 }

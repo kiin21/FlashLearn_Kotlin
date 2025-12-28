@@ -210,6 +210,14 @@ fun FlashlearnNavHost(
                 },
                 onStudyNow = {
                     navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
+                },
+                onToggleSelectionMode = viewModel::toggleSelectionMode,
+                onToggleCardSelection = viewModel::toggleCardSelection,
+                onDeleteSelected = viewModel::deleteSelectedCards,
+                onDeleteTopic = {
+                    viewModel.deleteTopic {
+                        navController.popBackStack()
+                    }
                 }
             )
         }

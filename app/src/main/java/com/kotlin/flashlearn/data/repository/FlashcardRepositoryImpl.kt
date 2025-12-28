@@ -29,7 +29,7 @@ class FlashcardRepositoryImpl @Inject constructor(
     private val datamuseApi: DatamuseApi,
     private val topicRepository: TopicRepository,
     private val freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
-    private val unsplashApi: com.kotlin.flashlearn.data.remote.UnsplashApi
+    private val pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
 ) : FlashcardRepository {
     
     companion object {
@@ -46,25 +46,34 @@ class FlashcardRepositoryImpl @Inject constructor(
     
     override suspend fun getFlashcardsByTopicId(topicId: String): Result<List<Flashcard>> {
         return try {
-            // Check cache first
-            flashcardCache[topicId]?.let { 
-                return Result.success(it) 
+            // 1. Try to get from database first
+            var flashcards = getFlashcardsFromDatabase(topicId)
+            
+            // 2. Fallback to Datamuse if DB empty (ONLY for System Topics)
+            if (flashcards.isEmpty()) {
+                // Check if it is a system topic first
+                val topicResult = topicRepository.getTopicById(topicId)
+                val topic = topicResult.getOrNull()
+                
+                // Only fetch default words if it is a system topic. 
+                // User topics should remain empty if the user deleted everything.
+                if (topic != null && topic.isSystemTopic) {
+                    flashcards = getFlashcardsFromDatamuse(topicId)
+                    // SAVE these immediately to DB to persist IDs and prevent partial data issues later
+                    if (flashcards.isNotEmpty()) {
+                         saveFlashcardsForTopic(topicId, flashcards)
+                    }
+                }
+            }
+
+            // 3. Update cache and return (Deduplicate by word to fix UI issue)
+            val uniqueFlashcards = flashcards.distinctBy { it.word.lowercase() }
+            
+            if (uniqueFlashcards.isNotEmpty()) {
+                flashcardCache[topicId] = uniqueFlashcards
             }
             
-            // Try to get from database first
-            val dbFlashcards = getFlashcardsFromDatabase(topicId)
-            if (dbFlashcards.isNotEmpty()) {
-                flashcardCache[topicId] = dbFlashcards
-                return Result.success(dbFlashcards)
-            }
-            
-            // Fallback to Datamuse API for system topics
-            val flashcards = getFlashcardsFromDatamuse(topicId)
-            if (flashcards.isNotEmpty()) {
-                flashcardCache[topicId] = flashcards
-            }
-            
-            Result.success(flashcards)
+            Result.success(uniqueFlashcards)
         } catch (e: Exception) {
             e.printStackTrace()
             if (e is CancellationException) throw e
@@ -139,79 +148,13 @@ class FlashcardRepositoryImpl @Inject constructor(
         return try {
             // Save each flashcard to database
             // Process each flashcard to enrich data if needed
-            val enrichedFlashcards = flashcards.map { card ->
-                var ipa = card.ipa
-                var imageUrl = card.imageUrl
-                
-                // Fetch IPA if missing
-                if (ipa.isBlank()) {
-                    try {
-                        val response = freeDictionaryApi.getWordDetails(card.word)
-                        ipa = response.firstOrNull()?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text ?: ""
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-                
-                // Fetch Image if missing
-                if (imageUrl.isBlank()) {
-                    try {
-                        val response = unsplashApi.searchPhotos(
-                            query = card.word,
-                            authorization = "Client-ID ${BuildConfig.UNSPLASH_ACCESS_KEY}"
-                        )
-                        imageUrl = response.results.firstOrNull()?.urls?.regular ?: ""
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-                
-                card.copy(ipa = ipa, imageUrl = imageUrl)
-            }
+            val enrichedFlashcards = flashcards.map { enrichFlashcardData(it) }
 
             for (flashcard in enrichedFlashcards) {
-                val finalIpa = flashcard.ipa
-                val finalImageUrl = flashcard.imageUrl
-                
-                val request = NeonSqlRequest(
-                    query = """
-                        INSERT INTO flashcards (id, topic_id, word, pronunciation, part_of_speech, definition, example_sentence, ipa, image_url)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                        ON CONFLICT (id) DO UPDATE SET
-                            word = EXCLUDED.word,
-                            pronunciation = EXCLUDED.pronunciation,
-                            part_of_speech = EXCLUDED.part_of_speech,
-                            definition = EXCLUDED.definition,
-                            example_sentence = EXCLUDED.example_sentence,
-                            ipa = EXCLUDED.ipa,
-                            image_url = EXCLUDED.image_url
-                    """.trimIndent(),
-                    params = listOf(
-                        flashcard.id,
-                        topicId,
-                        flashcard.word,
-                        flashcard.pronunciation,
-                        flashcard.partOfSpeech,
-                        flashcard.definition,
-                        flashcard.exampleSentence,
-                        finalIpa,
-                        finalImageUrl
-                    )
-                )
-                
-                val response = neonSqlApi.executeQuery(
-                    connectionString = CONNECTION_STRING,
-                    request = request
-                )
-                
-                if (response.error != null) {
-                    return Result.failure(Exception(response.error.message))
-                }
+                saveFlashcardToDb(flashcard, topicId)
             }
             
-            // Update cache
             flashcardCache[topicId] = enrichedFlashcards
-            
             Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -299,6 +242,125 @@ class FlashcardRepositoryImpl @Inject constructor(
             flashcardCache.remove(topicId)
         } else {
             flashcardCache.clear()
+        }
+    }
+    suspend fun enrichFlashcard(card: Flashcard): Flashcard {
+        return enrichFlashcardData(card).also { enrichedCard ->
+            if (enrichedCard != card) {
+                saveFlashcardToDb(enrichedCard, card.topicId)
+            }
+        }
+    }
+
+    private suspend fun enrichFlashcardData(card: Flashcard): Flashcard {
+        var ipa = card.ipa
+        var imageUrl = card.imageUrl
+        
+        // Fetch IPA if missing
+        if (ipa.isBlank()) {
+            try {
+                println("FlashLearn: Fetching IPA for ${card.word}...")
+                val response = freeDictionaryApi.getWordDetails(card.word)
+                val entry = response.firstOrNull()
+                
+                // Try to find IPA in phonetics list first, then fallback to top-level phonetic
+                ipa = entry?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text
+                    ?: entry?.phonetic
+                    ?: ""
+                    
+                println("FlashLearn: IPA found: $ipa")
+            } catch (e: Exception) {
+                println("FlashLearn: IPA fetch error: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+        
+        // Fetch Image if missing (Pixabay)
+        if (imageUrl.isBlank()) {
+            try {
+                println("FlashLearn: Fetching image for ${card.word} from Pixabay...")
+                val response = pixabayApi.searchImages(
+                    apiKey = BuildConfig.PIXABAY_API_KEY,
+                    query = card.word
+                )
+                println("FlashLearn: Pixabay hits: ${response.hits.size}")
+                imageUrl = response.hits.firstOrNull()?.webformatUrl ?: ""
+                println("FlashLearn: Image URL found: $imageUrl")
+            } catch (e: Exception) {
+                println("FlashLearn: Pixabay error: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+        
+        return card.copy(ipa = ipa, imageUrl = imageUrl)
+    }
+
+    private suspend fun saveFlashcardToDb(flashcard: Flashcard, topicId: String) {
+        val request = NeonSqlRequest(
+            query = """
+                INSERT INTO flashcards (id, topic_id, word, pronunciation, part_of_speech, definition, example_sentence, ipa, image_url)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (id) DO UPDATE SET
+                    word = EXCLUDED.word,
+                    pronunciation = EXCLUDED.pronunciation,
+                    part_of_speech = EXCLUDED.part_of_speech,
+                    definition = EXCLUDED.definition,
+                    example_sentence = EXCLUDED.example_sentence,
+                    ipa = EXCLUDED.ipa,
+                    image_url = EXCLUDED.image_url
+            """.trimIndent(),
+            params = listOf(
+                flashcard.id,
+                topicId,
+                flashcard.word,
+                flashcard.pronunciation,
+                flashcard.partOfSpeech,
+                flashcard.definition,
+                flashcard.exampleSentence,
+                flashcard.ipa,
+                flashcard.imageUrl
+            )
+        )
+        
+        neonSqlApi.executeQuery(
+            connectionString = CONNECTION_STRING,
+            request = request
+        )
+    }
+
+    override suspend fun deleteFlashcards(flashcardIds: List<String>): Result<Unit> {
+        return try {
+            if (flashcardIds.isEmpty()) return Result.success(Unit)
+
+            // Since we are using an HTTP API that might not support array parameters easily in the simple query wrapper,
+            // we will construct a query with multiple placeholders or loop.
+            // For robustness with list size, let's just loop for now or batch in small groups. 
+            // Given typical usage, list size won't be huge.
+            // Optimization: Construct "unrolled" IN clause: WHERE id IN ('id1', 'id2', ...)
+            
+            val idsString = flashcardIds.joinToString(",") { "'$it'" }
+            val request = NeonSqlRequest(
+                query = "DELETE FROM flashcards WHERE id IN ($idsString)",
+                params = emptyList() // Parameters embedded directly for list
+            )
+            
+            val response = neonSqlApi.executeQuery(
+                connectionString = CONNECTION_STRING,
+                request = request
+            )
+            
+            if (response.error != null) {
+                return Result.failure(Exception(response.error.message))
+            }
+            
+            // Clear cache to ensure UI refreshes correctly
+            flashcardCache.clear()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            if (e is CancellationException) throw e
+            Result.failure(e)
         }
     }
 }

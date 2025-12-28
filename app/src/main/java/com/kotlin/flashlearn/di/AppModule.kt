@@ -70,8 +70,8 @@ object AppModule {
         datamuseApi: DatamuseApi,
         topicRepository: TopicRepository,
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
-        unsplashApi: com.kotlin.flashlearn.data.remote.UnsplashApi
-    ): FlashcardRepository = FlashcardRepositoryImpl(neonSqlApi, datamuseApi, topicRepository, freeDictionaryApi, unsplashApi)
+        pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
+    ): FlashcardRepository = FlashcardRepositoryImpl(neonSqlApi, datamuseApi, topicRepository, freeDictionaryApi, pixabayApi)
     
     @Provides
     @Singleton

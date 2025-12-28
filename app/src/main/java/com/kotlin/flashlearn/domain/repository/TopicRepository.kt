@@ -38,4 +38,9 @@ interface TopicRepository {
     
     // Legacy method for backward compatibility
     suspend fun getAllTopics(): Result<List<Topic>> = getPublicTopics()
+    
+    /**
+     * Deletes a topic by its ID.
+     */
+    suspend fun deleteTopic(topicId: String): Result<Unit>
 }

@@ -16,10 +16,14 @@ import javax.inject.Inject
 class TopicDetailViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
+    private val firebaseAuth: com.google.firebase.auth.FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val topicId: String = savedStateHandle.get<String>("topicId").orEmpty()
+    
+    private val currentUserId: String?
+        get() = firebaseAuth.currentUser?.uid
 
     private val _state = MutableStateFlow(TopicDetailState())
     val state: StateFlow<TopicDetailState> = _state.asStateFlow()
@@ -45,9 +49,12 @@ class TopicDetailViewModel @Inject constructor(
                         return@launch
                     }
                     
+                    val isOwner = topic.createdBy == currentUserId
+                    
                     _state.value = _state.value.copy(
                         topicTitle = topic.name,
-                        topicDescription = topic.description
+                        topicDescription = topic.description,
+                        isOwner = isOwner
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
@@ -71,7 +78,10 @@ class TopicDetailViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     cards = flashcards,
-                    error = null
+                    error = null,
+                    // Reset selection when reloading
+                    isSelectionMode = false,
+                    selectedCardIds = emptySet()
                 )
             },
             onFailure = { e ->
@@ -86,5 +96,63 @@ class TopicDetailViewModel @Inject constructor(
     
     fun refreshCards() {
         loadTopicAndCards()
+    }
+    
+    fun toggleSelectionMode() {
+        _state.value = _state.value.copy(
+            isSelectionMode = !_state.value.isSelectionMode,
+            selectedCardIds = emptySet()
+        )
+    }
+    
+    fun toggleCardSelection(cardId: String) {
+        val currentSelected = _state.value.selectedCardIds.toMutableSet()
+        if (currentSelected.contains(cardId)) {
+            currentSelected.remove(cardId)
+        } else {
+            currentSelected.add(cardId)
+        }
+        
+        // Auto-exit selection mode if deselecting the last one? 
+        // Or strictly strictly only exit if explicit cancel or empty after delete.
+        // Let's keep selection mode active even if empty, until explicitly cancelled or deleted.
+        
+        _state.value = _state.value.copy(selectedCardIds = currentSelected)
+    }
+    
+    fun deleteSelectedCards() {
+        viewModelScope.launch {
+            val selectedIds = _state.value.selectedCardIds.toList()
+            if (selectedIds.isEmpty()) return@launch
+            
+            _state.value = _state.value.copy(isLoading = true)
+            
+            flashcardRepository.deleteFlashcards(selectedIds)
+                .onSuccess {
+                    loadFlashcards() // Reload to refresh list and exit selection
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to delete cards"
+                    )
+                }
+        }
+    }
+    
+    fun deleteTopic(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+             _state.value = _state.value.copy(isLoading = true)
+             topicRepository.deleteTopic(topicId)
+                 .onSuccess {
+                     onSuccess()
+                 }
+                 .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to delete topic"
+                    )
+                 }
+        }
     }
 }

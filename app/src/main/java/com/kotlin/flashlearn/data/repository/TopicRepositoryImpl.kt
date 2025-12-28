@@ -192,6 +192,26 @@ class TopicRepositoryImpl @Inject constructor(
         return Result.failure(e)
     }
     
+    override suspend fun deleteTopic(topicId: String): Result<Unit> {
+        return try {
+            val request = NeonSqlRequest(
+                query = "DELETE FROM topics WHERE id = \$1",
+                params = listOf(topicId)
+            )
+            val response = neonSqlApi.executeQuery(
+                connectionString = CONNECTION_STRING,
+                request = request
+            )
+            
+            if (response.error != null) {
+                return Result.failure(Exception(response.error.message))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            handleException(e)
+        }
+    }
+
     private fun TopicDto.toDomain(): Topic {
         return Topic(
             id = id,

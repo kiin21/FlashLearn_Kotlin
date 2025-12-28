@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+
+
 android {
     namespace = "com.kotlin.flashlearn"
     compileSdk = 34
@@ -84,7 +86,7 @@ android {
         buildConfigField("String", "DATAMUSE_BASE_URL", "\"${props.getProperty('DATAMUSE_BASE_URL')}\"")
         buildConfigField("String", "NEON_SQL_BASE_URL", "\"${neonSqlBaseUrl}\"")
         buildConfigField("String", "NEON_CONNECTION_STRING", "\"${neonConnectionString}\"")
-        buildConfigField("String", "UNSPLASH_ACCESS_KEY", "\"${props.getProperty('UNSPLASH_ACCESS_KEY')}\"")
+        buildConfigField("String", "PIXABAY_API_KEY", "\"${props.getProperty('PIXABAY_API_KEY')}\"")
     }
 }
 

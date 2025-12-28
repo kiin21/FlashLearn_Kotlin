@@ -10,6 +10,7 @@ interface FreeDictionaryApi {
 }
 
 data class DictionaryEntryDto(
+    @SerializedName("phonetic") val phonetic: String?,
     @SerializedName("phonetics") val phonetics: List<PhoneticDto>?
 )
 

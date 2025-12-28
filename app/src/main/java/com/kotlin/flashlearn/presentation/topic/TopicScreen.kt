@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCard
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -103,7 +104,7 @@ fun TopicScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = uiState.error ?: "Unknown error",
-                                color = Color.Red
+                                color = MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { viewModel.loadTopics() }) {
@@ -119,7 +120,7 @@ fun TopicScreen(
                     ) {
                         Text(
                             text = "No topics yet. Create your first topic!",
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -141,8 +142,8 @@ fun TopicScreen(
 fun TopicHeader() {
     Text(
         text = "My Collections",
-        fontSize = 22.sp,
-        fontWeight = FontWeight.Bold
+        style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onBackground
     )
 }
 
@@ -187,13 +188,17 @@ fun TopicList(
     ) {
         items(topics) { topic ->
             val wordCount = topicWordCounts[topic.id] ?: 0
+            val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
+            
             TopicCard(
                 topicId = topic.id,
                 title = topic.name,
                 words = wordCount,
                 description = topic.description,
                 progress = 0f, // TODO: Calculate from user progress
-                onClick = onTopicClick
+                isOwner = isOwner,
+                onClick = onTopicClick,
+                onDelete = { viewModel.deleteTopic(topic.id) }
             )
         }
     }
@@ -206,7 +211,9 @@ fun TopicCard(
     words: Int,
     description: String,
     progress: Float,
-    onClick: (String) -> Unit
+    isOwner: Boolean = false,
+    onClick: (String) -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -215,14 +222,40 @@ fun TopicCard(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("$words ${if (words != 1) "words" else "word"}  • $description", fontSize = 12.sp, color = Color.Gray)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "$words ${if (words != 1) "words" else "word"}  • $description", 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                if (isOwner) {
+                     IconButton(
+                         onClick = onDelete,
+                         modifier = Modifier.size(24.dp)
+                     ) {
+                         Icon(
+                             Icons.Default.Delete,
+                             contentDescription = "Delete Topic",
+                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                         )
+                     }
+                }
+            }
+            
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },
                 color = FlashRed,
-                trackColor = Color.LightGray
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }

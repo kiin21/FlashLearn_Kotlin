@@ -32,7 +32,7 @@ class TopicViewModel @Inject constructor(
     private val _topicWordCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val topicWordCounts: StateFlow<Map<String, Int>> = _topicWordCounts.asStateFlow()
     
-    private val currentUserId: String?
+    val currentUserId: String?
         get() = firebaseAuth.currentUser?.uid
     
     init {
@@ -97,6 +97,20 @@ class TopicViewModel @Inject constructor(
     }
     
     fun isLoggedIn(): Boolean = currentUserId != null
+    
+    fun deleteTopic(topicId: String) {
+        viewModelScope.launch {
+            val result = topicRepository.deleteTopic(topicId)
+            if (result.isSuccess) {
+                // Determine if we need to remove from cache or just reload
+                loadTopics() // Simple reload to refresh the list
+            } else {
+                 _uiState.value = _uiState.value.copy(
+                    error = result.exceptionOrNull()?.message ?: "Failed to delete topic"
+                )
+            }
+        }
+    }
 }
 
 data class TopicUiState(

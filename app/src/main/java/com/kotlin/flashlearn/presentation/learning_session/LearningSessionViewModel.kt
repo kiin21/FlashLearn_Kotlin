@@ -47,12 +47,16 @@ class LearningSessionViewModel @Inject constructor(
 
             flashcardRepository.getFlashcardsByTopicId(topicId).fold(
                 onSuccess = { flashcards ->
+                    val initialCard = flashcards.getOrNull(0)
                     _state.update {
                         it.copy(
                             isLoading = false,
                             flashcards = flashcards,
                             currentCardIndex = 0
                         )
+                    }
+                    if (initialCard != null) {
+                        enrichCard(initialCard)
                     }
                 },
                 onFailure = { error ->
@@ -65,6 +69,24 @@ class LearningSessionViewModel @Inject constructor(
                     _uiEvent.send(LearningSessionUiEvent.ShowError(error.message ?: "Failed to load flashcards"))
                 }
             )
+        }
+    }
+
+    private fun enrichCard(card: com.kotlin.flashlearn.domain.model.Flashcard) {
+        if (card.imageUrl.isBlank() || card.ipa.isBlank()) {
+            viewModelScope.launch {
+                try {
+                    val enrichedCard = (flashcardRepository as com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl).enrichFlashcard(card)
+                    _state.update { currentState ->
+                        val updatedCards = currentState.flashcards.map { 
+                            if (it.id == enrichedCard.id) enrichedCard else it 
+                        }
+                        currentState.copy(flashcards = updatedCards)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 

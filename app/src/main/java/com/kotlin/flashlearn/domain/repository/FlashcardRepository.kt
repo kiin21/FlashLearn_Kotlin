@@ -42,4 +42,10 @@ interface FlashcardRepository {
     * @return flashcard data.
     */
     suspend fun getFlashcardById(cardId: String): Result<Flashcard?>
+
+    /**
+     * Deletes a list of flashcards by their IDs.
+     * @param flashcardIds The list of flashcard IDs to delete.
+     */
+    suspend fun deleteFlashcards(flashcardIds: List<String>): Result<Unit>
 }

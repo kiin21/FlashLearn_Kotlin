@@ -20,9 +20,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -138,7 +138,7 @@ fun HeaderSection(user: User?) {
             Text(
                 text = "Hello, ${user?.displayName?.split(" ")?.firstOrNull() ?: "Friend"}!",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = "Let's keep the streak alive.",
@@ -164,8 +164,8 @@ fun HeaderSection(user: User?) {
             Text(
                 text = "${user?.streak ?: 0} DAYS",
                 color = Color(0xFFFF9800),
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
             )
         }
     }
@@ -186,7 +186,7 @@ fun ExamDateCard(user: User?) {
                 Text(
                     text = "VSTEP EXAM DATE",
                     color = FlashGrey,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -195,7 +195,7 @@ fun ExamDateCard(user: User?) {
                 Text(
                     text = dateFormat.format(date), // Mock date logic
                     color = Color.White,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -209,13 +209,13 @@ fun ExamDateCard(user: User?) {
                 Text(
                     text = "14", // days left
                     color = FlashRed,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Days Left",
                     color = FlashGrey,
-                    fontSize = 10.sp
+                    style = MaterialTheme.typography.labelSmall
                 )
             }
         }
@@ -241,7 +241,7 @@ fun DailyWordSection(
             Text(
                 text = "View Archive",
                 color = FlashRed,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onViewArchive() }
             )
@@ -261,7 +261,7 @@ fun DailyWordSection(
                     Text(
                         text = "B2 LEVEL",
                         color = FlashRed,
-                        fontSize = 10.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .background(FlashRedLight, RoundedCornerShape(4.dp))
@@ -277,7 +277,7 @@ fun DailyWordSection(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.VolumeUp,
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = "Pronounce",
                             tint = FlashRed
                         )
@@ -286,20 +286,20 @@ fun DailyWordSection(
                 
                 Text(
                     text = "Resilient",
-                    fontSize = 32.sp,
+                    style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = FlashBlack
                 )
                 Text(
                     text = "/rɪˈzɪl.jənt/",
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = FlashGrey,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
                 Text(
                     text = "Able to withstand or recover quickly from difficult conditions.",
                     color = FlashDarkGrey,
-                    lineHeight = 20.sp
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
@@ -336,14 +336,15 @@ fun ContinueLearningSection(
                     Text(
                         text = "75%",
                         color = FlashRed,
+                        style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "B1 Environment",
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -424,8 +425,8 @@ fun RecommendedCard(
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = titles.getOrElse(index) { "Collection" },
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -433,7 +434,7 @@ fun RecommendedCard(
             Text(
                 text = counts.getOrElse(index) { "20 words" },
                 color = FlashGrey,
-                fontSize = 12.sp
+                style = MaterialTheme.typography.labelSmall
             )
         }
     }
