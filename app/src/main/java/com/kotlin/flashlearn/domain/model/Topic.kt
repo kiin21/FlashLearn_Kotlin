@@ -16,7 +16,8 @@ data class Topic(
     val isSystemTopic: Boolean = false,
     val isPublic: Boolean = true,
     val createdBy: String? = null,
-    val wordCount: Int = 0
+    val wordCount: Int = 0,
+    val imageUrl: String? = null
 ) {
     /**
      * Returns true if this topic should be visible to the given user.

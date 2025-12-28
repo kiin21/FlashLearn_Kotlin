@@ -10,5 +10,6 @@ data class TopicDetailState(
     val cards: List<Flashcard> = emptyList(),
     val isSelectionMode: Boolean = false,
     val selectedCardIds: Set<String> = emptySet(),
-    val isOwner: Boolean = false
+    val isOwner: Boolean = false,
+    val imageUrl: String = ""
 )

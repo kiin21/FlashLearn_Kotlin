@@ -16,14 +16,17 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 @Singleton
 class TopicRepositoryImpl @Inject constructor(
-    private val postgresApi: PostgresApi
+    private val postgresApi: PostgresApi,
+    private val pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
 ) : TopicRepository {
     
     companion object {
         private val CONNECTION_STRING = BuildConfig.NEON_CONNECTION_STRING
-        private const val SELECT_COLUMNS = "id, name, description, icon_type, is_system_topic, is_public, created_by"
+        private const val SELECT_COLUMNS = "id, name, description, icon_type, is_system_topic, is_public, created_by, image_url"
     }
     
+    // ... (getPublicTopics, getUserTopics, getVisibleTopics, getTopicById are unchanged) ...
+
     override suspend fun getPublicTopics(): Result<List<Topic>> {
         return try {
             val request = PostgresSqlRequest(
@@ -103,14 +106,28 @@ class TopicRepositoryImpl @Inject constructor(
             handleException(e)
         }
     }
-    
+
     override suspend fun createTopic(topic: Topic): Result<Topic> {
         return try {
+            // Auto-fetch image if missing
+            var imageUrl = topic.imageUrl
+            if (imageUrl.isNullOrBlank()) {
+                try {
+                    val response = pixabayApi.searchImages(
+                        apiKey = BuildConfig.PIXABAY_API_KEY,
+                        query = topic.name
+                    )
+                    imageUrl = response.hits.firstOrNull()?.webformatUrl
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
             val id = if (topic.id.isBlank()) UUID.randomUUID().toString() else topic.id
             val request = PostgresSqlRequest(
                 query = """
-                    INSERT INTO topics (id, name, description, icon_type, is_system_topic, is_public, created_by)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    INSERT INTO topics (id, name, description, icon_type, is_system_topic, is_public, created_by, image_url)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING $SELECT_COLUMNS
                 """.trimIndent(),
                 params = listOf(
@@ -120,7 +137,8 @@ class TopicRepositoryImpl @Inject constructor(
                     topic.iconType,
                     topic.isSystemTopic,
                     topic.isPublic,
-                    topic.createdBy ?: ""
+                    topic.createdBy ?: "",
+                    imageUrl ?: ""
                 )
             )
             val response = postgresApi.executeQuery(
@@ -134,9 +152,56 @@ class TopicRepositoryImpl @Inject constructor(
             
             val createdTopic = response.rows?.firstOrNull()?.let { row ->
                 TopicDto.fromRow(row).toDomain()
-            } ?: topic.copy(id = id)
+            } ?: topic.copy(id = id, imageUrl = imageUrl)
             
             Result.success(createdTopic)
+        } catch (e: Exception) {
+            handleException(e)
+        }
+    }
+
+    override suspend fun updateTopic(topic: Topic): Result<Topic> {
+        return try {
+             // Params map:
+            /*
+            $1: id
+            $2: name
+            $3: description
+            $4: icon_type
+            $5: is_public
+            $6: image_url
+             */
+             val updateRequest = PostgresSqlRequest(
+                query = """
+                    UPDATE topics 
+                    SET name = $2, description = $3, icon_type = $4, is_public = $5, image_url = $6
+                    WHERE id = $1
+                    RETURNING $SELECT_COLUMNS
+                """.trimIndent(),
+                params = listOf(
+                    topic.id,
+                    topic.name,
+                    topic.description,
+                    topic.iconType,
+                    topic.isPublic,
+                    topic.imageUrl ?: ""
+                )
+            )
+
+            val response = postgresApi.executeQuery(
+                connectionString = CONNECTION_STRING,
+                request = updateRequest
+            )
+            
+            if (response.error != null) {
+                return Result.failure(Exception(response.error.message))
+            }
+            
+            val updatedTopic = response.rows?.firstOrNull()?.let { row ->
+                TopicDto.fromRow(row).toDomain()
+            } ?: topic
+            
+            Result.success(updatedTopic)
         } catch (e: Exception) {
             handleException(e)
         }
@@ -212,6 +277,32 @@ class TopicRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun regenerateTopicImage(topicId: String): Result<String> {
+        return try {
+            // 1. Get Topic Name
+            val topicResult = getTopicById(topicId)
+            val topic = topicResult.getOrNull() ?: return Result.failure(Exception("Topic not found"))
+            
+            // 2. Fetch from Pixabay
+            val response = pixabayApi.searchImages(
+                apiKey = BuildConfig.PIXABAY_API_KEY,
+                query = topic.name
+            )
+            // Pick a random hit from the top 5 to give variety if "Regenerate" is clicked multiple times?
+            // Or just the first one. Let's do random from top 10 to allow "cycling".
+            val hits = response.hits.take(10)
+            if (hits.isEmpty()) return Result.success("")
+            
+            val newImageUrl = hits.random().webformatUrl
+            
+            // 3. Update Topic in DB
+            val updatedTopic = topic.copy(imageUrl = newImageUrl)
+            updateTopic(updatedTopic).map { newImageUrl }
+        } catch (e: Exception) {
+            handleException(e)
+        }
+    }
+
     private fun TopicDto.toDomain(): Topic {
         return Topic(
             id = id,
@@ -220,7 +311,8 @@ class TopicRepositoryImpl @Inject constructor(
             iconType = iconType ?: "book",
             isSystemTopic = isSystemTopic,
             isPublic = isPublic,
-            createdBy = createdBy
+            createdBy = createdBy,
+            imageUrl = imageUrl
         )
     }
 }

@@ -76,8 +76,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideTopicRepository(
-        postgresApi: PostgresApi
-    ): TopicRepository = TopicRepositoryImpl(postgresApi)
+        postgresApi: PostgresApi,
+        pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
+    ): TopicRepository = TopicRepositoryImpl(postgresApi, pixabayApi)
     
     @Provides
     @Singleton

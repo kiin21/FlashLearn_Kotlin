@@ -219,7 +219,9 @@ fun FlashlearnNavHost(
                     viewModel.deleteTopic {
                         navController.popBackStack()
                     }
-                }
+                },
+                onUpdateTopic = viewModel::updateTopic,
+                onRegenerateImage = viewModel::regenerateImage
             )
         }
 

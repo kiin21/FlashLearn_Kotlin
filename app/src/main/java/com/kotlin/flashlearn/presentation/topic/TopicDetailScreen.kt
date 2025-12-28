@@ -25,7 +25,9 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Share
@@ -62,6 +64,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import com.kotlin.flashlearn.ui.theme.FlashRed
 
 
@@ -77,9 +81,26 @@ fun TopicDetailScreen(
     onToggleCardSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
     onDeleteSelected: () -> Unit,
-    onDeleteTopic: () -> Unit
+    onDeleteTopic: () -> Unit,
+    onUpdateTopic: (String, String, String) -> Unit,
+    onRegenerateImage: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        EditTopicDialog(
+            currentName = state.topicTitle,
+            currentDescription = state.topicDescription,
+            currentImageUrl = state.imageUrl,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { name, desc, imgUrl -> 
+                onUpdateTopic(name, desc, imgUrl)
+                showEditDialog = false
+            },
+            onRegenerateImage = onRegenerateImage
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -132,7 +153,17 @@ fun TopicDetailScreen(
                                     onDismissRequest = { showMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge) },
+                                        text = { Text("Edit Topic") },
+                                        onClick = {
+                                            showMenu = false
+                                            showEditDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Edit, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
                                         onClick = {
                                             showMenu = false
                                             onDeleteTopic()
@@ -168,12 +199,30 @@ fun TopicDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) { /* icon */ }
+            // Header
+            if (!state.imageUrl.isBlank()) {
+                AsyncImage(
+                    model = state.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                     Icon(
+                         painter = painterResource(id = android.R.drawable.ic_menu_agenda), // Placeholder if we don't have nice icon res
+                         contentDescription = null,
+                         tint = MaterialTheme.colorScheme.onPrimaryContainer
+                     )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
             Text(state.topicTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)

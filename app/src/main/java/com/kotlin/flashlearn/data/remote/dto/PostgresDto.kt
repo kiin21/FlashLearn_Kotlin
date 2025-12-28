@@ -47,12 +47,13 @@ data class TopicDto(
     val iconType: String? = null,
     val isSystemTopic: Boolean = false,
     val isPublic: Boolean = true,
-    val createdBy: String? = null
+    val createdBy: String? = null,
+    val imageUrl: String? = null
 ) {
     companion object {
         /**
          * Parse a row from SQL result to TopicDto.
-         * Column order: id, name, description, icon_type, is_system_topic, is_public, created_by
+         * Column order: id, name, description, icon_type, is_system_topic, is_public, created_by, image_url
          */
         fun fromRow(row: List<Any?>): TopicDto {
             return TopicDto(
@@ -62,7 +63,8 @@ data class TopicDto(
                 iconType = row.getOrNull(3)?.toString(),
                 isSystemTopic = (row.getOrNull(4) as? Boolean) ?: false,
                 isPublic = (row.getOrNull(5) as? Boolean) ?: true,
-                createdBy = row.getOrNull(6)?.toString()
+                createdBy = row.getOrNull(6)?.toString(),
+                imageUrl = row.getOrNull(7)?.toString()
             )
         }
     }

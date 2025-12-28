@@ -54,7 +54,8 @@ class TopicDetailViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         topicTitle = topic.name,
                         topicDescription = topic.description,
-                        isOwner = isOwner
+                        isOwner = isOwner,
+                        imageUrl = topic.imageUrl ?: ""
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
@@ -157,6 +158,58 @@ class TopicDetailViewModel @Inject constructor(
                         isLoading = false,
                         error = e.message ?: "Failed to delete topic"
                     )
+                 }
+        }
+    }
+
+    fun updateTopic(newName: String, newDescription: String, newImageUrl: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            val currentTopicResult = topicRepository.getTopicById(topicId)
+            val currentTopic = currentTopicResult.getOrNull()
+            
+            if (currentTopic != null) {
+                val updatedTopic = currentTopic.copy(
+                    name = newName,
+                    description = newDescription,
+                    imageUrl = newImageUrl
+                )
+                
+                topicRepository.updateTopic(updatedTopic)
+                    .onSuccess { topic ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            topicTitle = topic.name,
+                            topicDescription = topic.description,
+                            imageUrl = topic.imageUrl ?: ""
+                        )
+                    }
+                    .onFailure { e ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to update topic"
+                        )
+                    }
+            }
+        }
+    }
+    
+    fun regenerateImage() {
+        viewModelScope.launch {
+             _state.value = _state.value.copy(isLoading = true)
+             topicRepository.regenerateTopicImage(topicId)
+                 .onSuccess { newUrl ->
+                     _state.value = _state.value.copy(
+                         isLoading = false,
+                         imageUrl = newUrl
+                     )
+                 }
+                 .onFailure { e ->
+                     _state.value = _state.value.copy(
+                         isLoading = false,
+                         error = e.message ?: "Failed to regenerate image"
+                     )
                  }
         }
     }

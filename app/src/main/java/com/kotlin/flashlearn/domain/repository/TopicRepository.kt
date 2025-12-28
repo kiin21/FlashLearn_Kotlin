@@ -32,6 +32,11 @@ interface TopicRepository {
     suspend fun createTopic(topic: Topic): Result<Topic>
     
     /**
+     * Updates an existing topic.
+     */
+    suspend fun updateTopic(topic: Topic): Result<Topic>
+    
+    /**
      * Search topics by name (only public + user's own).
      */
     suspend fun searchTopics(query: String, userId: String?): Result<List<Topic>>
@@ -43,4 +48,9 @@ interface TopicRepository {
      * Deletes a topic by its ID.
      */
     suspend fun deleteTopic(topicId: String): Result<Unit>
+
+    /**
+     * Regenerates the topic image by fetching a new one from Pixabay.
+     */
+    suspend fun regenerateTopicImage(topicId: String): Result<String>
 }
