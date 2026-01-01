@@ -49,7 +49,6 @@ fun FlashcardFront(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Image (if available)
         if (flashcard.imageUrl.isNotBlank()) {
             SubcomposeAsyncImage(
                 model = flashcard.imageUrl,
@@ -68,7 +67,6 @@ fun FlashcardFront(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Word
         Text(
             text = flashcard.word,
             fontSize = 40.sp,
@@ -80,11 +78,9 @@ fun FlashcardFront(
         
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Part of speech & IPA
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Part of speech badge
             if (flashcard.partOfSpeech.isNotBlank()) {
                 Text(
                     text = flashcard.partOfSpeech.uppercase(),
@@ -98,7 +94,6 @@ fun FlashcardFront(
                 Spacer(Modifier.width(12.dp))
             }
 
-            // Audio/IPA Button
             Box(
                 modifier = Modifier
                     .background(FlashRedLight, CircleShape)
@@ -141,7 +136,6 @@ fun FlashcardBack(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Word (Header)
         Text(
             text = flashcard.word,
             fontSize = 28.sp,
@@ -152,7 +146,6 @@ fun FlashcardBack(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Definition
         Text(
             text = flashcard.definition,
             fontSize = 18.sp,
@@ -164,7 +157,6 @@ fun FlashcardBack(
 
         if (flashcard.exampleSentence.isNotBlank()) {
             Spacer(modifier = Modifier.height(24.dp))
-            // Example
             Text(
                 text = "\"${flashcard.exampleSentence}\"",
                 fontSize = 16.sp,

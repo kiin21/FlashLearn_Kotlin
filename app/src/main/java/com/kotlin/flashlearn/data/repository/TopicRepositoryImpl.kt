@@ -1,318 +1,235 @@
 package com.kotlin.flashlearn.data.repository
 
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.Source
 import com.kotlin.flashlearn.BuildConfig
-import com.kotlin.flashlearn.data.remote.PostgresApi
-import com.kotlin.flashlearn.data.remote.dto.PostgresSqlRequest
-import com.kotlin.flashlearn.data.remote.dto.TopicDto
+import com.kotlin.flashlearn.data.remote.PixabayApi
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.repository.TopicRepository
+import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * Implementation of TopicRepository using Postgres SQL over HTTP API.
- */
 @Singleton
 class TopicRepositoryImpl @Inject constructor(
-    private val postgresApi: PostgresApi,
-    private val pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
+    private val firestore: FirebaseFirestore,
+    private val pixabayApi: PixabayApi
 ) : TopicRepository {
-    
-    companion object {
-        private val CONNECTION_STRING = BuildConfig.NEON_CONNECTION_STRING
-        private const val SELECT_COLUMNS = "id, name, description, icon_type, is_system_topic, is_public, created_by, image_url"
-    }
-    
-    // ... (getPublicTopics, getUserTopics, getVisibleTopics, getTopicById are unchanged) ...
+
+    private val topicsCollection = firestore.collection("topics")
 
     override suspend fun getPublicTopics(): Result<List<Topic>> {
-        return try {
-            val request = PostgresSqlRequest(
-                query = """
-                    SELECT $SELECT_COLUMNS FROM topics 
-                    WHERE is_system_topic = true OR is_public = true
-                    ORDER BY is_system_topic DESC, name ASC
-                """.trimIndent()
-            )
-            executeAndMap(request)
-        } catch (e: Exception) {
-            handleException(e)
+        return runCatching {
+            val systemTopics = topicsCollection
+                .whereEqualTo("isSystemTopic", true)
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+
+            val publicTopics = topicsCollection
+                .whereEqualTo("isPublic", true)
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+
+            combineAndSort(systemTopics + publicTopics)
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
-    
+
     override suspend fun getUserTopics(userId: String): Result<List<Topic>> {
-        return try {
-            val request = PostgresSqlRequest(
-                query = "SELECT $SELECT_COLUMNS FROM topics WHERE created_by = \$1 ORDER BY name ASC",
-                params = listOf(userId)
-            )
-            executeAndMap(request)
-        } catch (e: Exception) {
-            handleException(e)
+        return runCatching {
+            topicsCollection
+                .whereEqualTo("createdBy", userId)
+                .orderBy("name", Query.Direction.ASCENDING)
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
-    
+
     override suspend fun getVisibleTopics(userId: String?): Result<List<Topic>> {
-        return try {
-            val request = if (userId.isNullOrBlank()) {
-                // Not logged in - only show public topics
-                PostgresSqlRequest(
-                    query = """
-                        SELECT $SELECT_COLUMNS FROM topics 
-                        WHERE is_system_topic = true OR is_public = true
-                        ORDER BY is_system_topic DESC, name ASC
-                    """.trimIndent()
-                )
+        return runCatching {
+            val systemTopics = topicsCollection
+                .whereEqualTo("isSystemTopic", true)
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+
+            val publicTopics = topicsCollection
+                .whereEqualTo("isPublic", true)
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+
+            val userTopics = if (!userId.isNullOrBlank()) {
+                topicsCollection
+                    .whereEqualTo("createdBy", userId)
+                    .getWithCacheFirst()
+                    .documents.mapNotNull { it.toTopic() }
             } else {
-                // Logged in - show public + user's private topics
-                PostgresSqlRequest(
-                    query = """
-                        SELECT $SELECT_COLUMNS FROM topics 
-                        WHERE is_system_topic = true OR is_public = true OR created_by = ${"$"}1
-                        ORDER BY is_system_topic DESC, name ASC
-                    """.trimIndent(),
-                    params = listOf(userId)
-                )
+                emptyList()
             }
-            executeAndMap(request)
-        } catch (e: Exception) {
-            handleException(e)
+
+            combineAndSort(systemTopics + publicTopics + userTopics)
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
-    
+
     override suspend fun getTopicById(topicId: String): Result<Topic?> {
-        return try {
-            val request = PostgresSqlRequest(
-                query = "SELECT $SELECT_COLUMNS FROM topics WHERE id = \$1",
-                params = listOf(topicId)
-            )
-            val response = postgresApi.executeQuery(
-                connectionString = CONNECTION_STRING,
-                request = request
-            )
-            
-            if (response.error != null) {
-                return Result.failure(Exception(response.error.message))
-            }
-            
-            val topic = response.rows?.firstOrNull()?.let { row ->
-                TopicDto.fromRow(row).toDomain()
-            }
-            
-            Result.success(topic)
-        } catch (e: Exception) {
-            handleException(e)
+        return runCatching {
+            getDocWithCacheFirst(topicId).toTopic()
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
 
     override suspend fun createTopic(topic: Topic): Result<Topic> {
-        return try {
-            // Auto-fetch image if missing
-            var imageUrl = topic.imageUrl
-            if (imageUrl.isNullOrBlank()) {
-                try {
-                    val response = pixabayApi.searchImages(
-                        apiKey = BuildConfig.PIXABAY_API_KEY,
-                        query = topic.name
-                    )
-                    imageUrl = response.hits.firstOrNull()?.webformatUrl
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+        return runCatching {
+            val imageUrl = fetchImageIfNeeded(topic)
+            val id = topic.id.ifBlank { UUID.randomUUID().toString() }
+            val newTopic = topic.copy(id = id, imageUrl = imageUrl)
 
-            val id = if (topic.id.isBlank()) UUID.randomUUID().toString() else topic.id
-            val request = PostgresSqlRequest(
-                query = """
-                    INSERT INTO topics (id, name, description, icon_type, is_system_topic, is_public, created_by, image_url)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                    RETURNING $SELECT_COLUMNS
-                """.trimIndent(),
-                params = listOf(
-                    id,
-                    topic.name,
-                    topic.description,
-                    topic.iconType,
-                    topic.isSystemTopic,
-                    topic.isPublic,
-                    topic.createdBy ?: "",
-                    imageUrl ?: ""
-                )
-            )
-            val response = postgresApi.executeQuery(
-                connectionString = CONNECTION_STRING,
-                request = request
-            )
-            
-            if (response.error != null) {
-                return Result.failure(Exception(response.error.message))
-            }
-            
-            val createdTopic = response.rows?.firstOrNull()?.let { row ->
-                TopicDto.fromRow(row).toDomain()
-            } ?: topic.copy(id = id, imageUrl = imageUrl)
-            
-            Result.success(createdTopic)
-        } catch (e: Exception) {
-            handleException(e)
+            topicsCollection.document(id)
+                .set(newTopic.toMap())
+                .await()
+
+            newTopic
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
 
     override suspend fun updateTopic(topic: Topic): Result<Topic> {
-        return try {
-             // Params map:
-            /*
-            $1: id
-            $2: name
-            $3: description
-            $4: icon_type
-            $5: is_public
-            $6: image_url
-             */
-             val updateRequest = PostgresSqlRequest(
-                query = """
-                    UPDATE topics 
-                    SET name = $2, description = $3, icon_type = $4, is_public = $5, image_url = $6
-                    WHERE id = $1
-                    RETURNING $SELECT_COLUMNS
-                """.trimIndent(),
-                params = listOf(
-                    topic.id,
-                    topic.name,
-                    topic.description,
-                    topic.iconType,
-                    topic.isPublic,
-                    topic.imageUrl ?: ""
-                )
-            )
+        return runCatching {
+            topicsCollection.document(topic.id)
+                .set(topic.toMap())
+                .await()
+            topic
+        }.onFailure { 
+            if (it is CancellationException) throw it 
+        }
+    }
 
-            val response = postgresApi.executeQuery(
-                connectionString = CONNECTION_STRING,
-                request = updateRequest
-            )
-            
-            if (response.error != null) {
-                return Result.failure(Exception(response.error.message))
-            }
-            
-            val updatedTopic = response.rows?.firstOrNull()?.let { row ->
-                TopicDto.fromRow(row).toDomain()
-            } ?: topic
-            
-            Result.success(updatedTopic)
-        } catch (e: Exception) {
-            handleException(e)
-        }
-    }
-    
     override suspend fun searchTopics(query: String, userId: String?): Result<List<Topic>> {
-        return try {
-            val request = if (userId.isNullOrBlank()) {
-                PostgresSqlRequest(
-                    query = """
-                        SELECT $SELECT_COLUMNS FROM topics 
-                        WHERE (is_system_topic = true OR is_public = true) AND name ILIKE $1
-                        ORDER BY is_system_topic DESC, name ASC
-                    """.trimIndent(),
-                    params = listOf("%$query%")
-                )
-            } else {
-                PostgresSqlRequest(
-                    query = """
-                        SELECT $SELECT_COLUMNS FROM topics 
-                        WHERE (is_system_topic = true OR is_public = true OR created_by = $2) AND name ILIKE $1
-                        ORDER BY is_system_topic DESC, name ASC
-                    """.trimIndent(),
-                    params = listOf("%$query%", userId)
-                )
-            }
-            executeAndMap(request)
-        } catch (e: Exception) {
-            handleException(e)
+        return runCatching {
+            val allTopics = getVisibleTopics(userId).getOrThrow()
+            allTopics.filter { it.name.contains(query, ignoreCase = true) }
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
-    
-    private suspend fun executeAndMap(request: PostgresSqlRequest): Result<List<Topic>> {
-        val response = postgresApi.executeQuery(
-            connectionString = CONNECTION_STRING,
-            request = request
-        )
-        
-        if (response.error != null) {
-            return Result.failure(Exception(response.error.message))
-        }
-        
-        val topics = response.rows?.map { row ->
-            TopicDto.fromRow(row).toDomain()
-        } ?: emptyList()
-        
-        return Result.success(topics)
-    }
-    
-    private fun <T> handleException(e: Exception): Result<T> {
-        e.printStackTrace()
-        if (e is CancellationException) throw e
-        return Result.failure(e)
-    }
-    
+
     override suspend fun deleteTopic(topicId: String): Result<Unit> {
-        return try {
-            val request = PostgresSqlRequest(
-                query = "DELETE FROM topics WHERE id = \$1",
-                params = listOf(topicId)
-            )
-            val response = postgresApi.executeQuery(
-                connectionString = CONNECTION_STRING,
-                request = request
-            )
+        return runCatching {
+            val flashcardsRef = topicsCollection.document(topicId).collection("flashcards")
+            val flashcards = flashcardsRef.get().await()
             
-            if (response.error != null) {
-                return Result.failure(Exception(response.error.message))
+            flashcards.documents.forEach { doc ->
+                doc.reference.delete().await()
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            handleException(e)
+            
+            topicsCollection.document(topicId).delete().await()
+            Unit
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
 
     override suspend fun regenerateTopicImage(topicId: String): Result<String> {
-        return try {
-            // 1. Get Topic Name
-            val topicResult = getTopicById(topicId)
-            val topic = topicResult.getOrNull() ?: return Result.failure(Exception("Topic not found"))
-            
-            // 2. Fetch from Pixabay
-            val response = pixabayApi.searchImages(
-                apiKey = BuildConfig.PIXABAY_API_KEY,
-                query = topic.name
-            )
-            // Pick a random hit from the top 5 to give variety if "Regenerate" is clicked multiple times?
-            // Or just the first one. Let's do random from top 10 to allow "cycling".
+        return runCatching {
+            val topic = getTopicById(topicId).getOrThrow() 
+                ?: throw Exception("Topic not found")
+
+            val response = pixabayApi.searchImages(BuildConfig.PIXABAY_API_KEY, topic.name)
             val hits = response.hits.take(10)
-            if (hits.isEmpty()) return Result.success("")
             
+            if (hits.isEmpty()) {
+                return Result.success("")
+            }
+
             val newImageUrl = hits.random().webformatUrl
-            
-            // 3. Update Topic in DB
             val updatedTopic = topic.copy(imageUrl = newImageUrl)
-            updateTopic(updatedTopic).map { newImageUrl }
-        } catch (e: Exception) {
-            handleException(e)
+            updateTopic(updatedTopic)
+
+            newImageUrl
+        }.onFailure { 
+            if (it is CancellationException) throw it 
         }
     }
 
-    private fun TopicDto.toDomain(): Topic {
-        return Topic(
-            id = id,
-            name = name,
-            description = description ?: "",
-            iconType = iconType ?: "book",
-            isSystemTopic = isSystemTopic,
-            isPublic = isPublic,
-            createdBy = createdBy,
-            imageUrl = imageUrl
+    private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
+        val cached = runCatching { 
+            get(Source.CACHE).await() 
+        }.getOrNull()
+
+        return if (cached?.documents?.isNotEmpty() == true) {
+            cached
+        } else {
+            get(Source.DEFAULT).await()
+        }
+    }
+
+    private suspend fun getDocWithCacheFirst(topicId: String): DocumentSnapshot {
+        val cached = runCatching {
+            topicsCollection.document(topicId).get(Source.CACHE).await()
+        }.getOrNull()
+
+        return if (cached?.exists() == true) {
+            cached
+        } else {
+            topicsCollection.document(topicId).get(Source.DEFAULT).await()
+        }
+    }
+
+    private suspend fun fetchImageIfNeeded(topic: Topic): String? {
+        if (!topic.imageUrl.isNullOrBlank()) {
+            return topic.imageUrl
+        }
+
+        return runCatching {
+            val response = pixabayApi.searchImages(BuildConfig.PIXABAY_API_KEY, topic.name)
+            response.hits.firstOrNull()?.webformatUrl
+        }.getOrNull()
+    }
+
+    private fun combineAndSort(topics: List<Topic>): List<Topic> {
+        return topics
+            .distinctBy { it.id }
+            .sortedWith(compareByDescending<Topic> { it.isSystemTopic }.thenBy { it.name })
+    }
+
+    private fun DocumentSnapshot.toTopic(): Topic? {
+        if (!exists()) return null
+
+        return runCatching {
+            Topic(
+                id = id,
+                name = getString("name") ?: return null,
+                description = getString("description") ?: "",
+                iconType = getString("iconType") ?: "book",
+                isSystemTopic = getBoolean("isSystemTopic") ?: false,
+                isPublic = getBoolean("isPublic") ?: true,
+                createdBy = getString("createdBy"),
+                imageUrl = getString("imageUrl")
+            )
+        }.getOrNull()
+    }
+
+    private fun Topic.toMap(): Map<String, Any?> {
+        return mapOf(
+            "id" to id,
+            "name" to name,
+            "description" to description,
+            "iconType" to iconType,
+            "isSystemTopic" to isSystemTopic,
+            "isPublic" to isPublic,
+            "createdBy" to createdBy,
+            "imageUrl" to imageUrl
         )
     }
 }

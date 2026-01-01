@@ -9,7 +9,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.kotlin.flashlearn.data.remote.DatamuseApi
-import com.kotlin.flashlearn.data.remote.PostgresApi
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
@@ -28,10 +27,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/**
- * Hilt Module providing application-level dependencies.
- * Following Dependency Injection best practices from Google MAD.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -54,9 +49,21 @@ object AppModule {
         auth: FirebaseAuth
     ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth)
 
+
     @Provides
     @Singleton
-    fun provideFirebaseFirestore(): FirebaseFirestore = Firebase.firestore
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        val firestore = Firebase.firestore
+        val settings = com.google.firebase.firestore.firestoreSettings {
+            setLocalCacheSettings(
+                com.google.firebase.firestore.persistentCacheSettings {
+                    setSizeBytes(100 * 1024 * 1024L)
+                }
+            )
+        }
+        firestore.firestoreSettings = settings
+        return firestore
+    }
 
     @Provides
     @Singleton
@@ -67,32 +74,31 @@ object AppModule {
     @Provides
     @Singleton
     fun provideFlashcardRepository(
-        postgresApi: PostgresApi,
+        firestore: FirebaseFirestore,
         datamuseApi: DatamuseApi,
         topicRepository: TopicRepository,
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
         pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi,
         userProgressDao: UserProgressDao
     ): FlashcardRepository = FlashcardRepositoryImpl(
-        postgresApi, 
-        datamuseApi, 
-        topicRepository, 
-        freeDictionaryApi, 
+        firestore,
+        datamuseApi,
+        topicRepository,
+        freeDictionaryApi,
         pixabayApi,
         userProgressDao
     )
-    
+
     @Provides
     @Singleton
     fun provideTopicRepository(
-        postgresApi: PostgresApi,
+        firestore: FirebaseFirestore,
         pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi
-    ): TopicRepository = TopicRepositoryImpl(postgresApi, pixabayApi)
-    
+    ): TopicRepository = TopicRepositoryImpl(firestore, pixabayApi)
+
     @Provides
     @Singleton
     fun provideDatamuseRepository(
         datamuseApi: DatamuseApi
     ): DatamuseRepository = DatamuseRepositoryImpl(datamuseApi)
 }
-

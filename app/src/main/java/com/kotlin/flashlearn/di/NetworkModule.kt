@@ -2,7 +2,6 @@ package com.kotlin.flashlearn.di
 
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.DatamuseApi
-import com.kotlin.flashlearn.data.remote.PostgresApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,20 +14,17 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
 
-/**
- * Hilt Module providing network-related dependencies.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    
+
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        
+
         return OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -36,7 +32,7 @@ object NetworkModule {
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
-    
+
     @Provides
     @Singleton
     @Named("datamuse")
@@ -46,23 +42,6 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-    
-    @Provides
-    @Singleton
-    @Named("postgres")
-    fun providePostgresRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BuildConfig.NEON_SQL_BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun providePostgresApi(@Named("postgres") retrofit: Retrofit): PostgresApi {
-        return retrofit.create(PostgresApi::class.java)
     }
 
     @Provides

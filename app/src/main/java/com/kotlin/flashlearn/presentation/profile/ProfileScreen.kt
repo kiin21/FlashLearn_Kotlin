@@ -105,7 +105,6 @@ fun ProfileScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             Text(
                 text = "Profile",
                 style = MaterialTheme.typography.headlineSmall,
@@ -113,20 +112,17 @@ fun ProfileScreen(
                 modifier = Modifier.padding(top = 16.dp, bottom = 24.dp)
             )
 
-            // User Info Section
             UserInfoSection(
                 userData = userData,
                 onEditProfilePicture = { showNotImplementedMessage("Edit profile picture") }
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Preferences Section
             PreferencesSection(
                 onChangePassword = { showNotImplementedMessage("Change password") }
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Account Section
             AccountSection(
                 onSignOut = onSignOut,
                 onDeleteAccount = { showNotImplementedMessage("Delete account") }
@@ -251,15 +247,13 @@ private fun AccountSection(
         
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Special styling for Delete Account
         ProfileRowNavigation(
             icon = Icons.Default.DeleteOutline,
             text = "Delete Account",
             textColor = FlashRed,
             iconTint = FlashRed,
-            cardContainerColor = FlashRedLight.copy(alpha = 0.3f), // Light red background
-            iconBackgroundColor = Color.Transparent, // No circle background for this specific design if full card is colored? Or maybe keep it subtle.
-            // Actually design shows red icon, red text, light red card background.
+            cardContainerColor = FlashRedLight.copy(alpha = 0.3f),
+            iconBackgroundColor = Color.Transparent,
             onClick = onDeleteAccount
         )
     }

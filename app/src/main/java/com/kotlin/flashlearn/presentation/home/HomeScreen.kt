@@ -98,28 +98,23 @@ fun HomeScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header
             HeaderSection(userData)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Exam Date Card
             ExamDateCard(userData)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Daily Word
             DailyWordSection(
                 onViewArchive = { showNotImplementedMessage("View Archive") },
                 onPronounce = { showNotImplementedMessage("Pronunciation") }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Continue Learning
             ContinueLearningSection(
                 onStartLearning = { onNavigateToLearningSession("env_science_101") }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Recommended
             RecommendedSection(
                 onCardClick = { showNotImplementedMessage("Recommended collection") }
             )
@@ -193,7 +188,7 @@ fun ExamDateCard(user: User?) {
                 val date = user?.examDate?.let { Date(it) } ?: Date()
                 val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
                 Text(
-                    text = dateFormat.format(date), // Mock date logic
+                    text = dateFormat.format(date),
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -207,7 +202,7 @@ fun ExamDateCard(user: User?) {
                     .padding(12.dp)
             ) {
                 Text(
-                    text = "14", // days left
+                    text = "14",
                     color = FlashRed,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold

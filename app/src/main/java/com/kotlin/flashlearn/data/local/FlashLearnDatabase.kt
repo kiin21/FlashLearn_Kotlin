@@ -9,10 +9,6 @@ import com.kotlin.flashlearn.data.local.entity.FlashcardEntity
 import com.kotlin.flashlearn.data.local.entity.TopicEntity
 import com.kotlin.flashlearn.data.local.entity.UserProgressEntity
 
-/**
- * Room Database for FlashLearn app.
- * Provides offline-first caching for topics, flashcards, and user progress.
- */
 @Database(
     entities = [
         FlashcardEntity::class,
