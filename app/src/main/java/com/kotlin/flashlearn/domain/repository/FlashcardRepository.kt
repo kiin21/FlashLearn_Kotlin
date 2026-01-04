@@ -48,4 +48,20 @@ interface FlashcardRepository {
      * @param flashcardIds The list of flashcard IDs to delete.
      */
     suspend fun deleteFlashcards(flashcardIds: List<String>): Result<Unit>
+
+    /**
+     * Gets the proficiency score for a flashcard.
+     * @param flashcardId The ID of the flashcard.
+     * @param userId The ID of the current user.
+     * @return The proficiency score (0 if not found).
+     */
+    suspend fun getProficiencyScore(flashcardId: String, userId: String): Result<Int>
+
+    /**
+     * Updates the proficiency score for a flashcard.
+     * @param flashcardId The ID of the flashcard.
+     * @param userId The ID of the current user.
+     * @param newScore The new proficiency score.
+     */
+    suspend fun updateProficiencyScore(flashcardId: String, userId: String, newScore: Int): Result<Unit>
 }

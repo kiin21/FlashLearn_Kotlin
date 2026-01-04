@@ -47,7 +47,7 @@ class LearningSessionViewModel @Inject constructor(
 
             flashcardRepository.getFlashcardsByTopicId(topicId).fold(
                 onSuccess = { flashcards ->
-                    val sessionCards = flashcards.getOrNull(0)
+                    val sessionCards = flashcards
                     _state.update {
                         it.copy(
                             isLoading = false,

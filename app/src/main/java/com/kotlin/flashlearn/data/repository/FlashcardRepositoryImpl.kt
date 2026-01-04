@@ -284,4 +284,39 @@ class FlashcardRepositoryImpl @Inject constructor(
             )
         }.getOrNull()
     }
+
+    override suspend fun getProficiencyScore(flashcardId: String, userId: String): Result<Int> {
+        return runCatching {
+            val progress = userProgressDao.getProgress(userId, flashcardId)
+            progress?.proficiencyScore ?: 0
+        }
+    }
+
+    override suspend fun updateProficiencyScore(flashcardId: String, userId: String, newScore: Int): Result<Unit> {
+        return runCatching {
+            val currentProgress = userProgressDao.getProgress(userId, flashcardId)
+            val newStatus = when {
+                newScore >= 6 -> ProgressStatus.MASTERED
+                newScore >= 3 -> ProgressStatus.REVIEW
+                else -> ProgressStatus.LEARNING
+            }
+
+            val progress = currentProgress?.copy(
+                proficiencyScore = newScore,
+                status = newStatus,
+                updatedAt = System.currentTimeMillis(),
+                syncedToRemote = false
+            ) ?: UserProgressEntity(
+                id = "${userId}_${flashcardId}",
+                userId = userId,
+                flashcardId = flashcardId,
+                status = newStatus,
+                proficiencyScore = newScore,
+                updatedAt = System.currentTimeMillis(),
+                syncedToRemote = false
+            )
+
+            userProgressDao.upsert(progress)
+        }
+    }
 }

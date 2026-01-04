@@ -211,6 +211,9 @@ fun FlashlearnNavHost(
                 onStudyNow = {
                     navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
                 },
+                onTakeQuiz = {
+                    navController.navigate(Route.QuizSession.createRoute(topicId))
+                },
                 onToggleSelectionMode = viewModel::toggleSelectionMode,
                 onToggleCardSelection = viewModel::toggleCardSelection,
                 onSelectAll = viewModel::selectAllCards,
@@ -384,6 +387,15 @@ fun FlashlearnNavHost(
                 onNavigateToCommunity = {
                     navController.navigate(Route.Community.route)
                 }
+            )
+        }
+
+        composable(
+            route = Route.QuizSession.route,
+            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+        ) {
+            com.kotlin.flashlearn.presentation.quiz.QuizScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

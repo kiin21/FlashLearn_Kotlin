@@ -77,6 +77,7 @@ fun TopicDetailScreen(
     onBack: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
     onStudyNow: () -> Unit,
+    onTakeQuiz: () -> Unit,
     onToggleSelectionMode: () -> Unit,
     onToggleCardSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
@@ -249,7 +250,7 @@ fun TopicDetailScreen(
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedButton(
-                    onClick = { /* Quiz */ },
+                    onClick = onTakeQuiz,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = FlashRed),
                     border = BorderStroke(1.dp, FlashRed.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(12.dp),
