@@ -8,21 +8,22 @@ import com.kotlin.flashlearn.domain.model.Flashcard
  */
 data class LearningSessionState(
     val isLoading: Boolean = false,
-    val flashcards: List<Flashcard> = emptyList(),
-    val currentCardIndex: Int = 0,
+    val sessionQueue: List<Flashcard> = emptyList(),
+    val initialCardCount: Int = 0,
+    val completedCardCount: Int = 0,
     val isCardFlipped: Boolean = false,
-    val masteredCardIds: Set<String> = emptySet(),
-    val error: String? = null
+    val error: String? = null,
+    val previousState: LearningSessionState? = null // For Undo
 ) {
     val currentCard: Flashcard?
-        get() = flashcards.getOrNull(currentCardIndex)
+        get() = sessionQueue.firstOrNull()
     
     val progress: Float
-        get() = if (flashcards.isEmpty()) 0f else (currentCardIndex + 1).toFloat() / flashcards.size.toFloat()
+        get() = if (initialCardCount == 0) 0f else completedCardCount.toFloat() / initialCardCount.toFloat()
     
     val isSessionComplete: Boolean
-        get() = currentCardIndex >= flashcards.size && flashcards.isNotEmpty()
+        get() = sessionQueue.isEmpty() && initialCardCount > 0
     
     val progressText: String
-        get() = "${currentCardIndex + 1} OF ${flashcards.size}"
+        get() = "$completedCardCount OF $initialCardCount"
 }

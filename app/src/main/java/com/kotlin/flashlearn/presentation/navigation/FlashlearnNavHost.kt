@@ -302,8 +302,9 @@ fun FlashlearnNavHost(
             LearningSessionScreen(
                 state = state,
                 onFlipCard = { viewModel.flipCard() },
-                onGotIt = { viewModel.onGotIt(currentUserId) },
-                onStudyAgain = { viewModel.onStudyAgain(currentUserId) },
+                onSwipeRight = { viewModel.onSwipeRight() },
+                onSwipeLeft = { viewModel.onSwipeLeft() },
+                onUndo = { viewModel.onUndo() },
                 onExit = { viewModel.exitSession() }
             )
         }
@@ -327,8 +328,8 @@ fun FlashlearnNavHost(
             }
 
             SessionCompleteScreen(
-                masteredCount = state?.masteredCardIds?.size ?: 0,
-                totalCount = state?.flashcards?.size ?: 0,
+                masteredCount = state?.completedCardCount ?: 0,
+                totalCount = state?.initialCardCount ?: 0,
                 onBackToHome = {
                     if (returnTo == "topic") {
                         navController.navigate(Route.TopicDetail.createRoute(topicId)) {
