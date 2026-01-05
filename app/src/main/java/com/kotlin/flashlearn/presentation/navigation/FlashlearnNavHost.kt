@@ -221,7 +221,8 @@ fun FlashlearnNavHost(
                     }
                 },
                 onUpdateTopic = viewModel::updateTopic,
-                onRegenerateImage = viewModel::regenerateImage
+                onRegenerateImage = viewModel::regenerateImage,
+                onTogglePublic = viewModel::togglePublicStatus
             )
         }
 

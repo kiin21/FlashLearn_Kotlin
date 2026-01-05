@@ -129,8 +129,12 @@ class CommunityViewModel @Inject constructor(
                         emptyList()
                     }
 
-                    // Apply filters
-                    var filteredTopics = topics
+                    // Filter: Community shows user-created topics from OTHER users only
+                    // - Exclude system topics
+                    // - Exclude current user's own topics (they're in Topic screen)
+                    var filteredTopics = topics.filter { topic ->
+                        !topic.isSystemTopic && topic.createdBy != userId
+                    }
                     
                     val currentState = _state.value
 

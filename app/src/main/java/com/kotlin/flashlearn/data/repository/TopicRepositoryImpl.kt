@@ -26,14 +26,17 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getPublicTopics(): Result<List<Topic>> {
         return runCatching {
+            // Fetch from server first for Community - needs fresh upvote counts
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             val publicTopics = topicsCollection
                 .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             combineAndSort(systemTopics + publicTopics)
@@ -56,16 +59,13 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getVisibleTopics(userId: String?): Result<List<Topic>> {
         return runCatching {
+            // System topics - built-in learning content
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
                 .getWithCacheFirst()
                 .documents.mapNotNull { it.toTopic() }
 
-            val publicTopics = topicsCollection
-                .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
-                .documents.mapNotNull { it.toTopic() }
-
+            // User's own topics (both public and private)
             val userTopics = if (!userId.isNullOrBlank()) {
                 topicsCollection
                     .whereEqualTo("createdBy", userId)
@@ -75,7 +75,8 @@ class TopicRepositoryImpl @Inject constructor(
                 emptyList()
             }
 
-            combineAndSort(systemTopics + publicTopics + userTopics)
+            // Note: Public topics from OTHER users are shown in Community, not here
+            combineAndSort(systemTopics + userTopics)
         }.onFailure { 
             if (it is CancellationException) throw it 
         }

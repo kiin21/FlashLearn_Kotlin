@@ -55,7 +55,8 @@ class TopicDetailViewModel @Inject constructor(
                         topicTitle = topic.name,
                         topicDescription = topic.description,
                         isOwner = isOwner,
-                        imageUrl = topic.imageUrl ?: ""
+                        imageUrl = topic.imageUrl ?: "",
+                        isPublic = topic.isPublic
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
@@ -211,6 +212,40 @@ class TopicDetailViewModel @Inject constructor(
                          error = e.message ?: "Failed to regenerate image"
                      )
                  }
+        }
+    }
+    
+    /**
+     * Toggle topic public/private status.
+     * When public, topic appears in Community for others to discover.
+     */
+    fun togglePublicStatus() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            val currentTopicResult = topicRepository.getTopicById(topicId)
+            val currentTopic = currentTopicResult.getOrNull()
+            
+            if (currentTopic != null) {
+                val newIsPublic = !currentTopic.isPublic
+                val updatedTopic = currentTopic.copy(isPublic = newIsPublic)
+                
+                topicRepository.updateTopic(updatedTopic)
+                    .onSuccess { topic ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            isPublic = topic.isPublic
+                        )
+                    }
+                    .onFailure { e ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to update visibility"
+                        )
+                    }
+            } else {
+                _state.value = _state.value.copy(isLoading = false)
+            }
         }
     }
 }

@@ -11,5 +11,6 @@ data class TopicDetailState(
     val isSelectionMode: Boolean = false,
     val selectedCardIds: Set<String> = emptySet(),
     val isOwner: Boolean = false,
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val isPublic: Boolean = false
 )
