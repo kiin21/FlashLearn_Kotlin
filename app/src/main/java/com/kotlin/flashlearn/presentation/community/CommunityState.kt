@@ -1,0 +1,33 @@
+package com.kotlin.flashlearn.presentation.community
+
+import com.kotlin.flashlearn.domain.model.CommunityFilter
+import com.kotlin.flashlearn.domain.model.CommunitySortOption
+import com.kotlin.flashlearn.domain.model.Topic
+
+/**
+ * Represents the UI state for the Community screen.
+ */
+data class CommunityState(
+    val topics: List<CommunityTopicItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val searchQuery: String = "",
+    val activeFilter: CommunityFilter = CommunityFilter(),
+    val activeSort: CommunitySortOption = CommunitySortOption.UPVOTES,
+    val isFilterSheetVisible: Boolean = false
+) {
+    /**
+     * Returns the count of active filters for badge display.
+     */
+    val filterBadgeCount: Int
+        get() = activeFilter.activeFilterCount
+}
+
+/**
+ * Represents a topic item in the Community list with its favorite/download status.
+ */
+data class CommunityTopicItem(
+    val topic: Topic,
+    val isFavorited: Boolean = false,
+    val isDownloaded: Boolean = false
+)

@@ -356,6 +356,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
+                },
+                onNavigateToTopicDetail = { topicId ->
+                    navController.navigate(Route.TopicDetail.createRoute(topicId))
                 }
             )
         }
