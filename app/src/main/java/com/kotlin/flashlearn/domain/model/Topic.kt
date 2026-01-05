@@ -17,7 +17,13 @@ data class Topic(
     val isPublic: Boolean = true,
     val createdBy: String? = null,
     val wordCount: Int = 0,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    // New fields for Community feature
+    val vstepLevel: VSTEPLevel? = null,
+    val upvoteCount: Int = 0,
+    val downloadCount: Int = 0,
+    val creatorName: String = "",
+    val createdAt: Long = System.currentTimeMillis()
 ) {
     /**
      * Returns true if this topic should be visible to the given user.
