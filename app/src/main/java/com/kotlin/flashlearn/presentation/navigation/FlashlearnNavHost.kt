@@ -221,7 +221,8 @@ fun FlashlearnNavHost(
                     }
                 },
                 onUpdateTopic = viewModel::updateTopic,
-                onRegenerateImage = viewModel::regenerateImage
+                onRegenerateImage = viewModel::regenerateImage,
+                onTogglePublic = viewModel::togglePublicStatus
             )
         }
 
@@ -356,6 +357,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
+                },
+                onNavigateToTopicDetail = { topicId ->
+                    navController.navigate(Route.TopicDetail.createRoute(topicId))
                 }
             )
         }

@@ -8,6 +8,7 @@ import com.google.firebase.firestore.Source
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.PixabayApi
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
@@ -25,14 +26,17 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getPublicTopics(): Result<List<Topic>> {
         return runCatching {
+            // Fetch from server first for Community - needs fresh upvote counts
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             val publicTopics = topicsCollection
                 .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             combineAndSort(systemTopics + publicTopics)
@@ -55,16 +59,13 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getVisibleTopics(userId: String?): Result<List<Topic>> {
         return runCatching {
+            // System topics - built-in learning content
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
                 .getWithCacheFirst()
                 .documents.mapNotNull { it.toTopic() }
 
-            val publicTopics = topicsCollection
-                .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
-                .documents.mapNotNull { it.toTopic() }
-
+            // User's own topics (both public and private)
             val userTopics = if (!userId.isNullOrBlank()) {
                 topicsCollection
                     .whereEqualTo("createdBy", userId)
@@ -74,7 +75,8 @@ class TopicRepositoryImpl @Inject constructor(
                 emptyList()
             }
 
-            combineAndSort(systemTopics + publicTopics + userTopics)
+            // Note: Public topics from OTHER users are shown in Community, not here
+            combineAndSort(systemTopics + userTopics)
         }.onFailure { 
             if (it is CancellationException) throw it 
         }
@@ -215,7 +217,13 @@ class TopicRepositoryImpl @Inject constructor(
                 isSystemTopic = getBoolean("isSystemTopic") ?: false,
                 isPublic = getBoolean("isPublic") ?: true,
                 createdBy = getString("createdBy"),
-                imageUrl = getString("imageUrl")
+                imageUrl = getString("imageUrl"),
+                // New Community fields
+                vstepLevel = VSTEPLevel.fromString(getString("vstepLevel")),
+                upvoteCount = getLong("upvoteCount")?.toInt() ?: 0,
+                downloadCount = getLong("downloadCount")?.toInt() ?: 0,
+                creatorName = getString("creatorName") ?: "",
+                createdAt = getLong("createdAt") ?: System.currentTimeMillis()
             )
         }.getOrNull()
     }
@@ -229,7 +237,13 @@ class TopicRepositoryImpl @Inject constructor(
             "isSystemTopic" to isSystemTopic,
             "isPublic" to isPublic,
             "createdBy" to createdBy,
-            "imageUrl" to imageUrl
+            "imageUrl" to imageUrl,
+            // New Community fields
+            "vstepLevel" to vstepLevel?.name,
+            "upvoteCount" to upvoteCount,
+            "downloadCount" to downloadCount,
+            "creatorName" to creatorName,
+            "createdAt" to createdAt
         )
     }
 }

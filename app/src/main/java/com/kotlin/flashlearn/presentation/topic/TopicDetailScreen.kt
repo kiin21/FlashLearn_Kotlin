@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -83,7 +85,8 @@ fun TopicDetailScreen(
     onDeleteSelected: () -> Unit,
     onDeleteTopic: () -> Unit,
     onUpdateTopic: (String, String, String) -> Unit,
-    onRegenerateImage: () -> Unit
+    onRegenerateImage: () -> Unit,
+    onTogglePublic: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -160,6 +163,23 @@ fun TopicDetailScreen(
                                         },
                                         leadingIcon = {
                                             Icon(Icons.Default.Edit, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { 
+                                            Text(
+                                                if (state.isPublic) "Make Private" else "Make Public"
+                                            ) 
+                                        },
+                                        onClick = {
+                                            showMenu = false
+                                            onTogglePublic()
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (state.isPublic) Icons.Default.Lock else Icons.Default.Public, 
+                                                contentDescription = null
+                                            )
                                         }
                                     )
                                     DropdownMenuItem(

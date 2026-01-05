@@ -14,8 +14,10 @@ import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.TopicRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
+import com.kotlin.flashlearn.data.repository.FavoriteRepositoryImpl
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
+import com.kotlin.flashlearn.domain.repository.FavoriteRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
@@ -101,4 +103,10 @@ object AppModule {
     fun provideDatamuseRepository(
         datamuseApi: DatamuseApi
     ): DatamuseRepository = DatamuseRepositoryImpl(datamuseApi)
+
+    @Provides
+    @Singleton
+    fun provideFavoriteRepository(
+        firestore: FirebaseFirestore
+    ): FavoriteRepository = FavoriteRepositoryImpl(firestore)
 }

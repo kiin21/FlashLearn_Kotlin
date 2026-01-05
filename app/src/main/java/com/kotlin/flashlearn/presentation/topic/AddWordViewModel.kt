@@ -259,13 +259,20 @@ class AddWordViewModel @Inject constructor(
             
             val topicId = UUID.randomUUID().toString()
             
+            // Get creator name from Firebase Auth
+            val currentUser = firebaseAuth.currentUser
+            val creatorName = currentUser?.displayName 
+                ?: currentUser?.email?.substringBefore("@") 
+                ?: "Anonymous"
+            
             val newTopic = Topic(
                 id = topicId,
                 name = topicName,
                 description = description.ifBlank { "Custom vocabulary collection" },
                 isSystemTopic = false,
                 isPublic = false,
-                createdBy = userId
+                createdBy = userId,
+                creatorName = creatorName
             )
             
             // Convert VocabularyWord to Flashcard
