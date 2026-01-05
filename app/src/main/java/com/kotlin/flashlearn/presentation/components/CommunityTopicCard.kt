@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.ThumbUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,13 +38,10 @@ import com.kotlin.flashlearn.ui.theme.FlashRed
 /**
  * Topic card for Community screen.
  * 
- * Design (Option A - Spotify model):
- * - Heart button (right): Like + Save to Favorites - single action
- * - Stats: Download count + Like count (display only)
- * 
- * When user clicks heart:
- * - Topic saves to "Favorites" tab
- * - Like count increments
+ * Design (Separate Upvote/Favorite):
+ * - 👍 ThumbUp button: Upvote (public voting, affects ranking)
+ * - 🔖 Bookmark button: Favorite (private save, for "Favorites" tab)
+ * - Stats: Upvote count display
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -50,6 +49,7 @@ fun CommunityTopicCard(
     item: CommunityTopicItem,
     onCardClick: () -> Unit,
     onFavoriteClick: () -> Unit,
+    onUpvoteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
@@ -125,33 +125,38 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Stats row: Like count only (display only)
+                // Stats row: Upvote count with clickable icon
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Likes",
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    // Upvote button + count
+                    IconButton(
+                        onClick = onUpvoteClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (item.isUpvoted) Icons.Filled.ThumbUp else Icons.Outlined.ThumbUp,
+                            contentDescription = if (item.isUpvoted) "Remove upvote" else "Upvote",
+                            modifier = Modifier.size(18.dp),
+                            tint = if (item.isUpvoted) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Text(
                         text = formatCount(topic.upvoteCount),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (item.isUpvoted) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Right side - Heart button (Like + Save)
+            // Right side - Bookmark button (Save to Favorites)
             IconButton(
                 onClick = onFavoriteClick,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    imageVector = if (item.isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = if (item.isFavorited) "Remove from favorites" else "Add to favorites",
+                    imageVector = if (item.isFavorited) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (item.isFavorited) "Remove from saved" else "Save for later",
                     tint = if (item.isFavorited) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

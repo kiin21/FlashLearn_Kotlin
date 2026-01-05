@@ -70,6 +70,9 @@ class CommunityViewModel @Inject constructor(
             is CommunityAction.OnToggleFavorite -> {
                 toggleFavorite(action.topicId)
             }
+            is CommunityAction.OnToggleUpvote -> {
+                toggleUpvote(action.topicId)
+            }
             is CommunityAction.OnTopicClick -> {
                 viewModelScope.launch {
                     _uiEvent.emit(CommunityUiEvent.NavigateToTopicDetail(action.topicId))
@@ -128,6 +131,11 @@ class CommunityViewModel @Inject constructor(
                     } else {
                         emptyList()
                     }
+                    val upvotedIds = if (userId != null) {
+                        favoriteRepository.getUpvotedTopicIdsOnce(userId).getOrNull() ?: emptyList()
+                    } else {
+                        emptyList()
+                    }
 
                     // Filter: Community shows user-created topics from OTHER users only
                     // - Exclude system topics
@@ -180,7 +188,7 @@ class CommunityViewModel @Inject constructor(
                         CommunityTopicItem(
                             topic = topic,
                             isFavorited = topic.id in favoriteIds,
-                            isDownloaded = false // TODO: Implement download tracking
+                            isUpvoted = topic.id in upvotedIds
                         )
                     }
 
@@ -206,10 +214,14 @@ class CommunityViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Toggle favorite status (private save for "Favorites" tab).
+     * Does NOT affect upvote count.
+     */
     private fun toggleFavorite(topicId: String) {
         val userId = currentUserId ?: run {
             viewModelScope.launch {
-                _uiEvent.emit(CommunityUiEvent.ShowError("Please sign in to favorite topics"))
+                _uiEvent.emit(CommunityUiEvent.ShowError("Please sign in to save topics"))
             }
             return
         }
@@ -224,10 +236,50 @@ class CommunityViewModel @Inject constructor(
                         state.copy(
                             topics = state.topics.map { item ->
                                 if (item.topic.id == topicId) {
+                                    item.copy(isFavorited = isFavorited)
+                                } else {
+                                    item
+                                }
+                            }
+                        )
+                    }
+
+                    val message = if (isFavorited) "Saved" else "Removed from saved"
+                    _uiEvent.emit(CommunityUiEvent.ShowSuccess(message))
+                },
+                onFailure = { error ->
+                    _uiEvent.emit(CommunityUiEvent.ShowError(error.message ?: "Failed to save topic"))
+                }
+            )
+        }
+    }
+
+    /**
+     * Toggle upvote status (public vote, affects ranking).
+     * DOES affect upvote count on topic.
+     */
+    private fun toggleUpvote(topicId: String) {
+        val userId = currentUserId ?: run {
+            viewModelScope.launch {
+                _uiEvent.emit(CommunityUiEvent.ShowError("Please sign in to upvote"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            val result = favoriteRepository.toggleUpvote(userId, topicId)
+
+            result.fold(
+                onSuccess = { isUpvoted ->
+                    // Update local state immediately for responsive UI
+                    _state.update { state ->
+                        state.copy(
+                            topics = state.topics.map { item ->
+                                if (item.topic.id == topicId) {
                                     item.copy(
-                                        isFavorited = isFavorited,
+                                        isUpvoted = isUpvoted,
                                         topic = item.topic.copy(
-                                            upvoteCount = if (isFavorited) {
+                                            upvoteCount = if (isUpvoted) {
                                                 item.topic.upvoteCount + 1
                                             } else {
                                                 (item.topic.upvoteCount - 1).coerceAtLeast(0)
@@ -240,12 +292,9 @@ class CommunityViewModel @Inject constructor(
                             }
                         )
                     }
-
-                    val message = if (isFavorited) "Added to favorites" else "Removed from favorites"
-                    _uiEvent.emit(CommunityUiEvent.ShowSuccess(message))
                 },
                 onFailure = { error ->
-                    _uiEvent.emit(CommunityUiEvent.ShowError(error.message ?: "Failed to update favorite"))
+                    _uiEvent.emit(CommunityUiEvent.ShowError(error.message ?: "Failed to upvote"))
                 }
             )
         }

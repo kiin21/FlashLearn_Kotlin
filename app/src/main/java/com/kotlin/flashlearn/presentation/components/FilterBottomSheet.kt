@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -230,13 +229,13 @@ private fun LevelFilterChip(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
     
-    Row(
+    Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(backgroundColor)
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = level.displayName,
@@ -244,15 +243,5 @@ private fun LevelFilterChip(
             fontWeight = FontWeight.Medium,
             color = textColor
         )
-        
-        if (isSelected) {
-            Spacer(modifier = Modifier.width(4.dp))
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = Color.White
-            )
-        }
     }
 }

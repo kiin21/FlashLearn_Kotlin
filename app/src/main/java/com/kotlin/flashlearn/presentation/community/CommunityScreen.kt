@@ -232,6 +232,9 @@ fun CommunityScreen(
                                     },
                                     onFavoriteClick = { 
                                         viewModel.onAction(CommunityAction.OnToggleFavorite(item.topic.id)) 
+                                    },
+                                    onUpvoteClick = {
+                                        viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
                                     }
                                 )
                             }
@@ -309,7 +312,7 @@ private fun MainTabs(
             onClick = { onTabChange(1) },
             text = {
                 Text(
-                    text = "Favorites",
+                    text = "Saved",
                     fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal
                 )
             },
@@ -450,7 +453,7 @@ private fun EmptyState(
                 text = if (isDiscoverTab) {
                     if (hasFilters) "No topics found" else "No topics yet"
                 } else {
-                    "No favorites yet"
+                    "No saved topics yet"
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -460,7 +463,7 @@ private fun EmptyState(
                 text = if (isDiscoverTab) {
                     if (hasFilters) "Try adjusting your filters or search" else "Be the first to share a topic!"
                 } else {
-                    "Like topics to add them here"
+                    "Bookmark topics to save them here"
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)

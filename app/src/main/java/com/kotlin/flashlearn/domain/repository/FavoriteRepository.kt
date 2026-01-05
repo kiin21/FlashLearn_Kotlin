@@ -3,68 +3,55 @@ package com.kotlin.flashlearn.domain.repository
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository interface for managing user favorites (upvotes).
- * Favorites are stored in Firestore under users/{userId}/favoriteTopics.
+ * Repository interface for managing user interactions with topics.
  * 
- * Rules:
- * - One vote per user per topic
- * - Toggling favorite also updates the topic's upvoteCount
+ * Two types of interactions:
+ * 1. Favorite (Private) - Save topics for later, shown in "Favorites" tab
+ * 2. Upvote (Public) - Vote for topics, affects ranking
+ * 
+ * Storage:
+ * - Favorites: users/{userId}/favoriteTopics
+ * - Upvotes: users/{userId}/upvotedTopics
  */
 interface FavoriteRepository {
     
-    /**
-     * Adds a topic to user's favorites.
-     * Also increments the topic's upvoteCount.
-     * 
-     * @param userId The current user's ID
-     * @param topicId The topic ID to favorite
-     * @return Result indicating success or failure
-     */
-    suspend fun addFavorite(userId: String, topicId: String): Result<Unit>
-    
-    /**
-     * Removes a topic from user's favorites.
-     * Also decrements the topic's upvoteCount.
-     * 
-     * @param userId The current user's ID
-     * @param topicId The topic ID to unfavorite
-     * @return Result indicating success or failure
-     */
-    suspend fun removeFavorite(userId: String, topicId: String): Result<Unit>
+    // ==================== FAVORITE (Private Save) ====================
     
     /**
      * Toggles the favorite status of a topic.
-     * If favorited, removes it. If not, adds it.
+     * Favorite = personal save, does NOT affect upvote count.
      * 
-     * @param userId The current user's ID
-     * @param topicId The topic ID to toggle
-     * @return Result containing the new favorite status (true = favorited)
+     * @return Result containing the new favorite status (true = saved)
      */
     suspend fun toggleFavorite(userId: String, topicId: String): Result<Boolean>
     
     /**
-     * Checks if a topic is favorited by the user.
-     * 
-     * @param userId The current user's ID
-     * @param topicId The topic ID to check
-     * @return Result containing true if favorited, false otherwise
+     * Gets all favorited topic IDs for a user (one-time fetch).
      */
-    suspend fun isFavorited(userId: String, topicId: String): Result<Boolean>
+    suspend fun getFavoriteTopicIdsOnce(userId: String): Result<List<String>>
     
     /**
-     * Gets all favorited topic IDs for a user as a Flow.
-     * Updates in real-time when favorites change.
-     * 
-     * @param userId The current user's ID
-     * @return Flow of list of topic IDs
+     * Gets all favorited topic IDs as a Flow (real-time updates).
      */
     fun getFavoriteTopicIds(userId: String): Flow<List<String>>
     
+    // ==================== UPVOTE (Public Voting) ====================
+    
     /**
-     * Gets all favorited topic IDs for a user (one-time fetch).
+     * Toggles the upvote status of a topic.
+     * Upvote = public vote, DOES affect upvoteCount on topic.
      * 
-     * @param userId The current user's ID
-     * @return Result containing list of topic IDs
+     * @return Result containing the new upvote status (true = upvoted)
      */
-    suspend fun getFavoriteTopicIdsOnce(userId: String): Result<List<String>>
+    suspend fun toggleUpvote(userId: String, topicId: String): Result<Boolean>
+    
+    /**
+     * Gets all upvoted topic IDs for a user (one-time fetch).
+     */
+    suspend fun getUpvotedTopicIdsOnce(userId: String): Result<List<String>>
+    
+    /**
+     * Gets all upvoted topic IDs as a Flow (real-time updates).
+     */
+    fun getUpvotedTopicIds(userId: String): Flow<List<String>>
 }

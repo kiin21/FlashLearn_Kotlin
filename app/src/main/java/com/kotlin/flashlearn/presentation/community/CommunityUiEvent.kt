@@ -21,6 +21,7 @@ sealed class CommunityAction {
     data class OnSortChange(val sort: CommunitySortOption) : CommunityAction()
     data class OnFilterApply(val filter: CommunityFilter) : CommunityAction()
     data class OnToggleFavorite(val topicId: String) : CommunityAction()
+    data class OnToggleUpvote(val topicId: String) : CommunityAction()
     data class OnTopicClick(val topicId: String) : CommunityAction()
     data class OnLevelFilterToggle(val level: VSTEPLevel) : CommunityAction()
     data object OnFilterSheetOpen : CommunityAction()
