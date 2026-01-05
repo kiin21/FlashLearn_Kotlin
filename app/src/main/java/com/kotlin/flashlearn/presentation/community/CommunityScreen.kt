@@ -204,7 +204,7 @@ fun CommunityScreen(
                     val displayedTopics = if (selectedTabIndex == 0) {
                         state.topics // Discover: all topics
                     } else {
-                        state.topics.filter { it.isFavorited } // Saved: only bookmarked
+                        state.topics.filter { it.isFavorited } // Favorites: only liked topics
                     }
                     
                     if (displayedTopics.isEmpty()) {
@@ -230,7 +230,7 @@ fun CommunityScreen(
                                     onCardClick = { 
                                         viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id)) 
                                     },
-                                    onBookmarkClick = { 
+                                    onFavoriteClick = { 
                                         viewModel.onAction(CommunityAction.OnToggleFavorite(item.topic.id)) 
                                     }
                                 )
@@ -309,7 +309,7 @@ private fun MainTabs(
             onClick = { onTabChange(1) },
             text = {
                 Text(
-                    text = "Saved",
+                    text = "Favorites",
                     fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal
                 )
             },
@@ -450,7 +450,7 @@ private fun EmptyState(
                 text = if (isDiscoverTab) {
                     if (hasFilters) "No topics found" else "No topics yet"
                 } else {
-                    "No saved topics"
+                    "No favorites yet"
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -460,7 +460,7 @@ private fun EmptyState(
                 text = if (isDiscoverTab) {
                     if (hasFilters) "Try adjusting your filters or search" else "Be the first to share a topic!"
                 } else {
-                    "Bookmark topics to save them here"
+                    "Like topics to add them here"
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)

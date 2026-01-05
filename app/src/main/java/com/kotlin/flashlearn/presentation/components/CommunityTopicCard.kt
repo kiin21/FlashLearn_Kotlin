@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -36,22 +34,22 @@ import com.kotlin.flashlearn.presentation.community.CommunityTopicItem
 import com.kotlin.flashlearn.ui.theme.FlashRed
 
 /**
- * Topic card for Community screen - matches Figma design.
+ * Topic card for Community screen.
  * 
- * Layout:
- * - Left: Topic name, creator, tags, stats (download + upvote count)
- * - Right: Bookmark button
+ * Design (Option A - Spotify model):
+ * - Heart button (right): Like + Save to Favorites - single action
+ * - Stats: Download count + Like count (display only)
  * 
- * Stats:
- * - Download icon + count
- * - Heart icon + upvote count
+ * When user clicks heart:
+ * - Topic saves to "Favorites" tab
+ * - Like count increments
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CommunityTopicCard(
     item: CommunityTopicItem,
     onCardClick: () -> Unit,
-    onBookmarkClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
@@ -127,55 +125,33 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Stats row: Download count + Upvote count
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Download count
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = "Downloads",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = formatCount(topic.downloadCount),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    
-                    // Upvote count (heart icon like Figma)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Upvotes",
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = formatCount(topic.upvoteCount),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                // Stats row: Like count only (display only)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Likes",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formatCount(topic.upvoteCount),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             
             Spacer(modifier = Modifier.width(8.dp))
             
-            // Right side - Bookmark button
+            // Right side - Heart button (Like + Save)
             IconButton(
-                onClick = onBookmarkClick,
+                onClick = onFavoriteClick,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    imageVector = if (item.isFavorited) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                    contentDescription = if (item.isFavorited) "Remove from saved" else "Save for later",
+                    imageVector = if (item.isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                    contentDescription = if (item.isFavorited) "Remove from favorites" else "Add to favorites",
                     tint = if (item.isFavorited) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

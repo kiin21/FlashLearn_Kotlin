@@ -33,6 +33,5 @@ data class CommunityFilter(
  */
 enum class CommunitySortOption(val displayName: String) {
     UPVOTES("Most Liked"),
-    DOWNLOADS("Most Downloaded"),
     NEWEST("Newest")
 }

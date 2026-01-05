@@ -166,9 +166,6 @@ class CommunityViewModel @Inject constructor(
                         CommunitySortOption.UPVOTES -> {
                             filteredTopics.sortedByDescending { it.upvoteCount }
                         }
-                        CommunitySortOption.DOWNLOADS -> {
-                            filteredTopics.sortedByDescending { it.downloadCount }
-                        }
                         CommunitySortOption.NEWEST -> {
                             filteredTopics.sortedByDescending { it.createdAt }
                         }
