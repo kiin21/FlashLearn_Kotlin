@@ -37,7 +37,7 @@ class CommunityViewModel @Inject constructor(
 
     // Cache the current user ID for favorite operations
     private val currentUserId: String?
-        get() = authRepository.getSignedInUser()?.id
+        get() = authRepository.getSignedInUser()?.userId
 
     init {
         loadTopics()
