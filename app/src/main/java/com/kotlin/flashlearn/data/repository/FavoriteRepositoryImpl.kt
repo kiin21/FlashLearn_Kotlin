@@ -71,18 +71,21 @@ class FavoriteRepositoryImpl @Inject constructor(
                 
                 val topicRef = topicsCollection.document(topicId)
                 
-                // Check if favorited
+                // ===== ALL READS FIRST =====
                 val favoriteDoc = transaction.get(favoriteRef)
+                val topicDoc = transaction.get(topicRef)
+                
+                // Check if favorited
                 if (!favoriteDoc.exists()) {
                     // Not favorited, do nothing
                     return@runTransaction
                 }
                 
+                // ===== ALL WRITES AFTER =====
                 // Remove favorite
                 transaction.delete(favoriteRef)
                 
                 // Decrement upvote count on topic (minimum 0)
-                val topicDoc = transaction.get(topicRef)
                 val currentCount = topicDoc.getLong("upvoteCount") ?: 0
                 if (currentCount > 0) {
                     transaction.update(topicRef, "upvoteCount", FieldValue.increment(-1))
@@ -105,14 +108,16 @@ class FavoriteRepositoryImpl @Inject constructor(
                 
                 val topicRef = topicsCollection.document(topicId)
                 
+                // ===== ALL READS FIRST =====
                 val favoriteDoc = transaction.get(favoriteRef)
+                val topicDoc = transaction.get(topicRef)
+                val currentCount = topicDoc.getLong("upvoteCount") ?: 0
                 
+                // ===== ALL WRITES AFTER =====
                 if (favoriteDoc.exists()) {
                     // Currently favorited -> remove
                     transaction.delete(favoriteRef)
                     
-                    val topicDoc = transaction.get(topicRef)
-                    val currentCount = topicDoc.getLong("upvoteCount") ?: 0
                     if (currentCount > 0) {
                         transaction.update(topicRef, "upvoteCount", FieldValue.increment(-1))
                     }

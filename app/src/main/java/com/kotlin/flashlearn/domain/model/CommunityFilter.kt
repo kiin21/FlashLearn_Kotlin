@@ -29,8 +29,10 @@ data class CommunityFilter(
 
 /**
  * Sort options for Community topics list.
+ * All options sort in descending order (most/newest first).
  */
 enum class CommunitySortOption(val displayName: String) {
-    UPVOTES("Upvoted"),
+    UPVOTES("Most Liked"),
+    DOWNLOADS("Most Downloaded"),
     NEWEST("Newest")
 }

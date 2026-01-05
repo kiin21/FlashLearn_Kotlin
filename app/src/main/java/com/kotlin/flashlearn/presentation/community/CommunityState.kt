@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.presentation.community
 import com.kotlin.flashlearn.domain.model.CommunityFilter
 import com.kotlin.flashlearn.domain.model.CommunitySortOption
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 
 /**
  * Represents the UI state for the Community screen.
@@ -14,7 +15,9 @@ data class CommunityState(
     val searchQuery: String = "",
     val activeFilter: CommunityFilter = CommunityFilter(),
     val activeSort: CommunitySortOption = CommunitySortOption.UPVOTES,
-    val isFilterSheetVisible: Boolean = false
+    val isFilterSheetVisible: Boolean = false,
+    // Temporary filter state (for bottom sheet - not yet applied)
+    val tempSelectedLevels: List<VSTEPLevel> = emptyList()
 ) {
     /**
      * Returns the count of active filters for badge display.

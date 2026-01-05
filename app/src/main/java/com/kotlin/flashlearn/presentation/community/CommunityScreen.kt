@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -20,7 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,13 +54,17 @@ import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.presentation.components.CommunityTopicCard
 import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
-import com.kotlin.flashlearn.presentation.components.SortDropdown
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Community screen displaying shared public topics.
- * Users can search, filter, sort, and favorite topics.
+ * 
+ * Design:
+ * - Two tabs: Discover (browse all) / Saved (user's bookmarked topics)
+ * - Sort dropdown for ordering topics
+ * - Filter by VSTEP level
+ * - Search by name, description, creator
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +78,9 @@ fun CommunityScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    // Tab state: 0 = Discover, 1 = Saved
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     
     // Handle UI events
     LaunchedEffect(Unit) {
@@ -108,62 +118,61 @@ fun CommunityScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
         ) {
-            // Title
+            // Header
             Text(
                 text = "Community",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
             )
             
-            // Search bar
+            // Search Bar
             SearchBar(
                 query = state.searchQuery,
                 onQueryChange = { viewModel.onAction(CommunityAction.OnSearchQueryChange(it)) },
-                placeholder = "Find \"IELTS\" or \"Speaking\"..."
+                placeholder = "Search topics, creators...",
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Sort & Filter row
+            // Sort and Filter Row (Sort left, Filter right)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Sort dropdown
-                SortDropdown(
+                // Sort dropdown on left
+                SortDropdownButton(
                     selectedSort = state.activeSort,
                     onSortChange = { viewModel.onAction(CommunityAction.OnSortChange(it)) }
                 )
                 
-                // Filter button with badge
+                // Filter button with badge on right
                 FilterButton(
                     filterCount = state.filterBadgeCount,
                     onClick = { viewModel.onAction(CommunityAction.OnFilterSheetOpen) }
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
-            // Tabs (Upvoted / Newest)
-            SortTabs(
-                selectedSort = state.activeSort,
-                onSortChange = { viewModel.onAction(CommunityAction.OnSortChange(it)) }
+            // Tabs: Discover / Saved
+            MainTabs(
+                selectedTabIndex = selectedTabIndex,
+                onTabChange = { selectedTabIndex = it },
+                modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Content
+            // Content based on tab
             when {
                 state.isLoading -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = FlashRed)
@@ -171,63 +180,64 @@ fun CommunityScreen(
                 }
                 state.error != null -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = state.error ?: "Unknown error",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-                state.topics.isEmpty() -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "No topics found",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = state.error ?: "An error occurred",
+                                color = MaterialTheme.colorScheme.error
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Try adjusting your filters",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                text = "Tap to retry",
+                                color = FlashRed,
+                                modifier = Modifier.clickable { 
+                                    viewModel.onAction(CommunityAction.OnRefresh) 
+                                }
                             )
                         }
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        items(
-                            items = state.topics,
-                            key = { it.topic.id }
-                        ) { item ->
-                            CommunityTopicCard(
-                                item = item,
-                                onCardClick = { 
-                                    viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id)) 
-                                },
-                                onFavoriteClick = { 
-                                    viewModel.onAction(CommunityAction.OnToggleFavorite(item.topic.id)) 
-                                },
-                                onDownloadClick = { 
-                                    viewModel.onAction(CommunityAction.OnDownloadTopic(item.topic.id)) 
-                                }
-                            )
+                    // Filter topics based on selected tab
+                    val displayedTopics = if (selectedTabIndex == 0) {
+                        state.topics // Discover: all topics
+                    } else {
+                        state.topics.filter { it.isFavorited } // Saved: only bookmarked
+                    }
+                    
+                    if (displayedTopics.isEmpty()) {
+                        EmptyState(
+                            isDiscoverTab = selectedTabIndex == 0,
+                            hasFilters = state.filterBadgeCount > 0 || state.searchQuery.isNotBlank()
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                            
+                            items(
+                                items = displayedTopics,
+                                key = { it.topic.id }
+                            ) { item ->
+                                CommunityTopicCard(
+                                    item = item,
+                                    onCardClick = { 
+                                        viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id)) 
+                                    },
+                                    onBookmarkClick = { 
+                                        viewModel.onAction(CommunityAction.OnToggleFavorite(item.topic.id)) 
+                                    }
+                                )
+                            }
+                            
+                            item { Spacer(modifier = Modifier.height(16.dp)) }
                         }
-                        
-                        // Bottom spacing
-                        item { Spacer(modifier = Modifier.height(16.dp)) }
                     }
                 }
             }
@@ -238,7 +248,7 @@ fun CommunityScreen(
             FilterBottomSheet(
                 sheetState = filterSheetState,
                 currentFilter = state.activeFilter,
-                selectedLevels = state.activeFilter.levels,
+                selectedLevels = state.tempSelectedLevels,
                 onLevelToggle = { level ->
                     viewModel.onAction(CommunityAction.OnLevelFilterToggle(level))
                 },
@@ -257,6 +267,59 @@ fun CommunityScreen(
 }
 
 /**
+ * Main tabs: Discover / Saved
+ */
+@Composable
+private fun MainTabs(
+    selectedTabIndex: Int,
+    onTabChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TabRow(
+        selectedTabIndex = selectedTabIndex,
+        modifier = modifier,
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        indicator = { tabPositions ->
+            Box(
+                modifier = Modifier
+                    .tabIndicatorOffset(tabPositions[selectedTabIndex])
+                    .height(3.dp)
+                    .padding(horizontal = 32.dp)
+                    .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                    .background(FlashRed)
+            )
+        },
+        divider = {}
+    ) {
+        Tab(
+            selected = selectedTabIndex == 0,
+            onClick = { onTabChange(0) },
+            text = {
+                Text(
+                    text = "Discover",
+                    fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Normal
+                )
+            },
+            selectedContentColor = MaterialTheme.colorScheme.onSurface,
+            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Tab(
+            selected = selectedTabIndex == 1,
+            onClick = { onTabChange(1) },
+            text = {
+                Text(
+                    text = "Saved",
+                    fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal
+                )
+            },
+            selectedContentColor = MaterialTheme.colorScheme.onSurface,
+            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
  * Filter button with badge showing active filter count.
  */
 @Composable
@@ -269,7 +332,7 @@ private fun FilterButton(
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .clickable { onClick() }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -293,7 +356,6 @@ private fun FilterButton(
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 4.dp, y = (-4).dp)
                     .size(18.dp)
                     .clip(CircleShape)
                     .background(FlashRed),
@@ -311,69 +373,98 @@ private fun FilterButton(
 }
 
 /**
- * Sort tabs (Upvoted / Newest).
+ * Sort dropdown button showing current sort option.
  */
 @Composable
-private fun SortTabs(
+private fun SortDropdownButton(
     selectedSort: CommunitySortOption,
     onSortChange: (CommunitySortOption) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedTabIndex by remember(selectedSort) {
-        mutableIntStateOf(
-            when (selectedSort) {
-                CommunitySortOption.UPVOTES -> 0
-                CommunitySortOption.NEWEST -> 1
-            }
-        )
-    }
+    var expanded by remember { mutableStateOf(false) }
     
-    TabRow(
-        selectedTabIndex = selectedTabIndex,
-        modifier = modifier,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        indicator = { tabPositions ->
-            Box(
-                modifier = Modifier
-                    .tabIndicatorOffset(tabPositions[selectedTabIndex])
-                    .height(3.dp)
-                    .padding(horizontal = 24.dp)
-                    .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-                    .background(FlashRed)
+    Box(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = selectedSort.displayName,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        },
-        divider = {}
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Select sort option",
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            CommunitySortOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = option.displayName,
+                            fontWeight = if (option == selectedSort) FontWeight.Bold else FontWeight.Normal,
+                            color = if (option == selectedSort) FlashRed else MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    onClick = {
+                        onSortChange(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Empty state for when no topics are found.
+ */
+@Composable
+private fun EmptyState(
+    isDiscoverTab: Boolean,
+    hasFilters: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        Tab(
-            selected = selectedTabIndex == 0,
-            onClick = {
-                selectedTabIndex = 0
-                onSortChange(CommunitySortOption.UPVOTES)
-            },
-            text = {
-                Text(
-                    text = "Upvoted",
-                    fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Normal
-                )
-            },
-            selectedContentColor = MaterialTheme.colorScheme.onSurface,
-            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Tab(
-            selected = selectedTabIndex == 1,
-            onClick = {
-                selectedTabIndex = 1
-                onSortChange(CommunitySortOption.NEWEST)
-            },
-            text = {
-                Text(
-                    text = "Newest",
-                    fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal
-                )
-            },
-            selectedContentColor = MaterialTheme.colorScheme.onSurface,
-            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text(
+                text = if (isDiscoverTab) {
+                    if (hasFilters) "No topics found" else "No topics yet"
+                } else {
+                    "No saved topics"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = if (isDiscoverTab) {
+                    if (hasFilters) "Try adjusting your filters or search" else "Be the first to share a topic!"
+                } else {
+                    "Bookmark topics to save them here"
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
     }
 }

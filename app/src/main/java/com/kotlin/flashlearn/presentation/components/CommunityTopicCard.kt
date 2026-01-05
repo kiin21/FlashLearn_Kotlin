@@ -15,9 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,20 +34,24 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.presentation.community.CommunityTopicItem
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.ui.theme.FlashRedLight
 
 /**
- * Topic card for Community screen.
- * Displays topic name, creator, tags, download/like counts.
- * Matches Figma design.
+ * Topic card for Community screen - matches Figma design.
+ * 
+ * Layout:
+ * - Left: Topic name, creator, tags, stats (download + upvote count)
+ * - Right: Bookmark button
+ * 
+ * Stats:
+ * - Download icon + count
+ * - Heart icon + upvote count
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CommunityTopicCard(
     item: CommunityTopicItem,
     onCardClick: () -> Unit,
-    onFavoriteClick: () -> Unit,
-    onDownloadClick: () -> Unit,
+    onBookmarkClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
@@ -65,7 +70,8 @@ fun CommunityTopicCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
             // Left content
             Column(modifier = Modifier.weight(1f)) {
@@ -99,12 +105,12 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Tags (VSTEP Level)
+                // Tags (VSTEP Level + Category)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Extract level from name or use vstepLevel
+                    // VSTEP Level tag
                     val levelTag = topic.vstepLevel?.displayName 
                         ?: extractLevelFromName(topic.name)
                     
@@ -112,7 +118,7 @@ fun CommunityTopicCard(
                         TopicTag(text = levelTag)
                     }
                     
-                    // Extract skill/category from name
+                    // Category tag
                     val categoryTag = extractCategoryFromName(topic.name)
                     if (categoryTag != null) {
                         TopicTag(text = categoryTag)
@@ -121,7 +127,7 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Stats row (downloads & likes)
+                // Stats row: Download count + Upvote count
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -130,7 +136,7 @@ fun CommunityTopicCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Download,
-                            contentDescription = null,
+                            contentDescription = "Downloads",
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -142,13 +148,13 @@ fun CommunityTopicCard(
                         )
                     }
                     
-                    // Like count
+                    // Upvote count (heart icon like Figma)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = if (item.isFavorited) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = null,
+                            imageVector = Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Upvotes",
                             modifier = Modifier.size(16.dp),
-                            tint = if (item.isFavorited) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -160,15 +166,17 @@ fun CommunityTopicCard(
                 }
             }
             
-            // Right side - Download button
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            // Right side - Bookmark button
             IconButton(
-                onClick = onDownloadClick,
+                onClick = onBookmarkClick,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = "Download topic",
-                    tint = FlashRed
+                    imageVector = if (item.isFavorited) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (item.isFavorited) "Remove from saved" else "Save for later",
+                    tint = if (item.isFavorited) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

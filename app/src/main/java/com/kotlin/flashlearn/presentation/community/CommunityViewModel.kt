@@ -57,9 +57,11 @@ class CommunityViewModel @Inject constructor(
                 loadTopics()
             }
             is CommunityAction.OnFilterApply -> {
-                _state.update { 
-                    it.copy(
-                        activeFilter = action.filter,
+                // Apply: copy temp state to active filter, close sheet, reload
+                _state.update { state ->
+                    state.copy(
+                        activeFilter = state.activeFilter.copy(levels = state.tempSelectedLevels),
+                        tempSelectedLevels = emptyList(),
                         isFilterSheetVisible = false
                     ) 
                 }
@@ -68,27 +70,39 @@ class CommunityViewModel @Inject constructor(
             is CommunityAction.OnToggleFavorite -> {
                 toggleFavorite(action.topicId)
             }
-            is CommunityAction.OnDownloadTopic -> {
-                downloadTopic(action.topicId)
-            }
             is CommunityAction.OnTopicClick -> {
                 viewModelScope.launch {
                     _uiEvent.emit(CommunityUiEvent.NavigateToTopicDetail(action.topicId))
                 }
             }
             is CommunityAction.OnLevelFilterToggle -> {
-                toggleLevelFilter(action.level)
+                // Toggle in TEMPORARY state (not applied yet)
+                toggleTempLevelFilter(action.level)
             }
             CommunityAction.OnFilterSheetOpen -> {
-                _state.update { it.copy(isFilterSheetVisible = true) }
+                // Copy current active filter to temp state when opening sheet
+                _state.update { 
+                    it.copy(
+                        isFilterSheetVisible = true,
+                        tempSelectedLevels = it.activeFilter.levels
+                    ) 
+                }
             }
             CommunityAction.OnFilterSheetDismiss -> {
-                _state.update { it.copy(isFilterSheetVisible = false) }
+                // Cancel: discard temp state, close sheet
+                _state.update { 
+                    it.copy(
+                        isFilterSheetVisible = false,
+                        tempSelectedLevels = emptyList()
+                    ) 
+                }
             }
             CommunityAction.OnClearFilters -> {
+                // Clear All: immediately apply empty filter and close
                 _state.update { 
                     it.copy(
                         activeFilter = CommunityFilter(),
+                        tempSelectedLevels = emptyList(),
                         isFilterSheetVisible = false
                     ) 
                 }
@@ -120,18 +134,22 @@ class CommunityViewModel @Inject constructor(
                     
                     val currentState = _state.value
 
-                    // Filter by search query
+                    // Filter by search query (name, description, creatorName)
                     if (currentState.searchQuery.isNotBlank()) {
+                        val query = currentState.searchQuery.trim()
                         filteredTopics = filteredTopics.filter { topic ->
-                            topic.name.contains(currentState.searchQuery, ignoreCase = true) ||
-                            topic.description.contains(currentState.searchQuery, ignoreCase = true)
+                            topic.name.contains(query, ignoreCase = true) ||
+                            topic.description.contains(query, ignoreCase = true) ||
+                            topic.creatorName.contains(query, ignoreCase = true)
                         }
                     }
 
-                    // Filter by VSTEP level
+                    // Filter by VSTEP level - check vstepLevel field FIRST, then fallback to name
                     if (currentState.activeFilter.levels.isNotEmpty()) {
                         filteredTopics = filteredTopics.filter { topic ->
-                            // Check if topic name contains any of the selected levels
+                            // Primary: check vstepLevel field
+                            topic.vstepLevel in currentState.activeFilter.levels ||
+                            // Fallback: check if name contains level string
                             currentState.activeFilter.levels.any { level ->
                                 topic.name.contains(level.displayName, ignoreCase = true)
                             }
@@ -143,10 +161,13 @@ class CommunityViewModel @Inject constructor(
                         filteredTopics = filteredTopics.filter { it.createdBy == creatorId }
                     }
 
-                    // Sort topics
+                    // Sort topics (all descending - most/newest first)
                     val sortedTopics = when (currentState.activeSort) {
                         CommunitySortOption.UPVOTES -> {
                             filteredTopics.sortedByDescending { it.upvoteCount }
+                        }
+                        CommunitySortOption.DOWNLOADS -> {
+                            filteredTopics.sortedByDescending { it.downloadCount }
                         }
                         CommunitySortOption.NEWEST -> {
                             filteredTopics.sortedByDescending { it.createdAt }
@@ -229,24 +250,15 @@ class CommunityViewModel @Inject constructor(
         }
     }
 
-    private fun downloadTopic(topicId: String) {
-        // TODO: Implement download functionality
-        viewModelScope.launch {
-            _uiEvent.emit(CommunityUiEvent.ShowSuccess("Download feature coming soon!"))
-        }
-    }
-
-    private fun toggleLevelFilter(level: VSTEPLevel) {
+    private fun toggleTempLevelFilter(level: VSTEPLevel) {
         _state.update { state ->
-            val currentLevels = state.activeFilter.levels.toMutableList()
+            val currentLevels = state.tempSelectedLevels.toMutableList()
             if (level in currentLevels) {
                 currentLevels.remove(level)
             } else {
                 currentLevels.add(level)
             }
-            state.copy(
-                activeFilter = state.activeFilter.copy(levels = currentLevels)
-            )
+            state.copy(tempSelectedLevels = currentLevels)
         }
     }
 }
