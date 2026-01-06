@@ -28,6 +28,10 @@ sealed class Route(val route: String) {
     }
     data object Community : Route("community")
     
+    data object UserProfile : Route("user_profile/{userId}") {
+        fun createRoute(userId: String) = "user_profile/$userId"
+    }
+    
     data object AddWord : Route("add_word/{topicId}") {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
