@@ -50,6 +50,7 @@ fun CommunityTopicCard(
     onCardClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     onUpvoteClick: () -> Unit,
+    onCreatorClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
@@ -85,19 +86,23 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // Creator name
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Creator name (clickable)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onCreatorClick() }
+                ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = topic.creatorName.ifEmpty { "Anonymous" },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 

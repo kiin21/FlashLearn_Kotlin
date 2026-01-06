@@ -363,7 +363,31 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToTopicDetail = { topicId ->
                     navController.navigate(Route.TopicDetail.createRoute(topicId))
+                },
+                onNavigateToUserProfile = { userId ->
+                    navController.navigate(Route.UserProfile.createRoute(userId))
                 }
+            )
+        }
+        
+        // User Public Profile Screen
+        composable(
+            route = Route.UserProfile.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) {
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.community.UserPublicProfileViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            
+            com.kotlin.flashlearn.presentation.community.UserPublicProfileScreen(
+                state = state,
+                onBack = { navController.popBackStack() },
+                onTopicClick = { topicId ->
+                    navController.navigate(Route.TopicDetail.createRoute(topicId))
+                },
+                onUpvoteClick = viewModel::toggleUpvote,
+                onRetry = viewModel::retry
             )
         }
 

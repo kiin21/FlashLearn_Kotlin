@@ -73,7 +73,8 @@ fun CommunityScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    onNavigateToTopicDetail: (String) -> Unit = {}
+    onNavigateToTopicDetail: (String) -> Unit = {},
+    onNavigateToUserProfile: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -235,6 +236,11 @@ fun CommunityScreen(
                                     },
                                     onUpvoteClick = {
                                         viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
+                                    },
+                                    onCreatorClick = {
+                                        item.topic.createdBy?.let { userId ->
+                                            onNavigateToUserProfile(userId)
+                                        }
                                     }
                                 )
                             }
