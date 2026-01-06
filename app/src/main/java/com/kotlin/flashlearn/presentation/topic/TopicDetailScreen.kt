@@ -51,6 +51,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -73,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import kotlinx.coroutines.launch
 
@@ -94,7 +96,8 @@ fun TopicDetailScreen(
     onRegenerateImage: () -> Unit,
     onTogglePublic: () -> Unit,
     onSaveToMyTopics: () -> Unit,
-    onClearMessages: () -> Unit
+    onClearMessages: () -> Unit,
+    onSearchQueryChange: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showNonOwnerMenu by remember { mutableStateOf(false) }
@@ -340,15 +343,28 @@ fun TopicDetailScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            
+            // Header with count
             Text(
-                text = "Cards in this topic",
+                text = "Cards in this topic (${state.cards.size})",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.Start)
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Search Bar for flashcards
+            if (state.cards.isNotEmpty()) {
+                SearchBar(
+                    query = state.searchQuery,
+                    onQueryChange = onSearchQueryChange,
+                    placeholder = "Search cards..."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             when {
                 state.isLoading -> {
@@ -365,10 +381,25 @@ fun TopicDetailScreen(
                 state.cards.isEmpty() -> {
                     Text("No cards in this topic", color = Color.Gray)
                 }
+                state.displayedCards.isEmpty() && state.searchQuery.isNotBlank() -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(32.dp)
+                    ) {
+                        Text(
+                            text = "No cards found for \"${state.searchQuery}\"",
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextButton(onClick = { onSearchQueryChange("") }) {
+                            Text("Clear search", color = FlashRed)
+                        }
+                    }
+                }
                 else -> {
                     androidx.compose.foundation.lazy.LazyColumn {
-                        items(state.cards.size) { index ->
-                            val card = state.cards[index]
+                        items(state.displayedCards.size) { index ->
+                            val card = state.displayedCards[index]
                             CardItem(
                                 word = card.word,
                                 type = card.partOfSpeech,
