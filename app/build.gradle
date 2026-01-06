@@ -140,6 +140,10 @@ dependencies {
     implementation libs.hilt.work
     ksp libs.hilt.work.compiler
 
+    // Auth Utils
+    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.0.0")
+
     // Testing
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

@@ -45,4 +45,36 @@ class UserRepositoryImpl @Inject constructor(
             
         return serverDoc.toObject(User::class.java)
     }
+
+    override suspend fun getUserByLoginUsername(loginUsername: String): User? {
+        return usersCollection
+            .whereEqualTo("loginUsername", loginUsername)
+            .get()
+            .await()
+            .documents.firstOrNull()
+            ?.toObject(User::class.java)
+    }
+
+    override suspend fun isLoginUsernameTaken(loginUsername: String): Boolean {
+        return getUserByLoginUsername(loginUsername) != null
+    }
+
+    override suspend fun getUserByGoogleId(googleId: String): User? {
+        return usersCollection
+            .whereEqualTo("googleId", googleId)
+            .get()
+            .await()
+            .documents.firstOrNull()
+            ?.toObject(User::class.java)
+    }
+
+    override suspend fun linkGoogleAccount(userId: String, googleId: String, email: String?) {
+        usersCollection.document(userId).update(
+            mapOf(
+                "googleId" to googleId,
+                "email" to email,
+                "linkedProviders" to com.google.firebase.firestore.FieldValue.arrayUnion("google.com")
+            )
+        ).await()
+    }
 }

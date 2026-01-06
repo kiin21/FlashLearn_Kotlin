@@ -48,8 +48,9 @@ object AppModule {
     fun provideAuthRepository(
         @ApplicationContext context: Context,
         oneTapClient: SignInClient,
-        auth: FirebaseAuth
-    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth)
+        auth: FirebaseAuth,
+        userRepository: UserRepository
+    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository)
 
 
     @Provides

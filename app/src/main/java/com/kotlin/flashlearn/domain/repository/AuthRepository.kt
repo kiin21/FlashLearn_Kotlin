@@ -33,4 +33,16 @@ interface AuthRepository {
      * @return UserData if signed in, null otherwise.
      */
     fun getSignedInUser(): UserData?
+    
+    // Username/Password Authentication
+    suspend fun registerWithUsername(loginUsername: String, password: String): Result<UserData>
+    suspend fun signInWithUsername(loginUsername: String, password: String): Result<UserData>
+    
+    // Account Linking
+    suspend fun linkGoogleAccount(): Result<IntentSender?>
+    suspend fun linkGoogleAccountWithIntent(intent: Intent): Result<Unit>
+    fun getLinkedProviders(): List<String>
+    
+    // Session management for custom auth
+    fun setCurrentUser(userData: UserData?)
 }

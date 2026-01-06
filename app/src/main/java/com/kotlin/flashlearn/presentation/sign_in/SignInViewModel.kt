@@ -122,4 +122,56 @@ class SignInViewModel @Inject constructor(
     fun resetState() {
         _state.update { SignInState() }
     }
+
+    // Username/Password handlers
+    fun onUsernameChange(username: String) {
+        _state.update { it.copy(username = username, usernameError = null) }
+    }
+
+    fun onPasswordChange(password: String) {
+        _state.update { it.copy(password = password, passwordError = null) }
+    }
+
+    fun signInWithUsername() {
+        viewModelScope.launch {
+            val username = state.value.username.trim()
+            val password = state.value.password
+
+            // Validate inputs
+            if (username.isBlank()) {
+                _state.update { it.copy(usernameError = "Username is required") }
+                return@launch
+            }
+            if (password.isBlank()) {
+                _state.update { it.copy(passwordError = "Password is required") }
+                return@launch
+            }
+
+            _state.update { it.copy(isLoading = true, signInError = null) }
+
+            authRepository.signInWithUsername(username, password).fold(
+                onSuccess = { userData ->
+                    _state.update { 
+                        it.copy(isLoading = false, isSignInSuccessful = true) 
+                    }
+                    _uiEvent.send(SignInUiEvent.NavigateToHome)
+                },
+                onFailure = { error ->
+                    _state.update { 
+                        it.copy(
+                            isLoading = false,
+                            signInError = error.message
+                        ) 
+                    }
+                    _uiEvent.send(SignInUiEvent.ShowError(error.message ?: "Sign in failed"))
+                }
+            )
+        }
+    }
+
+    fun navigateToRegister() {
+        viewModelScope.launch {
+            _uiEvent.send(SignInUiEvent.NavigateToRegister)
+        }
+    }
 }

@@ -92,6 +92,9 @@ fun FlashlearnNavHost(
                             }
                             viewModel.resetState()
                         }
+                        is SignInUiEvent.NavigateToRegister -> {
+                            navController.navigate(Route.Register.route)
+                        }
                         is SignInUiEvent.ShowError -> {
                             Toast.makeText(
                                 context,
@@ -124,7 +127,44 @@ fun FlashlearnNavHost(
                             )
                         }
                     }
+                },
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onLoginClick = viewModel::signInWithUsername,
+                onRegisterClick = viewModel::navigateToRegister
+            )
+        }
+
+        // Register Screen
+        composable(Route.Register.route) {
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.register.RegisterViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            LaunchedEffect(key1 = Unit) {
+                viewModel.uiEvent.collectLatest { event ->
+                    when (event) {
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.NavigateToOnboarding -> {
+                            navController.navigate(Route.Onboarding.route) {
+                                popUpTo(Route.Register.route) { inclusive = true }
+                            }
+                        }
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.NavigateToSignIn -> {
+                            navController.popBackStack()
+                        }
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.ShowError -> {
+                            Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
+            }
+
+            com.kotlin.flashlearn.presentation.register.RegisterScreen(
+                state = state,
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onRegisterClick = viewModel::register,
+                onBackClick = { navController.popBackStack() }
             )
         }
         
