@@ -164,6 +164,61 @@ class TopicRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun cloneTopicToUser(
+        originalTopicId: String,
+        targetUserId: String,
+        targetUserName: String
+    ): Result<Topic> {
+        return runCatching {
+            // 1. Fetch original topic
+            val originalTopic = getTopicById(originalTopicId).getOrNull()
+                ?: throw Exception("Topic not found")
+            
+            // 2. Fetch original flashcards
+            val flashcardsSnapshot = topicsCollection
+                .document(originalTopicId)
+                .collection("flashcards")
+                .get(Source.DEFAULT)
+                .await()
+            
+            // 3. Create new topic with new ID
+            val newTopicId = UUID.randomUUID().toString()
+            val clonedTopic = originalTopic.copy(
+                id = newTopicId,
+                createdBy = targetUserId,
+                creatorName = targetUserName,
+                isPublic = false,  // Private by default
+                isSystemTopic = false,
+                upvoteCount = 0,
+                downloadCount = 0,
+                createdAt = System.currentTimeMillis(),
+                clonedFrom = originalTopicId,
+                originalCreator = originalTopic.creatorName.ifEmpty { "Unknown" }
+            )
+            
+            // 4. Save cloned topic
+            topicsCollection.document(newTopicId).set(clonedTopic.toMap()).await()
+            
+            // 5. Clone flashcards
+            val newFlashcardsRef = topicsCollection.document(newTopicId).collection("flashcards")
+            flashcardsSnapshot.documents.forEach { doc ->
+                val newFlashcardId = UUID.randomUUID().toString()
+                val flashcardData = doc.data?.toMutableMap() ?: mutableMapOf()
+                flashcardData["id"] = newFlashcardId
+                newFlashcardsRef.document(newFlashcardId).set(flashcardData).await()
+            }
+            
+            // 6. Increment downloadCount on original topic
+            topicsCollection.document(originalTopicId).update(
+                "downloadCount", com.google.firebase.firestore.FieldValue.increment(1)
+            ).await()
+            
+            clonedTopic
+        }.onFailure {
+            if (it is CancellationException) throw it
+        }
+    }
+
     private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
         val cached = runCatching { 
             get(Source.CACHE).await() 
@@ -218,12 +273,15 @@ class TopicRepositoryImpl @Inject constructor(
                 isPublic = getBoolean("isPublic") ?: true,
                 createdBy = getString("createdBy"),
                 imageUrl = getString("imageUrl"),
-                // New Community fields
+                // Community fields
                 vstepLevel = VSTEPLevel.fromString(getString("vstepLevel")),
                 upvoteCount = getLong("upvoteCount")?.toInt() ?: 0,
                 downloadCount = getLong("downloadCount")?.toInt() ?: 0,
                 creatorName = getString("creatorName") ?: "",
-                createdAt = getLong("createdAt") ?: System.currentTimeMillis()
+                createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
+                // Clone attribution
+                clonedFrom = getString("clonedFrom"),
+                originalCreator = getString("originalCreator")
             )
         }.getOrNull()
     }
@@ -238,12 +296,15 @@ class TopicRepositoryImpl @Inject constructor(
             "isPublic" to isPublic,
             "createdBy" to createdBy,
             "imageUrl" to imageUrl,
-            // New Community fields
+            // Community fields
             "vstepLevel" to vstepLevel?.name,
             "upvoteCount" to upvoteCount,
             "downloadCount" to downloadCount,
             "creatorName" to creatorName,
-            "createdAt" to createdAt
+            "createdAt" to createdAt,
+            // Clone attribution
+            "clonedFrom" to clonedFrom,
+            "originalCreator" to originalCreator
         )
     }
 }

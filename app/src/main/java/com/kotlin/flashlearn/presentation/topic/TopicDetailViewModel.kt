@@ -248,4 +248,47 @@ class TopicDetailViewModel @Inject constructor(
             }
         }
     }
+    
+    /**
+     * Saves a community topic to user's own collection (clone).
+     */
+    fun saveToMyTopics() {
+        val userId = currentUserId ?: run {
+            _state.value = _state.value.copy(error = "Please sign in to save topics")
+            return
+        }
+        
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            val currentUser = firebaseAuth.currentUser
+            val userName = currentUser?.displayName 
+                ?: currentUser?.email?.substringBefore("@") 
+                ?: "Anonymous"
+            
+            topicRepository.cloneTopicToUser(topicId, userId, userName)
+                .onSuccess { clonedTopic ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        successMessage = "Saved to My Topics!"
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to save topic"
+                    )
+                }
+        }
+    }
+    
+    /**
+     * Clears success/error messages after they've been shown.
+     */
+    fun clearMessages() {
+        _state.value = _state.value.copy(
+            successMessage = null,
+            error = null
+        )
+    }
 }

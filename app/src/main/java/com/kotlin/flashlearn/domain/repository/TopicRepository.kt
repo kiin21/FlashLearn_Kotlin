@@ -53,4 +53,19 @@ interface TopicRepository {
      * Regenerates the topic image by fetching a new one from Pixabay.
      */
     suspend fun regenerateTopicImage(topicId: String): Result<String>
+    
+    /**
+     * Clones a topic (and its flashcards) to the user's collection.
+     * Used for "Save to My Topics" feature in Community.
+     * 
+     * @param originalTopicId The topic to clone
+     * @param targetUserId The user who will own the cloned topic
+     * @param targetUserName The display name to set as creator
+     * @return The newly created topic
+     */
+    suspend fun cloneTopicToUser(
+        originalTopicId: String, 
+        targetUserId: String,
+        targetUserName: String
+    ): Result<Topic>
 }
