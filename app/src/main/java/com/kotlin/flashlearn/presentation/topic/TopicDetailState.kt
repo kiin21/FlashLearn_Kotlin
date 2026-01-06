@@ -9,6 +9,8 @@ data class TopicDetailState(
     val topicTitle: String = "",
     val topicDescription: String = "",
     val cards: List<Flashcard> = emptyList(),
+    val displayedCards: List<Flashcard> = emptyList(),
+    val searchQuery: String = "",
     val isSelectionMode: Boolean = false,
     val selectedCardIds: Set<String> = emptySet(),
     val isOwner: Boolean = false,

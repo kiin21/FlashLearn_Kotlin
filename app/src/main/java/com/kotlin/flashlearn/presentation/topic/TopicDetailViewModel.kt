@@ -80,6 +80,7 @@ class TopicDetailViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     cards = flashcards,
+                    displayedCards = flashcards,
                     error = null,
                     // Reset selection when reloading
                     isSelectionMode = false,
@@ -98,6 +99,35 @@ class TopicDetailViewModel @Inject constructor(
     
     fun refreshCards() {
         loadTopicAndCards()
+    }
+    
+    /**
+     * Updates search query and filters flashcards.
+     */
+    fun updateSearchQuery(query: String) {
+        _state.value = _state.value.copy(searchQuery = query)
+        applySearch()
+    }
+    
+    /**
+     * Filters flashcards based on search query.
+     * Searches in word, definition, and example sentence.
+     */
+    private fun applySearch() {
+        val query = _state.value.searchQuery.lowercase().trim()
+        val allCards = _state.value.cards
+        
+        val filtered = if (query.isBlank()) {
+            allCards
+        } else {
+            allCards.filter { card ->
+                card.word.lowercase().contains(query) ||
+                card.definition.lowercase().contains(query) ||
+                card.exampleSentence.lowercase().contains(query)
+            }
+        }
+        
+        _state.value = _state.value.copy(displayedCards = filtered)
     }
     
     fun toggleSelectionMode() {
