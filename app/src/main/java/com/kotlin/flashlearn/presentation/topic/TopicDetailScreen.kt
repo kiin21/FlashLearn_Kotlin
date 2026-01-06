@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,10 +51,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,10 +92,30 @@ fun TopicDetailScreen(
     onDeleteTopic: () -> Unit,
     onUpdateTopic: (String, String, String) -> Unit,
     onRegenerateImage: () -> Unit,
-    onTogglePublic: () -> Unit
+    onTogglePublic: () -> Unit,
+    onSaveToMyTopics: () -> Unit,
+    onClearMessages: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Show snackbar for success/error messages
+    LaunchedEffect(state.successMessage) {
+        state.successMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            onClearMessages()
+        }
+    }
+    
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            snackbarHostState.showSnackbar(it)
+            onClearMessages()
+        }
+    }
 
     if (showEditDialog) {
         EditTopicDialog(
@@ -195,8 +221,37 @@ fun TopicDetailScreen(
                                 }
                             }
                         } else {
-                            IconButton(onClick = { /* Share */ }) {
-                                Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // Non-owner: 3-dot menu with Save/Share options
+                            Box {
+                                IconButton(onClick = { showNonOwnerMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
+                                }
+                                DropdownMenu(
+                                    expanded = showNonOwnerMenu,
+                                    onDismissRequest = { showNonOwnerMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Save to My Topics") },
+                                        onClick = {
+                                            showNonOwnerMenu = false
+                                            onSaveToMyTopics()
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.SaveAlt, contentDescription = null, tint = FlashRed)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Share", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                        onClick = {
+                                            showNonOwnerMenu = false
+                                            // TODO: Implement share when app is released
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        },
+                                        enabled = false // Disabled until app release
+                                    )
+                                }
                             }
                         }
                     }
@@ -209,6 +264,9 @@ fun TopicDetailScreen(
                 containerColor = FlashRed,
                 shape = CircleShape
             ) { Icon(Icons.Default.Add, contentDescription = null) }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
 

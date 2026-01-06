@@ -23,7 +23,10 @@ data class Topic(
     val upvoteCount: Int = 0,
     val downloadCount: Int = 0,
     val creatorName: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Clone attribution
+    val clonedFrom: String? = null,       // Original topic ID if cloned
+    val originalCreator: String? = null   // Original creator name for attribution
 ) {
     /**
      * Returns true if this topic should be visible to the given user.
