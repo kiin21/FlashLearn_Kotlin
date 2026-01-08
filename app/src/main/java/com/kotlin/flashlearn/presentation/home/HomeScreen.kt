@@ -58,15 +58,20 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun HomeScreen(
     userData: User?,
+    streakDays: Int,
     onNavigateToProfile: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
-    onNavigateToLearningSession: (String) -> Unit = {}
+    onNavigateToLearningSession: (String) -> Unit = {},
+    onNavigateToDailyWidget: () -> Unit = {},
+    onNavigateToDailyWidgetComplete: () -> Unit = {}
 ) {
+    val homeVm: HomeViewModel = hiltViewModel()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
@@ -98,7 +103,16 @@ fun HomeScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            HeaderSection(userData)
+            HeaderSection(
+                user = userData,
+                streakDays = streakDays,
+                onStreakClick = {
+                    homeVm.onStreakClick(
+                        onGoToDailyWidget = onNavigateToDailyWidget,
+                        onGoToDailyWidgetComplete = onNavigateToDailyWidgetComplete
+                    )
+                }
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             ExamDateCard(userData)
@@ -123,7 +137,11 @@ fun HomeScreen(
 }
 
 @Composable
-fun HeaderSection(user: User?) {
+fun HeaderSection(
+    user: User?,
+    streakDays: Int,
+    onStreakClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -146,6 +164,7 @@ fun HeaderSection(user: User?) {
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFFFF3E0))
+                .clickable { onStreakClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -157,7 +176,7 @@ fun HeaderSection(user: User?) {
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "${user?.streak ?: 0} DAYS",
+                text = "$streakDays DAYS",
                 color = Color(0xFFFF9800),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold

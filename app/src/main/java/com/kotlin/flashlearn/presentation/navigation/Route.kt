@@ -35,4 +35,8 @@ sealed class Route(val route: String) {
     data object AddWord : Route("add_word/{topicId}") {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
+
+    data object DailyWidget : Route("daily_widget")
+
+    data object DailyWidgetComplete : Route("daily_widget_complete")
 }

@@ -119,6 +119,7 @@ dependencies {
     implementation libs.firebase.firestore
     implementation libs.firebase.auth.ktx
     implementation libs.play.services.auth
+    implementation(libs.firebase.messaging)
 
     // Image Loading
     implementation libs.coil.compose
@@ -139,6 +140,9 @@ dependencies {
     implementation libs.workmanager.runtime
     implementation libs.hilt.work
     ksp libs.hilt.work.compiler
+
+    // Coroutine
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Testing
     testImplementation libs.junit

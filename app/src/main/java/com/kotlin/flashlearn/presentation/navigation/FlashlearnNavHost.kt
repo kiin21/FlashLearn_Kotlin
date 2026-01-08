@@ -38,6 +38,8 @@ import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.AddWordScreen
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
+import com.kotlin.flashlearn.presentation.widget.WidgetCompletedScreen
+import com.kotlin.flashlearn.presentation.widget.WidgetRevealScreen
 
 /**
  * Navigation host for the app.
@@ -152,8 +154,12 @@ fun FlashlearnNavHost(
                 )
             }
 
+            val streakVm = hiltViewModel<com.kotlin.flashlearn.presentation.home.HomeStreakViewModel>()
+            val streakDays by streakVm.streakDays.collectAsStateWithLifecycle()
+
             HomeScreen(
                 userData = user,
+                streakDays = streakDays,
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
                 },
@@ -165,6 +171,12 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToLearningSession = { topicId ->
                     navController.navigate(Route.LearningSession.createRoute(topicId, "home"))
+                },
+                onNavigateToDailyWidget = {
+                    navController.navigate(Route.DailyWidget.route)
+                },
+                onNavigateToDailyWidgetComplete = {
+                    navController.navigate(Route.DailyWidgetComplete.route)
                 }
             )
         }
@@ -414,6 +426,31 @@ fun FlashlearnNavHost(
                 onNavigateToCommunity = {
                     navController.navigate(Route.Community.route)
                 }
+            )
+        }
+
+        composable(Route.DailyWidget.route) {
+            WidgetRevealScreen(
+                onCompleted = {
+                    navController.navigate(Route.DailyWidgetComplete.route) {
+                        popUpTo(Route.DailyWidget.route) { inclusive = true }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Route.DailyWidgetComplete.route) {
+            WidgetCompletedScreen(
+                onBackHome = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
     }

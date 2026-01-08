@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.notification.DailyReminderPermissionGate
 import com.kotlin.flashlearn.presentation.navigation.FlashlearnNavHost
 import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,9 +22,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    private lateinit var reminderGate: DailyReminderPermissionGate
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        reminderGate = DailyReminderPermissionGate(this)
+        reminderGate.ensureDailyReminder(
+            hour = 9,
+            minute = 0,
+            title = "FlashLearn",
+            body = "Đến giờ học rồi! 📚"
+        )
         
         setContent {    
             FlashlearnTheme {
