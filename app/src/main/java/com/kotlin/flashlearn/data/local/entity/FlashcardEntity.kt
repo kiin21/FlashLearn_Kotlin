@@ -33,6 +33,8 @@ data class FlashcardEntity(
     val exampleSentence: String,
     val ipa: String,
     val imageUrl: String,
+    val pronunciationUrl: String = "",
+    val synonyms: List<String> = emptyList(),
     val createdAt: Long,
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
@@ -46,6 +48,8 @@ data class FlashcardEntity(
         exampleSentence = exampleSentence,
         ipa = ipa,
         imageUrl = imageUrl,
+        pronunciationUrl = pronunciationUrl.ifBlank { null },
+        synonyms = synonyms,
         createdAt = createdAt
     )
 
@@ -60,6 +64,8 @@ data class FlashcardEntity(
             exampleSentence = flashcard.exampleSentence,
             ipa = flashcard.ipa,
             imageUrl = flashcard.imageUrl,
+            pronunciationUrl = flashcard.pronunciationUrl.orEmpty(),
+            synonyms = flashcard.synonyms,
             createdAt = flashcard.createdAt
         )
     }

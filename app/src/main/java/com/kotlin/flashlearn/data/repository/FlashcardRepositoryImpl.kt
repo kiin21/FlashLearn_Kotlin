@@ -102,7 +102,9 @@ class FlashcardRepositoryImpl @Inject constructor(
                 pronunciation = "",
                 partOfSpeech = firstDef?.partOfSpeech?.uppercase() ?: "",
                 definition = firstDef?.definition ?: "",
-                exampleSentence = ""
+                exampleSentence = "",
+                pronunciationUrl = null,
+                synonyms = emptyList()
             )
         }
     }
@@ -265,7 +267,9 @@ class FlashcardRepositoryImpl @Inject constructor(
             "definition" to definition,
             "exampleSentence" to exampleSentence,
             "ipa" to ipa,
-            "imageUrl" to imageUrl
+            "imageUrl" to imageUrl,
+            "pronunciationUrl" to (pronunciationUrl ?: ""),
+            "synonyms" to synonyms
         )
     }
 
@@ -280,7 +284,9 @@ class FlashcardRepositoryImpl @Inject constructor(
                 definition = getString("definition") ?: "",
                 exampleSentence = getString("exampleSentence") ?: "",
                 ipa = getString("ipa") ?: "",
-                imageUrl = getString("imageUrl") ?: ""
+                imageUrl = getString("imageUrl") ?: "",
+                pronunciationUrl = getString("pronunciationUrl"),
+                synonyms = (get("synonyms") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
             )
         }.getOrNull()
     }
