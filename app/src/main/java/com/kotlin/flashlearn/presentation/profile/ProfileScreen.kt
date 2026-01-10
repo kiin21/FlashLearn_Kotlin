@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -72,18 +75,53 @@ fun ProfileScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
-    isGoogleLinked: Boolean = false,
+    linkedAccounts: List<com.kotlin.flashlearn.domain.model.LinkedAccount> = emptyList(),
     onLinkGoogleAccount: () -> Unit = {},
+    onUnlinkGoogleAccount: (String) -> Unit = {},
+    onUpdateEmail: (String) -> Unit = {},
     isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
+    
+    // Derive available emails from linked accounts + current email if not in list
+    val currentEmail = userData?.email
+    val availableEmails = remember(linkedAccounts, currentEmail) {
+        val emails = linkedAccounts.map { it.email }.toMutableList()
+        currentEmail?.let { 
+             if (!emails.contains(it) && it.isNotEmpty()) emails.add(it)
+        }
+        emails.distinct().sorted()
+    }
     
     val showNotImplementedMessage: (String) -> Unit = { featureName ->
         scope.launch {
             snackbarHostState.showSnackbar("$featureName is coming soon!")
         }
+    }
+
+    if (showUnlinkDialog != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showUnlinkDialog = null },
+            title = { Text("Unlink Account") },
+            text = { Text("Are you sure you want to unlink this Google account?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val accountId = showUnlinkDialog
+                    showUnlinkDialog = null
+                    accountId?.let { onUnlinkGoogleAccount(it) }
+                }) {
+                    Text("Unlink", color = FlashRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnlinkDialog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
     
     Scaffold(
@@ -119,7 +157,9 @@ fun ProfileScreen(
 
             UserInfoSection(
                 userData = userData,
-                onEditProfilePicture = { showNotImplementedMessage("Edit profile picture") }
+                availableEmails = availableEmails,
+                onEditProfilePicture = { showNotImplementedMessage("Edit profile picture") },
+                onUpdateEmail = onUpdateEmail
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -128,25 +168,32 @@ fun ProfileScreen(
             )
             Spacer(modifier = Modifier.height(32.dp))
 
+            LinkedAccountsSection(
+                linkedAccounts = linkedAccounts,
+                onLinkGoogleAccount = onLinkGoogleAccount,
+                onUnlinkAccount = { accountId -> showUnlinkDialog = accountId },
+                isLinkingInProgress = isLinkingInProgress
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
             AccountSection(
                 onSignOut = onSignOut,
-                onDeleteAccount = { showNotImplementedMessage("Delete account") },
-                isGoogleLinked = isGoogleLinked,
-                onLinkGoogleAccount = onLinkGoogleAccount,
-                isLinkingInProgress = isLinkingInProgress
+                onDeleteAccount = { showNotImplementedMessage("Delete account") }
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-
-
 @Composable
 private fun UserInfoSection(
     userData: UserData?,
-    onEditProfilePicture: () -> Unit = {}
+    availableEmails: List<String> = emptyList(),
+    onEditProfilePicture: () -> Unit = {},
+    onUpdateEmail: (String) -> Unit = {}
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -185,11 +232,45 @@ private fun UserInfoSection(
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = userData?.email ?: "No email",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        
+        Box {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable(enabled = availableEmails.size > 1) { expanded = true }
+                    .padding(4.dp)
+            ) {
+                Text(
+                    text = userData?.email ?: "No email",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (availableEmails.size > 1) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Change email",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+            
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                availableEmails.forEach { email ->
+                    DropdownMenuItem(
+                        text = { Text(text = email) },
+                        onClick = {
+                            onUpdateEmail(email)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -234,12 +315,95 @@ private fun PreferencesSection(
 }
 
 @Composable
+private fun LinkedAccountsSection(
+    linkedAccounts: List<com.kotlin.flashlearn.domain.model.LinkedAccount>,
+    onLinkGoogleAccount: () -> Unit,
+    onUnlinkAccount: (String) -> Unit,
+    isLinkingInProgress: Boolean
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "LINKED ACCOUNTS",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+        )
+
+        // Add specific "Link Google" button always visible to allow adding MORE accounts
+        ProfileRowNavigation(
+            icon = Icons.Default.Link,
+            text = if (isLinkingInProgress) "Linking..." else "Link Google Account",
+            onClick = onLinkGoogleAccount
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // List existing linked accounts
+        linkedAccounts.forEach { account ->
+            LinkedAccountRow(
+                email = account.email,
+                onUnlink = { onUnlinkAccount(account.accountId) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun LinkedAccountRow(
+    email: String,
+    onUnlink: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { }, // Non-clickable card, but row elements are
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = null,
+                tint = Color(0xFF4CAF50),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                 Text(
+                    text = "Google",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            androidx.compose.material3.IconButton(onClick = onUnlink) {
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = "Unlink",
+                    tint = FlashRed
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun AccountSection(
     onSignOut: () -> Unit,
-    onDeleteAccount: () -> Unit = {},
-    isGoogleLinked: Boolean = false,
-    onLinkGoogleAccount: () -> Unit = {},
-    isLinkingInProgress: Boolean = false
+    onDeleteAccount: () -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -249,24 +413,6 @@ private fun AccountSection(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
-        
-        // Link Google Account
-        if (isGoogleLinked) {
-            ProfileRowInfo(
-                icon = Icons.Default.Check,
-                text = "Google Account Linked",
-                iconTint = Color(0xFF4CAF50),
-                textColor = Color(0xFF4CAF50)
-            )
-        } else {
-            ProfileRowNavigation(
-                icon = Icons.Default.Link,
-                text = if (isLinkingInProgress) "Linking..." else "Link Google Account",
-                onClick = onLinkGoogleAccount
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(12.dp))
         
         ProfileRowNavigation(
             icon = Icons.AutoMirrored.Filled.ExitToApp,
@@ -451,3 +597,7 @@ private fun ProfileRowSwitch(
         }
     }
 }
+
+
+
+

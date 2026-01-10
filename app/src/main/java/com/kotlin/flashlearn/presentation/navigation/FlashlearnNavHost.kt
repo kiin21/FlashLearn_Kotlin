@@ -66,9 +66,10 @@ fun FlashlearnNavHost(
             val state by viewModel.state.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
 
-            // Check if already signed in
+            // Check if already signed in and restore session (checks for linked accounts)
             LaunchedEffect(key1 = Unit) {
-                if (authRepository.getSignedInUser() != null) {
+                val userData = authRepository.restoreSession()
+                if (userData != null) {
                     navController.navigate(Route.Home.route) {
                         popUpTo(Route.SignIn.route) { inclusive = true }
                     }
@@ -438,7 +439,8 @@ fun FlashlearnNavHost(
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
             var isLinkingInProgress by remember { mutableStateOf(false) }
-            var linkedProviders by remember { mutableStateOf<List<String>>(emptyList()) }
+            // Using LinkedAccount objects now
+            var linkedAccounts by remember { mutableStateOf<List<com.kotlin.flashlearn.domain.model.LinkedAccount>>(emptyList()) }
             var currentUserData by remember { mutableStateOf(authRepository.getSignedInUser()) }
             val currentUserId = currentUserData?.userId
 
@@ -447,7 +449,8 @@ fun FlashlearnNavHost(
                 currentUserId?.let { userId ->
                     scope.launch {
                         val user = userRepository.getUser(userId)
-                        linkedProviders = user?.linkedProviders ?: emptyList()
+                        // Use the new list, or helper to convert if needed (for migration could check both? For now clean slate)
+                        linkedAccounts = user?.linkedGoogleAccounts ?: emptyList() 
                     }
                 }
             }
@@ -466,12 +469,11 @@ fun FlashlearnNavHost(
                                             "Google account linked successfully!",
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        // Refresh linked providers and user data
+                                        // Refresh state
                                         currentUserId?.let { userId ->
                                             val user = userRepository.getUser(userId)
-                                            linkedProviders = user?.linkedProviders ?: emptyList()
+                                            linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
                                         }
-                                        // Refresh user data to show new email
                                         currentUserData = authRepository.getSignedInUser()
                                         isLinkingInProgress = false
                                     },
@@ -494,7 +496,7 @@ fun FlashlearnNavHost(
 
             ProfileScreen(
                 userData = currentUserData,
-                isGoogleLinked = linkedProviders.contains("google.com"),
+                linkedAccounts = linkedAccounts, // Pass the list
                 isLinkingInProgress = isLinkingInProgress,
                 onLinkGoogleAccount = {
                     scope.launch {
@@ -519,6 +521,46 @@ fun FlashlearnNavHost(
                                 isLinkingInProgress = false
                             }
                         )
+                    }
+                },
+                onUnlinkGoogleAccount = { googleId -> // Accepts ID now
+                    scope.launch {
+                        authRepository.unlinkGoogleAccount(googleId).fold(
+                            onSuccess = {
+                                Toast.makeText(
+                                    context,
+                                    "Account unlinked successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // Refresh state
+                                currentUserId?.let { userId ->
+                                    val user = userRepository.getUser(userId)
+                                    linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
+                                }
+                                currentUserData = authRepository.getSignedInUser()
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(
+                                    context,
+                                    "Unlinking failed: ${error.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+                },
+                onUpdateEmail = { newEmail ->
+                    scope.launch {
+                        currentUserId?.let { userId ->
+                            try {
+                                userRepository.updateEmail(userId, newEmail)
+                                // Refresh user data locally
+                                currentUserData = currentUserData?.copy(email = newEmail)
+                                Toast.makeText(context, "Primary email updated", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Failed to update email: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 },
                 onSignOut = {

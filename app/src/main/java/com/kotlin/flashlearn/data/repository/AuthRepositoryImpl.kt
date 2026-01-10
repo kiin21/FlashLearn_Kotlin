@@ -190,19 +190,36 @@ class AuthRepositoryImpl @Inject constructor(
             val firebaseUser = authResult.user ?: throw Exception("Google sign in failed")
             
             // Check if this Google account is already linked to another user
+            // Use new query method that checks the array
             val existingLinkedUser = userRepository.getUserByGoogleId(firebaseUser.uid)
             if (existingLinkedUser != null && existingLinkedUser.userId != currentUser.userId) {
+                // If it's the SAME user, we might want to just update info? 
+                // Currently throw error if linked to ANOTHER user.
                 throw Exception("This Google account is already linked to another user")
+            }
+            
+            // Check if already linked to CURRENT user (prevent duplicates)
+            val isAlreadyLinked = currentUserData?.let { 
+                // We need to fetch fresh user data to be sure, but for now check repo
+                val user = userRepository.getUser(it.userId)
+                user?.googleIds?.contains(firebaseUser.uid) == true
+            } ?: false
+            
+            if (isAlreadyLinked) {
+                 throw Exception("This Google account is already linked to your account")
             }
             
             // Link Google to current user
             userRepository.linkGoogleAccount(
                 userId = currentUser.userId,
                 googleId = firebaseUser.uid,
-                email = firebaseUser.email
+                email = firebaseUser.email ?: ""
             )
             
-            // Update currentUserData with new email
+            // Update currentUserData with new email? 
+            // If we have multiple emails, which one is primary? 
+            // For now, let's keep the main email as the LAST linked one, or just don't change it if it exists.
+            // Let's update it to provide feedback.
             currentUserData = currentUser.copy(
                 email = firebaseUser.email
             )
@@ -216,19 +233,87 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override fun getLinkedProviders(): List<String> {
-        // For Firebase Auth users
-        val firebaseProviders = auth.currentUser?.providerData?.map { it.providerId } ?: emptyList()
-        if (firebaseProviders.isNotEmpty()) {
-            return firebaseProviders.filter { it != "firebase" }
-        }
-        
-        // For username/password users, we'd need to check Firestore
-        // This would require making it a suspend function or caching the user
+        // This is deprecated/unused now that we use the list of objects.
+        // But for completeness:
         return emptyList()
+    }
+
+    override suspend fun unlinkGoogleAccount(googleId: String): Result<Unit> {
+        return runCatching {
+            val currentUser = currentUserData ?: throw Exception("Not signed in")
+            
+            // Unlink in Firestore
+            userRepository.unlinkGoogleAccount(currentUser.userId, googleId)
+            
+            // Sign out from Google/Firebase to clear session IF it matches the current session?
+            // If we have multiple accounts, we only sign out if we are currently "using" that credential 
+            // or if we just want to be safe.
+            // Let's sign out to ensure clean state if the user was using THIS google account.
+            // But how do we know?
+            // For safety, let's sign out of Firebase Auth if the current Firebase User has this UID.
+            if (auth.currentUser?.uid == googleId) {
+                try {
+                    oneTapClient.signOut().await()
+                    auth.signOut()
+                } catch (e: Exception) {
+                    android.util.Log.w("UnlinkGoogle", "Sign out failed: ${e.message}")
+                }
+            }
+            
+            // Update local user data
+            // If we removed the email that was set as primary, what do we do?
+            // ideally fetch fresh user data.
+            // For now, if email matches, clear it? Or leave it? 
+            // Let's leave it, ProfileScreen should refresh from Firestore.
+            
+            Unit
+        }
     }
 
     override fun setCurrentUser(userData: UserData?) {
         currentUserData = userData
+    }
+
+    override suspend fun restoreSession(): UserData? {
+        // If we already have in-memory user, return it
+        currentUserData?.let { return it }
+        
+        // Check if Firebase Auth has a persisted Google user
+        val firebaseUser = auth.currentUser ?: return null
+        
+        android.util.Log.d("RestoreSession", "Firebase user found: ${firebaseUser.uid}")
+        
+        // Check if this Google account is linked to a username/password account
+        val linkedUser = try {
+            userRepository.getUserByGoogleId(firebaseUser.uid)
+        } catch (e: Exception) {
+            android.util.Log.e("RestoreSession", "Failed to check linked user: ${e.message}")
+            null
+        }
+        
+        return if (linkedUser != null) {
+            android.util.Log.d("RestoreSession", "Found linked user: ${linkedUser.userId}, username: ${linkedUser.loginUsername}")
+            // Use the linked user's data (master username/password account)
+            val userData = UserData(
+                userId = linkedUser.userId,
+                username = linkedUser.loginUsername ?: linkedUser.displayName,
+                profilePictureUrl = linkedUser.photoUrl,
+                email = linkedUser.email
+            )
+            currentUserData = userData
+            userData
+        } else {
+            android.util.Log.d("RestoreSession", "No linked user, using Firebase user directly")
+            // Pure Google user - use Firebase user data
+            val userData = UserData(
+                userId = firebaseUser.uid,
+                username = firebaseUser.displayName,
+                profilePictureUrl = firebaseUser.photoUrl?.toString(),
+                email = firebaseUser.email
+            )
+            currentUserData = userData
+            userData
+        }
     }
 
     private fun buildSignInRequest(): BeginSignInRequest {

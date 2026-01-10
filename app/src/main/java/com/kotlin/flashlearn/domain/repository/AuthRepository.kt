@@ -41,8 +41,15 @@ interface AuthRepository {
     // Account Linking
     suspend fun linkGoogleAccount(): Result<IntentSender?>
     suspend fun linkGoogleAccountWithIntent(intent: Intent): Result<Unit>
+    suspend fun unlinkGoogleAccount(googleId: String): Result<Unit>
     fun getLinkedProviders(): List<String>
     
     // Session management for custom auth
     fun setCurrentUser(userData: UserData?)
+    
+    /**
+     * Restores session on app start. Checks if Firebase Google user has a linked account.
+     * @return UserData if session restored, null otherwise.
+     */
+    suspend fun restoreSession(): UserData?
 }
