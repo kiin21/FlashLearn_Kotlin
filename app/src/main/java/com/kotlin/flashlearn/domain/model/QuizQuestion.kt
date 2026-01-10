@@ -34,4 +34,32 @@ sealed class QuizQuestion {
         override val flashcard: Flashcard,
         val hint: String? = null
     ) : QuizQuestion()
+
+    // --- New VSTEP-inspired types ---
+    /**
+     * Writing skill: reorder segments to build the sentence.
+     */
+    data class SentenceBuilder(
+        override val flashcard: Flashcard,
+        val scrambledSegments: List<String>,
+        val correctSentence: String
+    ) : QuizQuestion()
+
+    /**
+     * Reading skill: choose the correct word to fill the blank.
+     */
+    data class ContextualGapFill(
+        override val flashcard: Flashcard,
+        val sentenceWithBlank: String,
+        val options: List<String>,
+        val correctOptionIndex: Int
+    ) : QuizQuestion()
+
+    /**
+     * Listening skill: listen and type the word.
+     */
+    data class Dictation(
+        override val flashcard: Flashcard,
+        val audioUrl: String
+    ) : QuizQuestion()
 }
