@@ -225,5 +225,7 @@
     <string name="vietnamese">Tiếng Việt</string>
     
     <!-- Snackbar Messages -->
+    <string name="general">General</string>
+    <string name="danger_zone">Danger Zone</string>
     <string name="feature_coming_soon">%1$s is coming soon!</string>
 </resources>

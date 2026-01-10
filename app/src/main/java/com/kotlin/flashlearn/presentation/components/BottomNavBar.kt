@@ -50,6 +50,7 @@ fun BottomNavBar(
                     )
                 },
                 label = { Text(text = label) },
+                alwaysShowLabel = true,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = FlashRed,
                     selectedTextColor = FlashRed,
