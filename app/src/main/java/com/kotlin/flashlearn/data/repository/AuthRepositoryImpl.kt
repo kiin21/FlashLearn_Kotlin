@@ -316,6 +316,19 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteAccount(): Result<Unit> = runCatching {
+        val userId = currentUserData?.userId ?: throw Exception("No user logged in")
+        
+        // Delete user data from Firestore
+        userRepository.deleteUser(userId)
+        
+        // Try to delete Firebase Auth user if exists
+        auth.currentUser?.delete()?.await()
+        
+        // Clear local session
+        currentUserData = null
+    }
+
     private fun buildSignInRequest(): BeginSignInRequest {
         return BeginSignInRequest.Builder()
             .setGoogleIdTokenRequestOptions(

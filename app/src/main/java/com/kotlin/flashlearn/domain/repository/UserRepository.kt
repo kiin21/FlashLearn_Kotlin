@@ -20,4 +20,5 @@ interface UserRepository {
     suspend fun unlinkGoogleAccount(userId: String, googleId: String)
     suspend fun updateEmail(userId: String, email: String)
     suspend fun uploadProfilePicture(userId: String, uriString: String): String
+    suspend fun deleteUser(userId: String)
 }

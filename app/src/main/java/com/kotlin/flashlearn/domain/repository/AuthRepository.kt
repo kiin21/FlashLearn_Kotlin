@@ -52,4 +52,9 @@ interface AuthRepository {
      * @return UserData if session restored, null otherwise.
      */
     suspend fun restoreSession(): UserData?
+    
+    /**
+     * Deletes the current user's account and all associated data.
+     */
+    suspend fun deleteAccount(): Result<Unit>
 }

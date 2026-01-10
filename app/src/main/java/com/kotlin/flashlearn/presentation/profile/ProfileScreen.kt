@@ -83,12 +83,14 @@ fun ProfileScreen(
     onUnlinkGoogleAccount: (String) -> Unit = {},
     onUpdateEmail: (String) -> Unit = {},
     onUpdateProfilePicture: (android.net.Uri) -> Unit = {},
+    onDeleteAccount: () -> Unit = {},
     isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -131,6 +133,27 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showUnlinkDialog = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
+    if (showDeleteAccountDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteAccountDialog = false
+                    onDeleteAccount()
+                }) {
+                    Text("Delete", color = FlashRed)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) {
                     Text("Cancel")
                 }
             }
@@ -197,7 +220,7 @@ fun ProfileScreen(
 
             AccountSection(
                 onSignOut = onSignOut,
-                onDeleteAccount = { showNotImplementedMessage("Delete account") }
+                onDeleteAccount = { showDeleteAccountDialog = true }
             )
             Spacer(modifier = Modifier.height(32.dp))
         }

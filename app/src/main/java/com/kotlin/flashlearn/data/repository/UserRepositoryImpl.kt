@@ -124,4 +124,22 @@ class UserRepositoryImpl @Inject constructor(
         
         return downloadUrl
     }
+
+    override suspend fun deleteUser(userId: String) {
+        // Delete subcollections first (favoriteTopics, upvotedTopics)
+        val favoriteTopicsRef = usersCollection.document(userId).collection("favoriteTopics")
+        val favoriteTopics = favoriteTopicsRef.get().await()
+        for (doc in favoriteTopics.documents) {
+            doc.reference.delete().await()
+        }
+        
+        val upvotedTopicsRef = usersCollection.document(userId).collection("upvotedTopics")
+        val upvotedTopics = upvotedTopicsRef.get().await()
+        for (doc in upvotedTopics.documents) {
+            doc.reference.delete().await()
+        }
+        
+        // Delete user document
+        usersCollection.document(userId).delete().await()
+    }
 }

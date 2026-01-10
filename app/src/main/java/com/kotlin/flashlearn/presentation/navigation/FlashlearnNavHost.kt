@@ -579,6 +579,21 @@ fun FlashlearnNavHost(
                         }
                     }
                 },
+                onDeleteAccount = {
+                    scope.launch {
+                        authRepository.deleteAccount().fold(
+                            onSuccess = {
+                                Toast.makeText(context, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                                navController.navigate(Route.SignIn.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(context, "Delete failed: ${error.message}", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
+                },
                 onSignOut = {
                     scope.launch {
                         authRepository.signOut()
