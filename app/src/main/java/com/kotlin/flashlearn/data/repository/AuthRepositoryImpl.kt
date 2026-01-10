@@ -48,11 +48,20 @@ class AuthRepositoryImpl @Inject constructor(
             val authResult = auth.signInWithCredential(googleCredentials).await()
             
             val firebaseUser = authResult.user ?: throw Exception("User is null after sign in")
+            android.util.Log.d("GoogleSignIn", "Firebase Google UID: ${firebaseUser.uid}")
             
             // Check if this Google account is linked to an existing user
-            val existingUser = userRepository.getUserByGoogleId(firebaseUser.uid)
+            android.util.Log.d("GoogleSignIn", "Checking for linked user with googleId: ${firebaseUser.uid}")
+            val existingUser = try {
+                userRepository.getUserByGoogleId(firebaseUser.uid)
+            } catch (e: Exception) {
+                android.util.Log.e("GoogleSignIn", "getUserByGoogleId failed: ${e.message}", e)
+                null
+            }
+            android.util.Log.d("GoogleSignIn", "Existing linked user: ${existingUser?.userId}")
             
             if (existingUser != null) {
+                android.util.Log.d("GoogleSignIn", "Found linked user! Logging in as: ${existingUser.userId}")
                 // Return linked user
                 val userData = UserData(
                     userId = existingUser.userId,
@@ -63,6 +72,7 @@ class AuthRepositoryImpl @Inject constructor(
                 currentUserData = userData
                 userData
             } else {
+                android.util.Log.d("GoogleSignIn", "No linked user found. Creating new user with UID: ${firebaseUser.uid}")
                 // New Google user - create with Firebase UID
                 val userData = UserData(
                     userId = firebaseUser.uid,
@@ -74,6 +84,7 @@ class AuthRepositoryImpl @Inject constructor(
                 userData
             }
         }.onFailure { 
+            android.util.Log.e("GoogleSignIn", "signInWithIntent failed: ${it.message}", it)
             if (it is CancellationException) throw it 
         }
     }
@@ -190,7 +201,16 @@ class AuthRepositoryImpl @Inject constructor(
                 googleId = firebaseUser.uid,
                 email = firebaseUser.email
             )
+            
+            // Update currentUserData with new email
+            currentUserData = currentUser.copy(
+                email = firebaseUser.email
+            )
+            
+            android.util.Log.d("LinkGoogle", "Successfully linked! Email updated to: ${firebaseUser.email}")
+            Unit
         }.onFailure {
+            android.util.Log.e("LinkGoogle", "Link failed: ${it.message}", it)
             if (it is CancellationException) throw it
         }
     }

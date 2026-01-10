@@ -8,7 +8,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +51,7 @@ import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 fun FlashlearnNavHost(
     navController: NavHostController,
     authRepository: AuthRepository,
+    userRepository: com.kotlin.flashlearn.domain.repository.UserRepository,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -433,9 +437,90 @@ fun FlashlearnNavHost(
 
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
+            var isLinkingInProgress by remember { mutableStateOf(false) }
+            var linkedProviders by remember { mutableStateOf<List<String>>(emptyList()) }
+            var currentUserData by remember { mutableStateOf(authRepository.getSignedInUser()) }
+            val currentUserId = currentUserData?.userId
+
+            // Fetch linked providers
+            LaunchedEffect(key1 = currentUserId) {
+                currentUserId?.let { userId ->
+                    scope.launch {
+                        val user = userRepository.getUser(userId)
+                        linkedProviders = user?.linkedProviders ?: emptyList()
+                    }
+                }
+            }
+
+            val linkGoogleLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        result.data?.let { intent ->
+                            scope.launch {
+                                isLinkingInProgress = true
+                                authRepository.linkGoogleAccountWithIntent(intent).fold(
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "Google account linked successfully!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        // Refresh linked providers and user data
+                                        currentUserId?.let { userId ->
+                                            val user = userRepository.getUser(userId)
+                                            linkedProviders = user?.linkedProviders ?: emptyList()
+                                        }
+                                        // Refresh user data to show new email
+                                        currentUserData = authRepository.getSignedInUser()
+                                        isLinkingInProgress = false
+                                    },
+                                    onFailure = { error ->
+                                        Toast.makeText(
+                                            context,
+                                            "Linking failed: ${error.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        isLinkingInProgress = false
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        isLinkingInProgress = false
+                    }
+                }
+            )
 
             ProfileScreen(
-                userData = authRepository.getSignedInUser(),
+                userData = currentUserData,
+                isGoogleLinked = linkedProviders.contains("google.com"),
+                isLinkingInProgress = isLinkingInProgress,
+                onLinkGoogleAccount = {
+                    scope.launch {
+                        isLinkingInProgress = true
+                        authRepository.linkGoogleAccount().fold(
+                            onSuccess = { intentSender ->
+                                intentSender?.let {
+                                    linkGoogleLauncher.launch(
+                                        IntentSenderRequest.Builder(it).build()
+                                    )
+                                } ?: run {
+                                    Toast.makeText(context, "Linking failed", Toast.LENGTH_SHORT).show()
+                                    isLinkingInProgress = false
+                                }
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(
+                                    context,
+                                    "Linking failed: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                isLinkingInProgress = false
+                            }
+                        )
+                    }
+                },
                 onSignOut = {
                     scope.launch {
                         authRepository.signOut()

@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.UserRepository
 import com.kotlin.flashlearn.presentation.navigation.FlashlearnNavHost
 import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,6 +21,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
+    
+    @Inject
+    lateinit var userRepository: UserRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +38,8 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     FlashlearnNavHost(
                         navController = navController,
-                        authRepository = authRepository
+                        authRepository = authRepository,
+                        userRepository = userRepository
                     )
                 }
             }

@@ -18,10 +18,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
@@ -70,6 +72,9 @@ fun ProfileScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
+    isGoogleLinked: Boolean = false,
+    onLinkGoogleAccount: () -> Unit = {},
+    isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -96,7 +101,7 @@ fun ProfileScreen(
                 }
             )
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = modifier
@@ -125,7 +130,10 @@ fun ProfileScreen(
 
             AccountSection(
                 onSignOut = onSignOut,
-                onDeleteAccount = { showNotImplementedMessage("Delete account") }
+                onDeleteAccount = { showNotImplementedMessage("Delete account") },
+                isGoogleLinked = isGoogleLinked,
+                onLinkGoogleAccount = onLinkGoogleAccount,
+                isLinkingInProgress = isLinkingInProgress
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -156,8 +164,8 @@ private fun UserInfoSection(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(FlashRed)
-                    .border(2.dp, Color.White, CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
                     .align(Alignment.BottomEnd)
                     .clickable { onEditProfilePicture() },
                 contentAlignment = Alignment.Center
@@ -180,7 +188,7 @@ private fun UserInfoSection(
         Text(
             text = userData?.email ?: "No email",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -228,7 +236,10 @@ private fun PreferencesSection(
 @Composable
 private fun AccountSection(
     onSignOut: () -> Unit,
-    onDeleteAccount: () -> Unit = {}
+    onDeleteAccount: () -> Unit = {},
+    isGoogleLinked: Boolean = false,
+    onLinkGoogleAccount: () -> Unit = {},
+    isLinkingInProgress: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -238,6 +249,24 @@ private fun AccountSection(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
+        
+        // Link Google Account
+        if (isGoogleLinked) {
+            ProfileRowInfo(
+                icon = Icons.Default.Check,
+                text = "Google Account Linked",
+                iconTint = Color(0xFF4CAF50),
+                textColor = Color(0xFF4CAF50)
+            )
+        } else {
+            ProfileRowNavigation(
+                icon = Icons.Default.Link,
+                text = if (isLinkingInProgress) "Linking..." else "Link Google Account",
+                onClick = onLinkGoogleAccount
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
         
         ProfileRowNavigation(
             icon = Icons.AutoMirrored.Filled.ExitToApp,
@@ -312,6 +341,51 @@ private fun ProfileRowNavigation(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileRowInfo(
+    icon: ImageVector,
+    text: String,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    iconTint: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = text,
+                    tint = iconTint,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = textColor
             )
         }
     }

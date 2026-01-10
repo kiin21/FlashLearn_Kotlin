@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -87,23 +88,30 @@ fun SignInScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
-        // Header Image Area (Pink/Red gradient placeholder)
-        Box(
+        // Header with App Logo and Welcome Title
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .background(FlashRedLight),
-            contentAlignment = Alignment.Center
+                .padding(vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Placeholder icon for image
-            Icon(
-                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
-                contentDescription = "Header Image",
-                modifier = Modifier.size(48.dp),
-                tint = FlashRed
+            // App logo
+            Image(
+                painter = painterResource(id = R.drawable.app_logo),
+                contentDescription = "FlashLearn Logo",
+                modifier = Modifier.size(100.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            // Welcome Title
+            Text(
+                text = "Welcome!",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
         }
         
@@ -112,16 +120,7 @@ fun SignInScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 32.dp)
         ) {
-            // Welcome Title
-            Text(
-                text = "Welcome!",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            
             Spacer(modifier = Modifier.height(24.dp))
             
             // Username Field
@@ -135,8 +134,8 @@ fun SignInScreen(
                 isError = state.usernameError != null,
                 supportingText = state.usernameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = FlashRed,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
@@ -159,13 +158,13 @@ fun SignInScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                            tint = Color.Gray
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = FlashRed,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
@@ -174,8 +173,8 @@ fun SignInScreen(
             // Forgot Password Link
             Text(
                 text = "Forgot password?",
-                color = FlashRed,
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { /* TODO: Implement later */ }
             )
             
@@ -189,17 +188,17 @@ fun SignInScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = FlashRed)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
                     Text(
                         text = "Login",
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -214,13 +213,13 @@ fun SignInScreen(
             ) {
                 Text(
                     text = "Not a member? ",
-                    color = Color.Gray,
-                    fontSize = 14.sp
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = "Register now",
-                    color = FlashRed,
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.clickable { onRegisterClick() }
                 )
@@ -233,13 +232,13 @@ fun SignInScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(
                     text = "  Or continue with  ",
-                    color = Color.Gray,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -252,7 +251,7 @@ fun SignInScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(40.dp),
-                        color = FlashRed
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             } else {
@@ -261,7 +260,7 @@ fun SignInScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                         .clip(RoundedCornerShape(25.dp))
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(25.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(25.dp))
                         .clickable { onSignInClick() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -278,8 +277,8 @@ fun SignInScreen(
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(
                             text = "Sign in with Google",
-                            fontSize = 14.sp,
-                            color = Color.Black
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
