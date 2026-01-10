@@ -1,5 +1,7 @@
 package com.kotlin.flashlearn.domain.model
 
+import com.kotlin.flashlearn.R
+
 /**
  * Filter options for Community screen.
  * Supports filtering by search query, VSTEP levels, and creator.
@@ -31,7 +33,7 @@ data class CommunityFilter(
  * Sort options for Community topics list.
  * All options sort in descending order (most/newest first).
  */
-enum class CommunitySortOption(val displayName: String) {
-    UPVOTES("Most Liked"),
-    NEWEST("Newest")
+enum class CommunitySortOption(val resId: Int) {
+    UPVOTES(R.string.sort_most_liked),
+    NEWEST(R.string.sort_newest)
 }

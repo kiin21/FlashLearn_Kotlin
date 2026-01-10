@@ -1,3 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FlashLearn</string>
+    
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="search">Search</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="or">Or</string>
+    <string name="close">Close</string>
+    <string name="more">More</string>
+    <string name="clear_filters">Clear filters</string>
+    <string name="guest">Guest</string>
+    <string name="no_email">No email</string>
+    <string name="coming_soon">%1$s is coming soon!</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="retry">Retry</string>
+    <string name="back">Back</string>
+    <string name="topic_not_found">Topic not found</string>
+    <string name="failed_load_topic">Failed to load topic</string>
+    <string name="failed_load_topics">Failed to load topics</string>
+    <string name="failed_load_vocabulary">Failed to load vocabulary</string>
+    <string name="failed_delete_cards">Failed to delete cards</string>
+    <string name="failed_delete_topic">Failed to delete topic</string>
+    <string name="failed_update_topic">Failed to update topic</string>
+    <string name="failed_regenerate_image">Failed to regenerate image</string>
+    <string name="failed_update_visibility">Failed to update visibility</string>
+    <string name="please_sign_in_save">Please sign in to save topics</string>
+    <string name="please_sign_in_upvote">Please sign in to upvote</string>
+    <string name="saved_success">Saved!</string>
+    <string name="removed_from_saved">Removed from saved</string>
+    <string name="failed_upvote">Failed to upvote</string>
+    <string name="please_enter_topic_name">Please enter a topic name</string>
+    <string name="please_select_word">Please select at least one word</string>
+    <string name="failed_save_flashcards">Failed to save flashcards</string>
+    
+    <!-- Sign In Screen -->
+    <string name="welcome">Welcome!</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="not_a_member">Not a member? </string>
+    <string name="register_now">Register now</string>
+    <string name="or_continue_with">Or continue with</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+    <string name="app_logo">App Logo</string>
+    <string name="google_logo">Google Logo</string>
+    
+    <!-- Register Screen -->
+    <string name="create_account">Create Account</string>
+    <string name="register">Register</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="already_have_account">Already have an account? </string>
+    <string name="sign_in">Sign in</string>
+    <string name="password_requirements">Min 8 chars, uppercase, number, special char</string>
+    
+    <!-- Home Screen -->
+    <string name="hello_greeting">Hello, %1$s!</string>
+    <string name="hello_friend">Hello, Friend!</string>
+    <string name="streak_message">Let\'s keep the streak alive.</string>
+    <string name="days">DAYS</string>
+    <string name="vstep_exam_date">VSTEP EXAM DATE</string>
+    <string name="days_left">Days Left</string>
+    <string name="daily_word">Daily Word</string>
+    <string name="view_archive">View Archive</string>
+    <string name="continue_learning">Continue Learning</string>
+    <string name="recommended_for_you">Recommended for You</string>
+    <string name="b2_level">B2 LEVEL</string>
+    <string name="pronounce">Pronounce</string>
+    <string name="pronunciation">Pronunciation</string>
+    <string name="recommended_collection">Recommended collection</string>
+    
+    <!-- Profile Screen -->
+    <string name="profile">Profile</string>
+    <string name="preferences">PREFERENCES</string>
+    <string name="notifications">Notifications</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="language">Language</string>
+    <string name="change_password">Change Password</string>
+    <string name="linked_accounts">Linked Accounts</string>
+    <string name="link_google_account">Link Google Account</string>
+    <string name="linking">Linking…</string>
+    <string name="account">ACCOUNT</string>
+    <string name="log_out">Log Out</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="google">Google</string>
+    
+    <!-- Profile Dialogs -->
+    <string name="unlink_account">Unlink Account</string>
+    <string name="unlink_account_confirm">Are you sure you want to unlink this Google account?</string>
+    <string name="unlink">Unlink</string>
+    <string name="delete_account_title">Delete Account</string>
+    <string name="delete_account_confirm">Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently deleted.</string>
+    <string name="change_password_title">Change Password</string>
+    <string name="current_password">Current Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_new_password">Confirm New Password</string>
+    <string name="change">Change</string>
+    <string name="enter_current_password">Please enter current password</string>
+    <string name="enter_new_password">Please enter new password</string>
+    <string name="passwords_not_match">Passwords do not match</string>
+    <string name="password_min_length">Password must be at least 8 characters</string>
+    <string name="password_change_failed">Failed to change password</string>
+    <string name="edit_profile_picture">Edit Profile Picture</string>
+    <string name="change_email">Change email</string>
+    
+    <!-- Topic Screen -->
+    <string name="my_collections">My Collections</string>
+    <string name="all">All</string>
+    <string name="recent">Recent</string>
+    <string name="favorites">Favorites</string>
+    <string name="filter_all">All</string>
+    <string name="filter_system">System</string>
+    <string name="filter_my_topics">My Topics</string>
+    <string name="add_new_topic">Add New Topic</string>
+    <string name="search_collections">Search your collections…</string>
+    <string name="no_topics_found_query">No topics found for \"%1$s\"</string>
+    <string name="no_filtered_topics_yet">No %1$s topics yet</string>
+    <string name="no_topics_yet_hint">No topics yet. Create your first topic!</string>
+    <string name="words">words</string>
+    <string name="cards_in_topic">Cards in this topic (%1$d)</string>
+    <string name="selected_count">%1$d Selected</string>
+    <string name="close_selection">Close Selection</string>
+    <string name="select_all">Select All</string>
+    <string name="delete_selected">Delete Selected</string>
+    <string name="edit_topic">Edit Topic</string>
+    <string name="make_private">Make Private</string>
+    <string name="make_public">Make Public</string>
+    <string name="delete_topic">Delete Topic</string>
+    <string name="save_to_my_topics">Save to My Topics</string>
+    <string name="share">Share</string>
+    <string name="vocabulary_collection">Vocabulary collection</string>
+    <string name="study_now">Study Now</string>
+    <string name="take_quiz">Take Quiz</string>
+    <string name="search_cards">Search cards…</string>
+    <string name="no_cards_in_topic">No cards in this topic</string>
+    <string name="no_cards_found">No cards found for \"%1$s\"</string>
+    <string name="clear_search">Clear search</string>
+    <string name="selected_txt">Selected</string>
+    <string name="select_txt">Select</string>
+    
+    <!-- Add Word Screen -->
+    <string name="add_topic">Add Topic</string>
+    <string name="topic_name">Topic Name *</string>
+    <string name="description_optional">Description (Optional)</string>
+    <string name="selected_words">Selected Words (%1$d)</string>
+    <string name="search_for_word">Search for a word</string>
+    <string name="get_words_by_topic">Get words by topic</string>
+    <string name="or_enter_manually">Or enter manually:</string>
+    <string name="available_words">Available Words (%1$d)</string>
+    <string name="create_new_topic">Create New Topic</string>
+    <string name="topic_created_success">Topic created successfully!</string>
+    <string name="create_topic_words">Create Topic (%1$d words)</string>
+    <string name="enter_topic_name">Enter topic name…</string>
+    <string name="add_description">Add description…</string>
+    <string name="type_to_search">Type to search…</string>
+    <string name="choose_topic">Choose a topic…</string>
+    <string name="topic_query_placeholder">e.g. environment, technology…</string>
+    <string name="get_button">Get</string>
+    <string name="remove">Remove</string>
+    
+    <!-- Learning Session -->
+    <string name="learning_session">Learning Session</string>
+    <string name="session_complete">Session Complete!</string>
+    <string name="great_job">Great job!</string>
+    <string name="cards_learned">Cards Learned</string>
+    <string name="accuracy">Accuracy</string>
+    <string name="time_spent">Time Spent</string>
+    <string name="continue_button">Continue</string>
+    <string name="back_to_topics">Back to Topics</string>
+    <string name="session_complete_desc">Great job! You\'ve completed this learning session.</string>
+    <string name="cards_mastered">Cards Mastered</string>
+    <string name="no_flashcards_available">No flashcards available for this topic</string>
+    <string name="study_again">Study Again</string>
+    <string name="got_it">Got It</string>
+    
+    <!-- Community Screen -->
+    <string name="community">Community</string>
+    <string name="explore">Explore</string>
+    <string name="following">Following</string>
+    <string name="followers">Followers</string>
+    <string name="search_community">Search topics, creators…</string>
+    <string name="discover">Discover</string>
+    <string name="saved">Saved</string>
+    <string name="tap_to_retry">Tap to retry</string>
+    <string name="filter">Filter</string>
+    <string name="select_sort_option">Select sort option</string>
+    <string name="no_topics_found">No topics found</string>
+    <string name="no_topics_yet">No topics yet</string>
+    <string name="no_saved_topics_yet">No saved topics yet</string>
+    <string name="adjust_filters_hint">Try adjusting your filters or search</string>
+    <string name="be_first_share_hint">Be the first to share a topic!</string>
+    <string name="bookmark_topics_hint">Bookmark topics to save them here</string>
+    <string name="sort_most_liked">Most Liked</string>
+    <string name="sort_newest">Newest</string>
+    
+    <!-- Onboarding -->
+    <string name="get_started">Get Started</string>
+    <string name="next">Next</string>
+    <string name="skip">Skip</string>
+    <string name="onboarding_title_1">Welcome to Flashlearn</string>
+    <string name="onboarding_desc_1">The ultimate tool to prepare English vocabulary for VSTEP Exam.</string>
+    <string name="onboarding_title_2">Swipe to Learn</string>
+    <string name="onboarding_desc_2">Swipe Right if you know it, Left if you don\'t. Simple and effective.</string>
+    <string name="onboarding_title_3">Create Your Collections</string>
+    <string name="onboarding_desc_3">Build your own flashcard decks and share with the community.</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_topic">Topic</string>
+    <string name="nav_community">Community</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Languages -->
+    <string name="english">English</string>
+    <string name="vietnamese">Tiếng Việt</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="general">General</string>
+    <string name="danger_zone">Danger Zone</string>
+    <string name="feature_coming_soon">%1$s is coming soon!</string>
 </resources>

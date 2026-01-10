@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.presentation.community.CommunityTopicItem
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import java.util.Locale
 
 /**
  * Topic card for Community screen.
@@ -213,10 +214,11 @@ private fun extractCategoryFromName(name: String): String? {
 /**
  * Formats count for display (e.g., 1234 -> "1.2k").
  */
+
 private fun formatCount(count: Int): String {
     return when {
-        count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
-        count >= 1_000 -> String.format("%.1fk", count / 1_000.0)
+        count >= 1_000_000 -> String.format(Locale.US, "%.1fM", count / 1_000_000.0)
+        count >= 1_000 -> String.format(Locale.US, "%.1fk", count / 1_000.0)
         else -> count.toString()
     }
 }

@@ -116,4 +116,9 @@ object AppModule {
     fun provideFavoriteRepository(
         firestore: FirebaseFirestore
     ): FavoriteRepository = FavoriteRepositoryImpl(firestore)
+    @Provides
+    @Singleton
+    fun provideLanguageManager(
+        @ApplicationContext context: Context
+    ): com.kotlin.flashlearn.util.LanguageManager = com.kotlin.flashlearn.util.LanguageManager(context)
 }

@@ -24,6 +24,8 @@ import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 
 @Composable
 fun TopicScreen(
@@ -50,7 +52,7 @@ fun TopicScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Add New Topic"
+                    contentDescription = stringResource(R.string.add_new_topic)
                 )
             }
         },
@@ -80,7 +82,7 @@ fun TopicScreen(
             SearchBar(
                 query = uiState.searchQuery,
                 onQueryChange = { viewModel.updateSearchQuery(it) },
-                placeholder = "Search your collections..."
+                placeholder = stringResource(R.string.search_collections)
             )
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -110,12 +112,12 @@ fun TopicScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = uiState.error ?: "Unknown error",
+                                text = uiState.error ?: stringResource(R.string.unknown_error),
                                 color = MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(onClick = { viewModel.loadTopics() }) {
-                                Text("Retry")
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }
@@ -128,11 +130,11 @@ fun TopicScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = if (uiState.searchQuery.isNotBlank()) 
-                                    "No topics found for \"${uiState.searchQuery}\"" 
+                                    stringResource(R.string.no_topics_found_query, uiState.searchQuery) 
                                 else if (uiState.activeFilter != TopicFilter.ALL)
-                                    "No ${uiState.activeFilter.displayName.lowercase()} topics yet"
+                                    stringResource(R.string.no_filtered_topics_yet, stringResource(uiState.activeFilter.resId).lowercase())
                                 else 
-                                    "No topics yet. Create your first topic!",
+                                    stringResource(R.string.no_topics_yet_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (uiState.searchQuery.isNotBlank() || uiState.activeFilter != TopicFilter.ALL) {
@@ -141,7 +143,7 @@ fun TopicScreen(
                                     viewModel.updateSearchQuery("")
                                     viewModel.updateFilter(TopicFilter.ALL)
                                 }) {
-                                    Text("Clear filters", color = FlashRed)
+                                    Text(stringResource(R.string.clear_filters), color = FlashRed)
                                 }
                             }
                         }
@@ -164,7 +166,7 @@ fun TopicScreen(
 @Composable
 fun TopicHeader() {
     Text(
-        text = "My Collections",
+        text = stringResource(R.string.my_collections),
         style = MaterialTheme.typography.headlineSmall,
         color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
@@ -186,7 +188,7 @@ fun FilterChipRow(
     ) {
         items(TopicFilter.entries) { filter ->
             FilterChipItem(
-                text = filter.displayName,
+                text = stringResource(filter.resId),
                 isSelected = activeFilter == filter,
                 onClick = { onFilterChange(filter) }
             )

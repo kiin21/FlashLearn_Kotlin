@@ -14,13 +14,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import com.kotlin.flashlearn.R
+
 /**
  * Filter options for Topic Screen.
  */
-enum class TopicFilter(val displayName: String) {
-    ALL("All"),
-    SYSTEM("System"),
-    MY_TOPICS("My Topics")
+enum class TopicFilter(val resId: Int) {
+    ALL(R.string.filter_all),
+    SYSTEM(R.string.filter_system),
+    MY_TOPICS(R.string.filter_my_topics)
 }
 
 /**

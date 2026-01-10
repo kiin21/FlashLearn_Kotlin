@@ -16,8 +16,10 @@ import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+import androidx.appcompat.app.AppCompatActivity
+
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
@@ -25,8 +27,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userRepository: UserRepository
 
+    @Inject
+    lateinit var languageManager: com.kotlin.flashlearn.util.LanguageManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        languageManager.applySavedLanguage()
         enableEdgeToEdge()
         
         setContent {    
@@ -39,7 +45,8 @@ class MainActivity : ComponentActivity() {
                     FlashlearnNavHost(
                         navController = navController,
                         authRepository = authRepository,
-                        userRepository = userRepository
+                        userRepository = userRepository,
+                        languageManager = languageManager
                     )
                 }
             }
