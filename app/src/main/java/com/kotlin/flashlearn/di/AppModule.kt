@@ -70,9 +70,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService = 
+        com.kotlin.flashlearn.data.remote.CloudinaryService()
+
+    @Provides
+    @Singleton
     fun provideUserRepository(
-        firestore: FirebaseFirestore
-    ): UserRepository = UserRepositoryImpl(firestore)
+        firestore: FirebaseFirestore,
+        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
+    ): UserRepository = UserRepositoryImpl(firestore, cloudinaryService)
 
     @Provides
     @Singleton

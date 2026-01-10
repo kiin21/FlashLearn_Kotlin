@@ -563,6 +563,22 @@ fun FlashlearnNavHost(
                         }
                     }
                 },
+                onUpdateProfilePicture = { uri ->
+                    scope.launch {
+                        currentUserId?.let { userId ->
+                            try {
+                                Toast.makeText(context, "Uploading image...", Toast.LENGTH_SHORT).show()
+                                val downloadUrl = userRepository.uploadProfilePicture(userId, uri.toString())
+                                
+                                // Refresh user data locally
+                                currentUserData = currentUserData?.copy(profilePictureUrl = downloadUrl)
+                                Toast.makeText(context, "Profile picture updated", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                },
                 onSignOut = {
                     scope.launch {
                         authRepository.signOut()

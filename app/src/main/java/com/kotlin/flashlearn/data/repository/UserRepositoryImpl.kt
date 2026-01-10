@@ -10,11 +10,12 @@ import javax.inject.Singleton
 
 @Singleton
 class UserRepositoryImpl @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
 ) : UserRepository {
 
     private val usersCollection = firestore.collection("users")
-
+    
     override suspend fun isNewUser(userId: String): Boolean {
         val document = usersCollection.document(userId)
             .get(Source.SERVER)
@@ -113,5 +114,14 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun updateEmail(userId: String, email: String) {
         usersCollection.document(userId).update("email", email).await()
+    }
+
+    override suspend fun uploadProfilePicture(userId: String, uriString: String): String {
+        val uri = android.net.Uri.parse(uriString)
+        val downloadUrl = cloudinaryService.uploadProfileImage(uri, userId)
+        
+        usersCollection.document(userId).update("photoUrl", downloadUrl).await()
+        
+        return downloadUrl
     }
 }

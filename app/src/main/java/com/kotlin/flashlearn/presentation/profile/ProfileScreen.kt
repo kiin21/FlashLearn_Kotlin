@@ -66,6 +66,9 @@ import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import kotlinx.coroutines.launch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +82,7 @@ fun ProfileScreen(
     onLinkGoogleAccount: () -> Unit = {},
     onUnlinkGoogleAccount: (String) -> Unit = {},
     onUpdateEmail: (String) -> Unit = {},
+    onUpdateProfilePicture: (android.net.Uri) -> Unit = {},
     isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -86,6 +90,15 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
     
+    // Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onUpdateProfilePicture(uri)
+        }
+    }
+
     // Derive available emails from linked accounts + current email if not in list
     val currentEmail = userData?.email
     val availableEmails = remember(linkedAccounts, currentEmail) {
@@ -158,7 +171,13 @@ fun ProfileScreen(
             UserInfoSection(
                 userData = userData,
                 availableEmails = availableEmails,
-                onEditProfilePicture = { showNotImplementedMessage("Edit profile picture") },
+                onEditProfilePicture = { 
+                    imagePickerLauncher.launch(
+                        androidx.activity.result.PickVisualMediaRequest(
+                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                        )
+                    )
+                },
                 onUpdateEmail = onUpdateEmail
             )
             Spacer(modifier = Modifier.height(32.dp))
