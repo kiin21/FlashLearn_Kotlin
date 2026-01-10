@@ -87,6 +87,11 @@ android {
         buildConfigField("String", "NEON_SQL_BASE_URL", "\"${neonSqlBaseUrl}\"")
         buildConfigField("String", "NEON_CONNECTION_STRING", "\"${neonConnectionString}\"")
         buildConfigField("String", "PIXABAY_API_KEY", "\"${props.getProperty('PIXABAY_API_KEY')}\"")
+        
+        // Cloudinary
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${props.getProperty('CLOUDINARY_CLOUD_NAME', '')}\"")
+        buildConfigField("String", "CLOUDINARY_API_KEY", "\"${props.getProperty('CLOUDINARY_API_KEY', '')}\"")
+        buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${props.getProperty('CLOUDINARY_API_SECRET', '')}\"")
     }
 }
 
@@ -119,6 +124,9 @@ dependencies {
     implementation libs.firebase.firestore
     implementation libs.firebase.auth.ktx
     implementation libs.play.services.auth
+    
+    // Cloudinary for image uploads
+    implementation("com.cloudinary:cloudinary-android:2.5.0")
 
     // Image Loading
     implementation libs.coil.compose
@@ -139,6 +147,10 @@ dependencies {
     implementation libs.workmanager.runtime
     implementation libs.hilt.work
     ksp libs.hilt.work.compiler
+
+    // Auth Utils
+    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.0.0")
 
     // Testing
     testImplementation libs.junit

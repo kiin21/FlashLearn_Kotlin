@@ -1,11 +1,9 @@
-package com.kotlin.flashlearn.presentation.sign_in
+package com.kotlin.flashlearn.presentation.register
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,12 +19,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -55,33 +52,23 @@ import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 
-/**
- * Sign In screen composable.
- * Follows best practices:
- * - Stateless composable (state hoisting)
- * - Uses Material 3 components
- * - Side effects handled properly with LaunchedEffect
- */
 @Composable
-fun SignInScreen(
-    state: SignInState,
-    onSignInClick: () -> Unit,
+fun RegisterScreen(
+    state: RegisterState,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
     onRegisterClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var passwordVisible by remember { mutableStateOf(false) }
-    
-    LaunchedEffect(key1 = state.signInError) {
-        state.signInError?.let { error ->
-            Toast.makeText(
-                context,
-                error,
-                Toast.LENGTH_LONG
-            ).show()
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = state.generalError) {
+        state.generalError?.let { error ->
+            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -92,37 +79,52 @@ fun SignInScreen(
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
-        // Header with App Logo and Welcome Title
+        // Header
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // App logo
+            // Back button at top-left
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Logo and title centered
             Image(
                 painter = painterResource(id = R.drawable.app_logo),
                 contentDescription = "FlashLearn Logo",
                 modifier = Modifier.size(100.dp)
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            // Welcome Title
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Welcome!",
+                text = "Create Account",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        
-        // Content
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
+                .padding(top = 32.dp)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            
             // Username Field
             OutlinedTextField(
                 value = state.username,
@@ -138,9 +140,9 @@ fun SignInScreen(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // Password Field
             OutlinedTextField(
                 value = state.password,
@@ -167,22 +169,49 @@ fun SignInScreen(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Forgot Password Link
+
+            // Password requirements hint
             Text(
-                text = "Forgot password?",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { /* TODO: Implement later */ }
+                text = "Min 8 chars, uppercase, number, special char",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Login Button
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Confirm Password Field
+            OutlinedTextField(
+                value = state.confirmPassword,
+                onValueChange = onConfirmPasswordChange,
+                label = { Text("Confirm Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                isError = state.confirmPasswordError != null,
+                supportingText = state.confirmPasswordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                            tint = Color.Gray
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Register Button
             Button(
-                onClick = onLoginClick,
+                onClick = onRegisterClick,
                 enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,93 +226,34 @@ fun SignInScreen(
                     )
                 } else {
                     Text(
-                        text = "Login",
+                        text = "Register",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Register Link
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Already have account link
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center
             ) {
                 Text(
-                    text = "Not a member? ",
+                    text = "Already have an account? ",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Register now",
+                    text = "Sign in",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onRegisterClick() }
+                    modifier = Modifier.clickable { onBackClick() }
                 )
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Divider with "Or continue with"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
-                Text(
-                    text = "  Or continue with  ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Google Sign In Button
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(40.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(25.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(25.dp))
-                        .clickable { onSignInClick() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        // Google logo with proper colors
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = "Google Logo",
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(
-                            text = "Sign in with Google",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
