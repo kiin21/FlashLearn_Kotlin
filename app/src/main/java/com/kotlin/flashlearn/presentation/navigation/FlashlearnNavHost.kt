@@ -211,8 +211,14 @@ fun FlashlearnNavHost(
                 onStudyNow = {
                     navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
                 },
-                onTakeQuiz = {
-                    navController.navigate(Route.QuizSession.createRoute(topicId))
+                onTakeQuiz = { config ->
+                    navController.navigate(
+                        Route.QuizSession.createRoute(
+                            topicId = topicId,
+                            mode = config.mode,
+                            count = config.questionCount
+                        )
+                    )
                 },
                 onToggleSelectionMode = viewModel::toggleSelectionMode,
                 onToggleCardSelection = viewModel::toggleCardSelection,
@@ -392,10 +398,47 @@ fun FlashlearnNavHost(
 
         composable(
             route = Route.QuizSession.route,
-            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("topicId") { type = NavType.StringType },
+                navArgument("mode") {
+                    type = NavType.StringType
+                    defaultValue = com.kotlin.flashlearn.domain.model.QuizMode.SPRINT.name
+                },
+                navArgument("count") {
+                    type = NavType.IntType
+                    defaultValue = 10
+                }
+            )
         ) {
             com.kotlin.flashlearn.presentation.quiz.QuizScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSummary = { topicId ->
+                    navController.navigate(Route.QuizSummary.createRoute(topicId))
+                }
+            )
+        }
+
+        composable(
+            route = Route.QuizSummary.route,
+            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            // Reuse QuizViewModel scoped to quiz session for summary data
+            val quizBackStackEntry = navController.previousBackStackEntry
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.quiz.QuizViewModel>(quizBackStackEntry!!)
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
+
+            com.kotlin.flashlearn.presentation.quiz.QuizSummaryScreen(
+                results = state.results,
+                onRestart = {
+                    navController.popBackStack(Route.QuizSession.createRoute(topicId, viewModel.currentMode, state.totalQuestions), inclusive = false)
+                },
+                onBackToTopic = {
+                    navController.navigate(Route.TopicDetail.createRoute(topicId)) {
+                        popUpTo(Route.TopicDetail.createRoute(topicId)) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
     }
