@@ -68,11 +68,20 @@ class SignInViewModel @Inject constructor(
                         val isNew = userRepository.isNewUser(userData.userId)
                         
                         if (isNew) {
-                            // Create new user
+                            // Create new user with Google account already linked
+                            val linkedAccount = com.kotlin.flashlearn.domain.model.LinkedAccount(
+                                accountId = userData.userId,
+                                email = userData.email ?: ""
+                            )
                             val newUser = User(
                                 userId = userData.userId,
                                 displayName = userData.username,
-                                photoUrl = userData.profilePictureUrl
+                                photoUrl = userData.profilePictureUrl,
+                                email = userData.email,
+                                googleId = userData.userId,
+                                googleIds = listOf(userData.userId),
+                                linkedGoogleAccounts = listOf(linkedAccount),
+                                linkedProviders = listOf("google.com")
                             )
                             userRepository.createUser(newUser)
                             

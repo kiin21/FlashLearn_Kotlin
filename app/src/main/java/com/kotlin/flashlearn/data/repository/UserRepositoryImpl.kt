@@ -63,7 +63,7 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun getUserByGoogleId(googleId: String): User? {
         return usersCollection
             .whereArrayContains("googleIds", googleId)
-            .get()
+            .get(Source.SERVER)
             .await()
             .documents.firstOrNull()
             ?.toObject(User::class.java)
@@ -126,17 +126,20 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteUser(userId: String) {
-        // Delete subcollections first (favoriteTopics, upvotedTopics)
-        val favoriteTopicsRef = usersCollection.document(userId).collection("favoriteTopics")
-        val favoriteTopics = favoriteTopicsRef.get().await()
-        for (doc in favoriteTopics.documents) {
-            doc.reference.delete().await()
+        runCatching {
+            val favoriteTopicsRef = usersCollection.document(userId).collection("favoriteTopics")
+            val favoriteTopics = favoriteTopicsRef.get().await()
+            for (doc in favoriteTopics.documents) {
+                runCatching { doc.reference.delete().await() }
+            }
         }
         
-        val upvotedTopicsRef = usersCollection.document(userId).collection("upvotedTopics")
-        val upvotedTopics = upvotedTopicsRef.get().await()
-        for (doc in upvotedTopics.documents) {
-            doc.reference.delete().await()
+        runCatching {
+            val upvotedTopicsRef = usersCollection.document(userId).collection("upvotedTopics")
+            val upvotedTopics = upvotedTopicsRef.get().await()
+            for (doc in upvotedTopics.documents) {
+                runCatching { doc.reference.delete().await() }
+            }
         }
         
         // Delete user document
