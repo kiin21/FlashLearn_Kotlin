@@ -42,7 +42,8 @@ fun UserInfoSection(
     userData: UserData?,
     availableEmails: List<String> = emptyList(),
     onEditProfilePicture: () -> Unit = {},
-    onUpdateEmail: (String) -> Unit = {}
+    onUpdateEmail: (String) -> Unit = {},
+    onViewProfilePicture: () -> Unit = {}
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -57,7 +58,8 @@ fun UserInfoSection(
                 modifier = Modifier
                     .size(100.dp)
                     .border(2.dp, Color.White, CircleShape)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .clickable { onViewProfilePicture() },
                 contentScale = ContentScale.Crop
             )
             Box(
