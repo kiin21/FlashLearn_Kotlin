@@ -27,12 +27,15 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -84,6 +87,7 @@ fun ProfileScreen(
     onUpdateEmail: (String) -> Unit = {},
     onUpdateProfilePicture: (android.net.Uri) -> Unit = {},
     onDeleteAccount: () -> Unit = {},
+    onChangePassword: (oldPassword: String, newPassword: String, onResult: (success: Boolean, error: String?) -> Unit) -> Unit = { _, _, _ -> },
     isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -91,6 +95,7 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
     
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -160,6 +165,20 @@ fun ProfileScreen(
         )
     }
     
+    if (showChangePasswordDialog) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePasswordDialog = false },
+            onSubmit = { oldPassword, newPassword, onResult ->
+                onChangePassword(oldPassword, newPassword) { success, error ->
+                    onResult(success, error)
+                    if (success) {
+                        showChangePasswordDialog = false
+                    }
+                }
+            }
+        )
+    }
+    
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -206,7 +225,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             PreferencesSection(
-                onChangePassword = { showNotImplementedMessage("Change password") }
+                onChangePassword = { showChangePasswordDialog = true }
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -638,6 +657,138 @@ private fun ProfileRowSwitch(
             )
         }
     }
+}
+
+@Composable
+private fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (oldPassword: String, newPassword: String, onResult: (success: Boolean, error: String?) -> Unit) -> Unit
+) {
+    var oldPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { if (!isLoading) onDismiss() },
+        title = { Text("Change Password") },
+        text = {
+            Column {
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = FlashRed,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+                
+                androidx.compose.material3.OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = { oldPassword = it; errorMessage = null },
+                    label = { Text("Current Password") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = if (passwordVisible) 
+                        androidx.compose.ui.text.input.VisualTransformation.None 
+                    else 
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                androidx.compose.material3.OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it; errorMessage = null },
+                    label = { Text("New Password") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = if (passwordVisible) 
+                        androidx.compose.ui.text.input.VisualTransformation.None 
+                    else 
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                androidx.compose.material3.OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it; errorMessage = null },
+                    label = { Text("Confirm New Password") },
+                    singleLine = true,
+                    enabled = !isLoading,
+                    visualTransformation = if (passwordVisible) 
+                        androidx.compose.ui.text.input.VisualTransformation.None 
+                    else 
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    when {
+                        oldPassword.isBlank() -> errorMessage = "Please enter current password"
+                        newPassword.isBlank() -> errorMessage = "Please enter new password"
+                        newPassword != confirmPassword -> errorMessage = "Passwords do not match"
+                        newPassword.length < 8 -> errorMessage = "Password must be at least 8 characters"
+                        else -> {
+                            isLoading = true
+                            errorMessage = null
+                            onSubmit(oldPassword, newPassword) { success, error ->
+                                isLoading = false
+                                if (!success) {
+                                    errorMessage = error ?: "Failed to change password"
+                                }
+                            }
+                        }
+                    }
+                },
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Change", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isLoading) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 

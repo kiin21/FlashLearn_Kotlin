@@ -21,4 +21,5 @@ interface UserRepository {
     suspend fun updateEmail(userId: String, email: String)
     suspend fun uploadProfilePicture(userId: String, uriString: String): String
     suspend fun deleteUser(userId: String)
+    suspend fun updatePasswordHash(userId: String, newPasswordHash: String)
 }

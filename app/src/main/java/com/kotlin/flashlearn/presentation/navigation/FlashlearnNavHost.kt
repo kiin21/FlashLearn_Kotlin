@@ -594,6 +594,19 @@ fun FlashlearnNavHost(
                         )
                     }
                 },
+                onChangePassword = { oldPassword, newPassword, onResult ->
+                    scope.launch {
+                        authRepository.changePassword(oldPassword, newPassword).fold(
+                            onSuccess = {
+                                Toast.makeText(context, "Password changed successfully", Toast.LENGTH_SHORT).show()
+                                onResult(true, null)
+                            },
+                            onFailure = { error ->
+                                onResult(false, error.message)
+                            }
+                        )
+                    }
+                },
                 onSignOut = {
                     scope.launch {
                         authRepository.signOut()

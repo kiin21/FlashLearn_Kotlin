@@ -329,6 +329,37 @@ class AuthRepositoryImpl @Inject constructor(
         currentUserData = null
     }
 
+    override suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit> = runCatching {
+        val userId = currentUserData?.userId ?: throw Exception("No user logged in")
+        
+        // Get user from Firestore to verify old password
+        val user = userRepository.getUser(userId) 
+            ?: throw Exception("User not found")
+        
+        // Verify user has a password (not Google-only account)
+        val existingHash = user.loginPasswordHash 
+            ?: throw Exception("This account uses Google Sign-In only. No password to change.")
+        
+        // Verify old password
+        if (!com.kotlin.flashlearn.data.util.PasswordUtils.verifyPassword(oldPassword, existingHash)) {
+            throw Exception("Current password is incorrect")
+        }
+        
+        // Check new password is different from old
+        if (oldPassword == newPassword) {
+            throw Exception("New password must be different from current password")
+        }
+        
+        // Validate new password
+        if (!com.kotlin.flashlearn.data.util.PasswordUtils.isValidPassword(newPassword)) {
+            throw Exception("New password must be 8+ characters with uppercase, lowercase, number, and special character")
+        }
+        
+        // Hash and update new password
+        val newHash = com.kotlin.flashlearn.data.util.PasswordUtils.hashPassword(newPassword)
+        userRepository.updatePasswordHash(userId, newHash)
+    }
+
     private fun buildSignInRequest(): BeginSignInRequest {
         return BeginSignInRequest.Builder()
             .setGoogleIdTokenRequestOptions(

@@ -57,4 +57,11 @@ interface AuthRepository {
      * Deletes the current user's account and all associated data.
      */
     suspend fun deleteAccount(): Result<Unit>
+    
+    /**
+     * Changes the password for the current user (custom auth only).
+     * @param oldPassword The current password for verification.
+     * @param newPassword The new password to set.
+     */
+    suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit>
 }

@@ -142,4 +142,8 @@ class UserRepositoryImpl @Inject constructor(
         // Delete user document
         usersCollection.document(userId).delete().await()
     }
+
+    override suspend fun updatePasswordHash(userId: String, newPasswordHash: String) {
+        usersCollection.document(userId).update("loginPasswordHash", newPasswordHash).await()
+    }
 }
