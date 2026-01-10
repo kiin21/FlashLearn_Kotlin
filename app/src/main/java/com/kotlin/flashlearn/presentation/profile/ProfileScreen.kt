@@ -89,6 +89,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.kotlin.flashlearn.presentation.profile.components.ChangePasswordDialog
 import com.kotlin.flashlearn.presentation.profile.components.PreferencesSection
 import com.kotlin.flashlearn.presentation.profile.components.UserInfoSection
+import com.kotlin.flashlearn.presentation.profile.components.ProfilePictureDialog
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -113,6 +114,7 @@ fun ProfileScreen(
     var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var showProfilePictureDialog by remember { mutableStateOf(false) }
     
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -231,8 +233,16 @@ fun ProfileScreen(
                         )
                     )
                 },
-                onUpdateEmail = onUpdateEmail
+                onUpdateEmail = onUpdateEmail,
+                onViewProfilePicture = { showProfilePictureDialog = true }
             )
+
+            if (showProfilePictureDialog) {
+                ProfilePictureDialog(
+                    imageUrl = userData?.profilePictureUrl,
+                    onDismiss = { showProfilePictureDialog = false }
+                )
+            }
             Spacer(modifier = Modifier.height(32.dp))
 
             PreferencesSection(
