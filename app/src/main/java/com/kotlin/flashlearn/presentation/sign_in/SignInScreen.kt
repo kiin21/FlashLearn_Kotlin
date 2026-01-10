@@ -51,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
@@ -101,14 +102,14 @@ fun SignInScreen(
         ) {
             // App logo
             Image(
-                painter = painterResource(id = R.drawable.app_logo),
-                contentDescription = "FlashLearn Logo",
+                painter = painterResource(id = R.mipmap.ic_launcher),
+                contentDescription = stringResource(R.string.app_logo),
                 modifier = Modifier.size(100.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             // Welcome Title
             Text(
-                text = "Welcome!",
+                text = stringResource(R.string.welcome),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -127,7 +128,7 @@ fun SignInScreen(
             OutlinedTextField(
                 value = state.username,
                 onValueChange = onUsernameChange,
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
@@ -145,7 +146,7 @@ fun SignInScreen(
             OutlinedTextField(
                 value = state.password,
                 onValueChange = onPasswordChange,
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
@@ -157,7 +158,7 @@ fun SignInScreen(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -172,7 +173,7 @@ fun SignInScreen(
             
             // Forgot Password Link
             Text(
-                text = "Forgot password?",
+                text = stringResource(R.string.forgot_password),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { /* TODO: Implement later */ }
@@ -197,7 +198,7 @@ fun SignInScreen(
                     )
                 } else {
                     Text(
-                        text = "Login",
+                        text = stringResource(R.string.login),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -212,12 +213,12 @@ fun SignInScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Not a member? ",
+                    text = stringResource(R.string.not_a_member),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Register now",
+                    text = stringResource(R.string.register_now),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -234,7 +235,7 @@ fun SignInScreen(
             ) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(
-                    text = "  Or continue with  ",
+                    text = "  ${stringResource(R.string.or_continue_with)}  ",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -271,12 +272,12 @@ fun SignInScreen(
                         // Google logo with proper colors
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = "Google Logo",
+                            contentDescription = stringResource(R.string.google_logo),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(
-                            text = "Sign in with Google",
+                            text = stringResource(R.string.sign_in_with_google),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )

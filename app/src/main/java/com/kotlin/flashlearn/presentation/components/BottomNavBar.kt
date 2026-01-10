@@ -14,16 +14,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 
 enum class BottomNavItem(
     val route: String,
     val icon: ImageVector,
-    val label: String
+@StringRes val labelResId: Int
 ) {
-    Home("home", Icons.Default.Home, "Home"),
-    Topic("topic", Icons.Default.Topic, "Topic"),
-    Community("community", Icons.Outlined.Forum, "Community"),
-    Profile("profile", Icons.Default.Person, "Profile")
+    Home("home", Icons.Default.Home, R.string.nav_home),
+    Topic("topic", Icons.Default.Topic, R.string.nav_topic),
+    Community("community", Icons.Outlined.Forum, R.string.nav_community),
+    Profile("profile", Icons.Default.Person, R.string.nav_profile)
 }
 
 @Composable
@@ -36,16 +39,17 @@ fun BottomNavBar(
     ) {
         BottomNavItem.entries.forEach { item ->
             val isSelected = currentRoute == item.route
+            val label = stringResource(item.labelResId)
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { onNavigate(item.route) },
                 icon = {
                     Icon(
                         imageVector = item.icon,
-                        contentDescription = item.label
+                        contentDescription = label
                     )
                 },
-                label = { Text(text = item.label) },
+                label = { Text(text = label) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = FlashRed,
                     selectedTextColor = FlashRed,

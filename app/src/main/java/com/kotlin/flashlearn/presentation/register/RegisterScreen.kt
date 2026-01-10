@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
@@ -96,7 +97,7 @@ fun RegisterScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.back),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -106,13 +107,13 @@ fun RegisterScreen(
             
             // Logo and title centered
             Image(
-                painter = painterResource(id = R.drawable.app_logo),
-                contentDescription = "FlashLearn Logo",
+                painter = painterResource(id = R.mipmap.ic_launcher),
+                contentDescription = stringResource(R.string.app_logo),
                 modifier = Modifier.size(100.dp)
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Create Account",
+                text = stringResource(R.string.create_account),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -129,7 +130,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = state.username,
                 onValueChange = onUsernameChange,
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
@@ -147,7 +148,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = state.password,
                 onValueChange = onPasswordChange,
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
@@ -159,7 +160,7 @@ fun RegisterScreen(
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -172,7 +173,7 @@ fun RegisterScreen(
 
             // Password requirements hint
             Text(
-                text = "Min 8 chars, uppercase, number, special char",
+                text = stringResource(R.string.password_requirements),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
@@ -184,7 +185,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = state.confirmPassword,
                 onValueChange = onConfirmPasswordChange,
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.confirm_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
@@ -196,7 +197,7 @@ fun RegisterScreen(
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Icon(
                             imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                            contentDescription = if (confirmPasswordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
                             tint = Color.Gray
                         )
                     }
@@ -226,7 +227,7 @@ fun RegisterScreen(
                     )
                 } else {
                     Text(
-                        text = "Register",
+                        text = stringResource(R.string.register),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -241,12 +242,12 @@ fun RegisterScreen(
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center
             ) {
                 Text(
-                    text = "Already have an account? ",
+                    text = stringResource(R.string.already_have_account),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Sign in",
+                    text = stringResource(R.string.sign_in),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,

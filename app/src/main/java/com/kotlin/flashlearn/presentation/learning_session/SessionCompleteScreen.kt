@@ -1,5 +1,7 @@
 package com.kotlin.flashlearn.presentation.learning_session
 
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,7 +71,7 @@ fun SessionCompleteScreen(
 
         // Title
         Text(
-            text = "Session Complete!",
+            text = stringResource(R.string.session_complete),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -80,7 +82,7 @@ fun SessionCompleteScreen(
 
         // Subtitle with stats
         Text(
-            text = "Great job! You've completed this learning session.",
+            text = stringResource(R.string.session_complete_desc),
             fontSize = 16.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center,
@@ -102,7 +104,7 @@ fun SessionCompleteScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Cards Mastered",
+                    text = stringResource(R.string.cards_mastered),
                     fontSize = 14.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -131,7 +133,7 @@ fun SessionCompleteScreen(
             )
         ) {
             Text(
-                text = "Back",
+                text = stringResource(R.string.back),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

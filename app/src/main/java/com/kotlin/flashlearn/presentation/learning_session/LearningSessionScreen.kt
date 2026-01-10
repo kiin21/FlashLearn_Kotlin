@@ -55,6 +55,8 @@ import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import kotlin.math.roundToInt
 
@@ -124,7 +126,7 @@ fun LearningSessionScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No flashcards available for this topic",
+                            text = stringResource(R.string.no_flashcards_available),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.Gray
                         )
@@ -179,7 +181,7 @@ private fun TopBar(
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.close),
                         tint = Color.Black
                     )
                 }
@@ -320,14 +322,14 @@ private fun BottomActionButtons(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Study Again",
+                    contentDescription = stringResource(R.string.study_again),
                     modifier = Modifier.size(32.dp),
                     tint = FlashRed
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "STUDY AGAIN",
+                text = stringResource(R.string.study_again).uppercase(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray
@@ -355,7 +357,7 @@ private fun BottomActionButtons(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "GOT IT",
+                text = stringResource(R.string.got_it).uppercase(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Gray

@@ -52,6 +52,7 @@ fun FlashlearnNavHost(
     navController: NavHostController,
     authRepository: AuthRepository,
     userRepository: com.kotlin.flashlearn.domain.repository.UserRepository,
+    languageManager: com.kotlin.flashlearn.util.LanguageManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -61,6 +62,7 @@ fun FlashlearnNavHost(
         startDestination = Route.SignIn.route,
         modifier = modifier
     ) {
+
         composable(Route.SignIn.route) {
             val viewModel = hiltViewModel<SignInViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -624,6 +626,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToCommunity = {
                     navController.navigate(Route.Community.route)
+                },
+                onLanguageChange = { languageCode ->
+                    languageManager.setLanguage(languageCode)
                 }
             )
         }

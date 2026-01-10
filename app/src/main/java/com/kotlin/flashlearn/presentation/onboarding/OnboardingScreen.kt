@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.sp
 import com.kotlin.flashlearn.ui.theme.FlashGreen
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -51,18 +53,18 @@ fun OnboardingScreen(
 ) {
     val pages = listOf(
         OnboardingPage(
-            title = "Welcome to Flashlearn",
-            description = "The ultimate tool to prepare English vocabulary for VSTEP Exam.",
+            title = stringResource(R.string.onboarding_title_1),
+            description = stringResource(R.string.onboarding_desc_1),
             icon = Icons.Outlined.MenuBook
         ),
         OnboardingPage(
-            title = "Swipe to Learn",
-            description = "Swipe Right if you know it, Left if you don't. Simple and effective.",
+            title = stringResource(R.string.onboarding_title_2),
+            description = stringResource(R.string.onboarding_desc_2),
             icon = Icons.Outlined.Style
         ),
         OnboardingPage(
-            title = "Create Your Collections",
-            description = "Build your own flashcard decks and share with the community.",
+            title = stringResource(R.string.onboarding_title_3),
+            description = stringResource(R.string.onboarding_desc_3),
             icon = Icons.Outlined.Layers
         )
     )
@@ -82,7 +84,7 @@ fun OnboardingScreen(
                 if (pagerState.currentPage < pages.size - 1) {
                     TextButton(onClick = onFinish) {
                         Text(
-                            text = "Skip",
+                            text = stringResource(R.string.skip),
                             color = Color.Gray
                         )
                     }
@@ -143,7 +145,7 @@ fun OnboardingScreen(
                 )
             ) {
                 Text(
-                    text = if (pagerState.currentPage < pages.size - 1) "Next" else "Get Started",
+                    text = if (pagerState.currentPage < pages.size - 1) stringResource(R.string.next) else stringResource(R.string.get_started),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
