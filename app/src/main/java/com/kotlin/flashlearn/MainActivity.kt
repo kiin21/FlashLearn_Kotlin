@@ -11,21 +11,31 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.notification.DailyReminderPermissionGate
+import com.kotlin.flashlearn.domain.repository.UserRepository
 import com.kotlin.flashlearn.presentation.navigation.FlashlearnNavHost
 import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+import androidx.appcompat.app.AppCompatActivity
+
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
+    
+    @Inject
+    lateinit var userRepository: UserRepository
+
+    @Inject
+    lateinit var languageManager: com.kotlin.flashlearn.util.LanguageManager
 
     private lateinit var reminderGate: DailyReminderPermissionGate
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        languageManager.applySavedLanguage()
         enableEdgeToEdge()
 
         reminderGate = DailyReminderPermissionGate(this)
@@ -33,7 +43,7 @@ class MainActivity : ComponentActivity() {
             hour = 9,
             minute = 0,
             title = "FlashLearn",
-            body = "Đến giờ học rồi! 📚"
+            body = "It's time for class!"
         )
         
         setContent {    
@@ -45,7 +55,9 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     FlashlearnNavHost(
                         navController = navController,
-                        authRepository = authRepository
+                        authRepository = authRepository,
+                        userRepository = userRepository,
+                        languageManager = languageManager
                     )
                 }
             }

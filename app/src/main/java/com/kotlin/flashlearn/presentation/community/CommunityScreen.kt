@@ -55,6 +55,8 @@ import com.kotlin.flashlearn.presentation.components.CommunityTopicCard
 import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import kotlinx.coroutines.flow.collectLatest
 
 /**
@@ -122,7 +124,7 @@ fun CommunityScreen(
         ) {
             // Header
             Text(
-                text = "Community",
+                text = stringResource(R.string.community),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -133,7 +135,7 @@ fun CommunityScreen(
             SearchBar(
                 query = state.searchQuery,
                 onQueryChange = { viewModel.onAction(CommunityAction.OnSearchQueryChange(it)) },
-                placeholder = "Search topics, creators...",
+                placeholder = stringResource(R.string.search_community),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             
@@ -186,12 +188,12 @@ fun CommunityScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = state.error ?: "An error occurred",
+                                text = state.error ?: stringResource(R.string.error),
                                 color = MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Tap to retry",
+                                text = stringResource(R.string.tap_to_retry),
                                 color = FlashRed,
                                 modifier = Modifier.clickable { 
                                     viewModel.onAction(CommunityAction.OnRefresh) 
@@ -306,7 +308,7 @@ private fun MainTabs(
             onClick = { onTabChange(0) },
             text = {
                 Text(
-                    text = "Discover",
+                    text = stringResource(R.string.discover),
                     fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Normal
                 )
             },
@@ -318,7 +320,7 @@ private fun MainTabs(
             onClick = { onTabChange(1) },
             text = {
                 Text(
-                    text = "Saved",
+                    text = stringResource(R.string.saved),
                     fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Normal
                 )
             },
@@ -348,13 +350,13 @@ private fun FilterButton(
         ) {
             Icon(
                 imageVector = Icons.Default.FilterList,
-                contentDescription = "Filter",
+                contentDescription = stringResource(R.string.filter),
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "Filter",
+                text = stringResource(R.string.filter),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -402,14 +404,14 @@ private fun SortDropdownButton(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = selectedSort.displayName,
+                text = stringResource(selectedSort.resId),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(4.dp))
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Select sort option",
+                contentDescription = stringResource(R.string.select_sort_option),
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -423,7 +425,7 @@ private fun SortDropdownButton(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = option.displayName,
+                            text = stringResource(option.resId),
                             fontWeight = if (option == selectedSort) FontWeight.Bold else FontWeight.Normal,
                             color = if (option == selectedSort) FlashRed else MaterialTheme.colorScheme.onSurface
                         )
@@ -457,9 +459,9 @@ private fun EmptyState(
         ) {
             Text(
                 text = if (isDiscoverTab) {
-                    if (hasFilters) "No topics found" else "No topics yet"
+                    if (hasFilters) stringResource(R.string.no_topics_found) else stringResource(R.string.no_topics_yet)
                 } else {
-                    "No saved topics yet"
+                    stringResource(R.string.no_saved_topics_yet)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -467,9 +469,9 @@ private fun EmptyState(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = if (isDiscoverTab) {
-                    if (hasFilters) "Try adjusting your filters or search" else "Be the first to share a topic!"
+                    if (hasFilters) stringResource(R.string.adjust_filters_hint) else stringResource(R.string.be_first_share_hint)
                 } else {
-                    "Bookmark topics to save them here"
+                    stringResource(R.string.bookmark_topics_hint)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)

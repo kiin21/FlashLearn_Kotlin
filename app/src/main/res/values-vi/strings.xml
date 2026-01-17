@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlashLearn</string>
+    
+    <!-- Common -->
+    <string name="cancel">Hủy</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="save">Lưu</string>
+    <string name="delete">Xóa</string>
+    <string name="edit">Sửa</string>
+    <string name="search">Tìm kiếm</string>
+    <string name="loading">Đang tải…</string>
+    <string name="error">Lỗi</string>
+    <string name="success">Thành công</string>
+    <string name="or">Hoặc</string>
+    <string name="close">Đóng</string>
+    <string name="more">Thêm</string>
+    <string name="clear_filters">Xóa bộ lọc</string>
+    <string name="guest">Khách</string>
+    <string name="no_email">Không có email</string>
+    <string name="coming_soon">%1$s sắp ra mắt!</string>
+    <string name="unknown_error">Lỗi không xác định</string>
+    <string name="retry">Thử lại</string>
+    <string name="back">Quay lại</string>
+    <string name="topic_not_found">Không tìm thấy chủ đề</string>
+    <string name="failed_load_topic">Tải chủ đề thất bại</string>
+    <string name="failed_load_topics">Tải các chủ đề thất bại</string>
+    <string name="failed_load_vocabulary">Tải từ vựng thất bại</string>
+    <string name="failed_delete_cards">Xóa thẻ thất bại</string>
+    <string name="failed_delete_topic">Xóa chủ đề thất bại</string>
+    <string name="failed_update_topic">Cập nhật chủ đề thất bại</string>
+    <string name="failed_regenerate_image">Tạo lại ảnh thất bại</string>
+    <string name="failed_update_visibility">Cập nhật chế độ hiển thị thất bại</string>
+    <string name="please_sign_in_save">Vui lòng đăng nhập để lưu chủ đề</string>
+    <string name="please_sign_in_upvote">Vui lòng đăng nhập để bình chọn</string>
+    <string name="saved_success">Đã lưu!</string>
+    <string name="removed_from_saved">Đã xóa khỏi danh sách lưu</string>
+    <string name="failed_upvote">Bình chọn thất bại</string>
+    <string name="please_enter_topic_name">Vui lòng nhập tên chủ đề</string>
+    <string name="please_select_word">Vui lòng chọn ít nhất một từ</string>
+    <string name="failed_save_flashcards">Lưu thẻ ghi nhớ thất bại</string>
+    
+    <!-- Sign In Screen -->
+    <string name="welcome">Chào mừng!</string>
+    <string name="username">Tên đăng nhập</string>
+    <string name="password">Mật khẩu</string>
+    <string name="login">Đăng nhập</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="not_a_member">Chưa có tài khoản? </string>
+    <string name="register_now">Đăng ký ngay</string>
+    <string name="or_continue_with">Hoặc tiếp tục với</string>
+    <string name="sign_in_with_google">Đăng nhập với Google</string>
+    <string name="hide_password">Ẩn mật khẩu</string>
+    <string name="show_password">Hiện mật khẩu</string>
+    <string name="app_logo">Logo ứng dụng</string>
+    <string name="google_logo">Logo Google</string>
+    
+    <!-- Register Screen -->
+    <string name="create_account">Tạo tài khoản</string>
+    <string name="register">Đăng ký</string>
+    <string name="confirm_password">Xác nhận mật khẩu</string>
+    <string name="already_have_account">Đã có tài khoản? </string>
+    <string name="sign_in">Đăng nhập</string>
+    <string name="password_requirements">Tối thiểu 8 ký tự, chữ hoa, số, ký tự đặc biệt</string>
+    
+    <!-- Home Screen -->
+    <string name="hello_greeting">Xin chào, %1$s!</string>
+    <string name="hello_friend">Xin chào, Bạn!</string>
+    <string name="streak_message">Hãy duy trì chuỗi ngày học nhé.</string>
+    <string name="days">NGÀY</string>
+    <string name="vstep_exam_date">NGÀY THI VSTEP</string>
+    <string name="days_left">Ngày còn lại</string>
+    <string name="daily_word">Từ vựng hôm nay</string>
+    <string name="view_archive">Xem lưu trữ</string>
+    <string name="continue_learning">Tiếp tục học</string>
+    <string name="recommended_for_you">Đề xuất cho bạn</string>
+    <string name="b2_level">TRÌNH ĐỘ B2</string>
+    <string name="pronounce">Phát âm</string>
+    <string name="pronunciation">Phát âm</string>
+    <string name="recommended_collection">Bộ sưu tập đề xuất</string>
+    
+    <!-- Profile Screen -->
+    <string name="profile">Hồ sơ</string>
+    <string name="preferences">TÙY CHỌN</string>
+    <string name="notifications">Thông báo</string>
+    <string name="dark_mode">Chế độ tối</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="change_password">Đổi mật khẩu</string>
+    <string name="linked_accounts">Tài khoản liên kết</string>
+    <string name="link_google_account">Liên kết tài khoản Google</string>
+    <string name="linking">Đang liên kết…</string>
+    <string name="account">TÀI KHOẢN</string>
+    <string name="log_out">Đăng xuất</string>
+    <string name="delete_account">Xóa tài khoản</string>
+    <string name="google">Google</string>
+    
+    <!-- Profile Dialogs -->
+    <string name="unlink_account">Hủy liên kết</string>
+    <string name="unlink_account_confirm">Bạn có chắc muốn hủy liên kết tài khoản Google này?</string>
+    <string name="unlink">Hủy liên kết</string>
+    <string name="delete_account_title">Xóa tài khoản</string>
+    <string name="delete_account_confirm">Bạn có chắc muốn xóa tài khoản? Hành động này không thể hoàn tác và tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.</string>
+    <string name="change_password_title">Đổi mật khẩu</string>
+    <string name="current_password">Mật khẩu hiện tại</string>
+    <string name="new_password">Mật khẩu mới</string>
+    <string name="confirm_new_password">Xác nhận mật khẩu mới</string>
+    <string name="change">Đổi</string>
+    <string name="enter_current_password">Vui lòng nhập mật khẩu hiện tại</string>
+    <string name="enter_new_password">Vui lòng nhập mật khẩu mới</string>
+    <string name="passwords_not_match">Mật khẩu không khớp</string>
+    <string name="password_min_length">Mật khẩu phải có ít nhất 8 ký tự</string>
+    <string name="password_change_failed">Đổi mật khẩu thất bại</string>
+    <string name="edit_profile_picture">Sửa ảnh đại diện</string>
+    <string name="change_email">Đổi email</string>
+    
+    <!-- Topic Screen -->
+    <string name="my_collections">Bộ sưu tập</string>
+    <string name="all">Tất cả</string>
+    <string name="recent">Gần đây</string>
+    <string name="favorites">Yêu thích</string>
+    <string name="filter_all">Tất cả</string>
+    <string name="filter_system">Hệ thống</string>
+    <string name="filter_my_topics">Của tôi</string>
+    <string name="add_new_topic">Thêm chủ đề mới</string>
+    <string name="search_collections">Tìm kiếm trong bộ sưu tập…</string>
+    <string name="no_topics_found_query">Không tìm thấy chủ đề nào cho \"%1$s\"</string>
+    <string name="no_filtered_topics_yet">Chưa có chủ đề %1$s nào</string>
+    <string name="no_topics_yet_hint">Chưa có chủ đề nào. Hãy tạo chủ đề đầu tiên của bạn!</string>
+    <string name="words">từ</string>
+    <string name="cards_in_topic">Thẻ trong chủ đề này (%1$d)</string>
+    <string name="selected_count">Đã chọn %1$d</string>
+    <string name="close_selection">Đóng chọn</string>
+    <string name="select_all">Chọn tất cả</string>
+    <string name="delete_selected">Xóa mục đã chọn</string>
+    <string name="edit_topic">Chỉnh sửa chủ đề</string>
+    <string name="make_private">Chuyển sang riêng tư</string>
+    <string name="make_public">Chuyển sang công khai</string>
+    <string name="delete_topic">Xóa chủ đề</string>
+    <string name="save_to_my_topics">Lưu vào chủ đề của tôi</string>
+    <string name="share">Chia sẻ</string>
+    <string name="vocabulary_collection">Bộ sưu tập từ vựng</string>
+    <string name="study_now">Học ngay</string>
+    <string name="take_quiz">Làm kiểm tra</string>
+    <string name="search_cards">Tìm kiếm thẻ…</string>
+    <string name="no_cards_in_topic">Không có thẻ nào trong chủ đề này</string>
+    <string name="no_cards_found">Không tìm thấy thẻ nào cho \"%1$s\"</string>
+    <string name="clear_search">Xóa tìm kiếm</string>
+    <string name="selected_txt">Đã chọn</string>
+    <string name="select_txt">Chọn</string>
+    
+    <!-- Add Word Screen -->
+    <string name="add_topic">Thêm chủ đề</string>
+    <string name="topic_name">Tên chủ đề *</string>
+    <string name="description_optional">Mô tả (Tùy chọn)</string>
+    <string name="selected_words">Từ đã chọn (%1$d)</string>
+    <string name="search_for_word">Tìm kiếm từ vựng</string>
+    <string name="get_words_by_topic">Lấy từ theo chủ đề</string>
+    <string name="or_enter_manually">Hoặc nhập thủ công:</string>
+    <string name="available_words">Từ có sẵn (%1$d)</string>
+    <string name="create_new_topic">Tạo chủ đề mới</string>
+    <string name="topic_created_success">Đã tạo chủ đề thành công!</string>
+    <string name="create_topic_words">Tạo chủ đề (%1$d từ)</string>
+    <string name="enter_topic_name">Nhập tên chủ đề…</string>
+    <string name="add_description">Thêm mô tả…</string>
+    <string name="type_to_search">Nhập để tìm kiếm…</string>
+    <string name="choose_topic">Chọn một chủ đề…</string>
+    <string name="topic_query_placeholder">v.d. môi trường, công nghệ…</string>
+    <string name="get_button">Lấy</string>
+    <string name="remove">Xóa</string>
+    
+    <!-- Learning Session -->
+    <string name="learning_session">Phiên học</string>
+    <string name="session_complete">Hoàn thành!</string>
+    <string name="great_job">Làm tốt lắm!</string>
+    <string name="cards_learned">Thẻ đã học</string>
+    <string name="accuracy">Độ chính xác</string>
+    <string name="time_spent">Thời gian</string>
+    <string name="continue_button">Tiếp tục</string>
+    <string name="back_to_topics">Quay lại chủ đề</string>
+    <string name="session_complete_desc">Làm tốt lắm! Bạn đã hoàn thành phiên học này.</string>
+    <string name="cards_mastered">Thẻ đã nắm vững</string>
+    <string name="no_flashcards_available">Không có thẻ ghi nhớ nào cho chủ đề này</string>
+    <string name="study_again">Học lại</string>
+    <string name="got_it">Đã hiểu</string>
+    
+    <!-- Community Screen -->
+    <string name="community">Cộng đồng</string>
+    <string name="explore">Khám phá</string>
+    <string name="following">Đang theo dõi</string>
+    <string name="followers">Người theo dõi</string>
+    <string name="search_community">Tìm kiếm chủ đề, người tạo…</string>
+    <string name="discover">Khám phá</string>
+    <string name="saved">Đã lưu</string>
+    <string name="tap_to_retry">Nhấn để thử lại</string>
+    <string name="filter">Lọc</string>
+    <string name="select_sort_option">Chọn tùy chọn sắp xếp</string>
+    <string name="no_topics_found">Không tìm thấy chủ đề nào</string>
+    <string name="no_topics_yet">Chưa có chủ đề nào</string>
+    <string name="no_saved_topics_yet">Chưa có chủ đề nào được lưu</string>
+    <string name="adjust_filters_hint">Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm</string>
+    <string name="be_first_share_hint">Hãy là người đầu tiên chia sẻ chủ đề!</string>
+    <string name="bookmark_topics_hint">Đánh dấu các chủ đề để lưu chúng tại đây</string>
+    <string name="sort_most_liked">Yêu thích nhất</string>
+    <string name="sort_newest">Mới nhất</string>
+    
+    <!-- Onboarding -->
+    <string name="get_started">Bắt đầu</string>
+    <string name="next">Tiếp</string>
+    <string name="skip">Bỏ qua</string>
+    <string name="onboarding_title_1">Chào mừng tới Flashlearn</string>
+    <string name="onboarding_desc_1">Công cụ tuyệt vời để chuẩn bị từ vựng tiếng Anh cho kỳ thi VSTEP.</string>
+    <string name="onboarding_title_2">Vuốt để học</string>
+    <string name="onboarding_desc_2">Vuốt Sang Phải nếu bạn biết, Sang Trái nếu không. Đơn giản và hiệu quả.</string>
+    <string name="onboarding_title_3">Tạo bộ sưu tập của riêng bạn</string>
+    <string name="onboarding_desc_3">Xây dựng bộ thẻ ghi nhớ của riêng bạn và chia sẻ với cộng đồng.</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_topic">Chủ đề</string>
+    <string name="nav_community">Cộng đồng</string>
+    <string name="nav_profile">Hồ sơ</string>
+    
+    <!-- Languages -->
+    <string name="english">English</string>
+    <string name="vietnamese">Tiếng Việt</string>
+    
+    <!-- Snackbar Messages -->
+    <string name="general">Chung</string>
+    <string name="danger_zone">Vùng nguy hiểm</string>
+    <string name="feature_coming_soon">%1$s sắp ra mắt!</string>
+</resources>

@@ -6,6 +6,7 @@ package com.kotlin.flashlearn.presentation.navigation
  */
 sealed class Route(val route: String) {
     data object SignIn : Route("sign_in")
+    data object Register : Route("register")
     data object Onboarding : Route("onboarding")
     data object Home : Route("home")
     data object Topic : Route("topic")

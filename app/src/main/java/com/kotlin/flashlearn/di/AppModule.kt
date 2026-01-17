@@ -48,8 +48,9 @@ object AppModule {
     fun provideAuthRepository(
         @ApplicationContext context: Context,
         oneTapClient: SignInClient,
-        auth: FirebaseAuth
-    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth)
+        auth: FirebaseAuth,
+        userRepository: UserRepository
+    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository)
 
 
     @Provides
@@ -69,9 +70,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService = 
+        com.kotlin.flashlearn.data.remote.CloudinaryService()
+
+    @Provides
+    @Singleton
     fun provideUserRepository(
-        firestore: FirebaseFirestore
-    ): UserRepository = UserRepositoryImpl(firestore)
+        firestore: FirebaseFirestore,
+        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
+    ): UserRepository = UserRepositoryImpl(firestore, cloudinaryService)
 
     @Provides
     @Singleton
@@ -109,4 +116,9 @@ object AppModule {
     fun provideFavoriteRepository(
         firestore: FirebaseFirestore
     ): FavoriteRepository = FavoriteRepositoryImpl(firestore)
+    @Provides
+    @Singleton
+    fun provideLanguageManager(
+        @ApplicationContext context: Context
+    ): com.kotlin.flashlearn.util.LanguageManager = com.kotlin.flashlearn.util.LanguageManager(context)
 }

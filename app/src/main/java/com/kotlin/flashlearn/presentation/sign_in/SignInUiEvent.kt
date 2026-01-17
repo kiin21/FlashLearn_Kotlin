@@ -8,4 +8,5 @@ sealed interface SignInUiEvent {
     data class ShowError(val message: String) : SignInUiEvent
     data object NavigateToOnboarding : SignInUiEvent
     data object NavigateToHome : SignInUiEvent
+    data object NavigateToRegister : SignInUiEvent
 }

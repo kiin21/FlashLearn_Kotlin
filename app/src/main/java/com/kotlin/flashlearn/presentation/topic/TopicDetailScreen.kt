@@ -2,7 +2,6 @@ package com.kotlin.flashlearn.presentation.topic
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,14 +19,11 @@ import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Share
@@ -45,19 +41,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,7 +68,8 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,25 +133,25 @@ fun TopicDetailScreen(
                 CenterAlignedTopAppBar(
                     title = { 
                         Text(
-                            "${state.selectedCardIds.size} Selected", 
+                            stringResource(R.string.selected_count, state.selectedCardIds.size), 
                             style = MaterialTheme.typography.titleMedium,
                         ) 
                     },
                     navigationIcon = {
                         IconButton(onClick = onToggleSelectionMode) {
-                            Icon(Icons.Default.Close, contentDescription = "Close Selection")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_selection))
                         }
                     },
                     actions = {
                         IconButton(onClick = onSelectAll) { 
                              Icon(
                                  imageVector = Icons.Default.CheckCircle, 
-                                 contentDescription = "Select All", 
+                                 contentDescription = stringResource(R.string.select_all), 
                                  tint = FlashRed
                              )
                         }
                         IconButton(onClick = onDeleteSelected) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = FlashRed)
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_selected), tint = FlashRed)
                         }
                     }
                 )
@@ -170,7 +163,7 @@ fun TopicDetailScreen(
                             Icon(
                                 imageVector = Icons.Default.ChevronLeft,
                                 tint = FlashRed,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.back)
                             )
                         }
                     },
@@ -178,14 +171,14 @@ fun TopicDetailScreen(
                         if (state.isOwner) {
                             Box {
                                 IconButton(onClick = { showMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
                                     onDismissRequest = { showMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Edit Topic") },
+                                        text = { Text(stringResource(R.string.edit_topic)) },
                                         onClick = {
                                             showMenu = false
                                             showEditDialog = true
@@ -197,7 +190,7 @@ fun TopicDetailScreen(
                                     DropdownMenuItem(
                                         text = { 
                                             Text(
-                                                if (state.isPublic) "Make Private" else "Make Public"
+                                                if (state.isPublic) stringResource(R.string.make_private) else stringResource(R.string.make_public)
                                             ) 
                                         },
                                         onClick = {
@@ -212,7 +205,7 @@ fun TopicDetailScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Delete Topic", color = MaterialTheme.colorScheme.error) },
+                                        text = { Text(stringResource(R.string.delete_topic), color = MaterialTheme.colorScheme.error) },
                                         onClick = {
                                             showMenu = false
                                             onDeleteTopic()
@@ -227,14 +220,14 @@ fun TopicDetailScreen(
                             // Non-owner: 3-dot menu with Save/Share options
                             Box {
                                 IconButton(onClick = { showNonOwnerMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = "More", tint = Color.Gray)
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
                                 }
                                 DropdownMenu(
                                     expanded = showNonOwnerMenu,
                                     onDismissRequest = { showNonOwnerMenu = false }
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Save to My Topics") },
+                                        text = { Text(stringResource(R.string.save_to_my_topics)) },
                                         onClick = {
                                             showNonOwnerMenu = false
                                             onSaveToMyTopics()
@@ -244,7 +237,7 @@ fun TopicDetailScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Share", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                        text = { Text(stringResource(R.string.share), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                         onClick = {
                                             showNonOwnerMenu = false
                                             // TODO: Implement share when app is released
@@ -308,7 +301,7 @@ fun TopicDetailScreen(
             Spacer(modifier = Modifier.height(12.dp))
             Text(state.topicTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
             Text(
-                state.topicDescription.ifBlank { "Vocabulary collection" },
+                state.topicDescription.ifBlank { stringResource(R.string.vocabulary_collection) },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -326,7 +319,7 @@ fun TopicDetailScreen(
                 ) {
                     Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Study Now", style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.study_now), style = MaterialTheme.typography.labelLarge)
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedButton(
@@ -338,7 +331,7 @@ fun TopicDetailScreen(
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF9E0000))
                     Spacer(Modifier.width(8.dp))
-                    Text("Take Quiz", style = MaterialTheme.typography.labelLarge, color = FlashRed)
+                    Text(stringResource(R.string.take_quiz), style = MaterialTheme.typography.labelLarge, color = FlashRed)
                 }
             }
 
@@ -346,7 +339,7 @@ fun TopicDetailScreen(
             
             // Header with count
             Text(
-                text = "Cards in this topic (${state.cards.size})",
+                text = stringResource(R.string.cards_in_topic, state.cards.size),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
@@ -361,7 +354,7 @@ fun TopicDetailScreen(
                 SearchBar(
                     query = state.searchQuery,
                     onQueryChange = onSearchQueryChange,
-                    placeholder = "Search cards..."
+                    placeholder = stringResource(R.string.search_cards)
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -379,7 +372,7 @@ fun TopicDetailScreen(
                     Text(state.error, color = Color.Red)
                 }
                 state.cards.isEmpty() -> {
-                    Text("No cards in this topic", color = Color.Gray)
+                    Text(stringResource(R.string.no_cards_in_topic), color = Color.Gray)
                 }
                 state.displayedCards.isEmpty() && state.searchQuery.isNotBlank() -> {
                     Column(
@@ -387,12 +380,12 @@ fun TopicDetailScreen(
                         modifier = Modifier.fillMaxWidth().padding(32.dp)
                     ) {
                         Text(
-                            text = "No cards found for \"${state.searchQuery}\"",
+                            text = stringResource(R.string.no_cards_found, state.searchQuery),
                             color = Color.Gray
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(onClick = { onSearchQueryChange("") }) {
-                            Text("Clear search", color = FlashRed)
+                            Text(stringResource(R.string.clear_search), color = FlashRed)
                         }
                     }
                 }
@@ -471,7 +464,7 @@ fun CardItem(
                 IconButton(onClick = onClick) {
                     Icon(
                         imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        contentDescription = if (isSelected) "Selected" else "Select",
+                        contentDescription = if (isSelected) stringResource(R.string.selected_txt) else stringResource(R.string.select_txt),
                         tint = if (isSelected) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
