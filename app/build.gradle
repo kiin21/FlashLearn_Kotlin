@@ -125,6 +125,7 @@ dependencies {
     implementation libs.firebase.firestore
     implementation libs.firebase.auth.ktx
     implementation libs.play.services.auth
+    implementation(libs.firebase.messaging)
     
     // Cloudinary for image uploads
     implementation("com.cloudinary:cloudinary-android:2.5.0")
@@ -148,6 +149,9 @@ dependencies {
     implementation libs.workmanager.runtime
     implementation libs.hilt.work
     ksp libs.hilt.work.compiler
+
+    // Coroutine
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Auth Utils
     implementation("org.mindrot:jbcrypt:0.4")

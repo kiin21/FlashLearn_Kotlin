@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.notification.DailyReminderPermissionGate
 import com.kotlin.flashlearn.domain.repository.UserRepository
 import com.kotlin.flashlearn.presentation.navigation.FlashlearnNavHost
 import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
@@ -30,10 +31,20 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var languageManager: com.kotlin.flashlearn.util.LanguageManager
 
+    private lateinit var reminderGate: DailyReminderPermissionGate
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         languageManager.applySavedLanguage()
         enableEdgeToEdge()
+
+        reminderGate = DailyReminderPermissionGate(this)
+        reminderGate.ensureDailyReminder(
+            hour = 9,
+            minute = 0,
+            title = "FlashLearn",
+            body = "It's time for class!"
+        )
         
         setContent {    
             FlashlearnTheme {
