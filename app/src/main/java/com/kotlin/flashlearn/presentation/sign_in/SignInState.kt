@@ -8,7 +8,7 @@ data class SignInState(
     val isLoading: Boolean = false,
     val isSignInSuccessful: Boolean = false,
     val uid: String? = null,
-    val signInError: String? = null
+    val signInError: String? = null,
     // Username/Password fields
     val username: String = "",
     val password: String = "",

@@ -28,6 +28,7 @@ data class UserProgressEntity(
     val userId: String,
     val flashcardId: String,
     val status: ProgressStatus,
+    val proficiencyScore: Int = 0, // 0-2: New, 3-5: Familiar, 6+: Mastered
     val updatedAt: Long = System.currentTimeMillis(),
     val syncedToRemote: Boolean = false // Tracks if synced to NeonDB
 )

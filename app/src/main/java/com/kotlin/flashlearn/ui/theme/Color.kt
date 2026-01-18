@@ -37,3 +37,17 @@ val Pink80 = BrandRed
 val Purple40 = BrandRed
 val PurpleGrey40 = TextGreySecondaryLight
 val Pink40 = BrandRed
+
+
+val FlashRedDarkest = Color(0xFFA00400)
+val FlashRedDark = Color(0xFF2897FF)
+val FlashRedMed = Color(0xFF6FB9FF)
+val FlashRedLightFig = Color(0xFFB3DAFF)
+val FlashRedKLightest = Color(0xFFFBC6C6)
+
+val FlashSuccessDark = Color(0xFF0C7A41)
+val FlashSuccessMed = Color(0xFF3AC0A0)
+val FlashSuccessLight = Color(0xFFE7F4E8)
+
+val FlashErrorMed = Color(0xFFE11D48)  // Using BrandRed for errors
+val FlashErrorLight = Color(0xFFFEE2E2)  // Light red background for error states

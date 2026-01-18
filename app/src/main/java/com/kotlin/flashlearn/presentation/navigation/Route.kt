@@ -1,5 +1,7 @@
 package com.kotlin.flashlearn.presentation.navigation
 
+import com.kotlin.flashlearn.domain.model.QuizMode
+
 /**
  * Type-safe navigation routes.
  * Using sealed class for compile-time safety and better IDE support.
@@ -37,6 +39,14 @@ sealed class Route(val route: String) {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
 
+    data object QuizSession : Route("quiz_session/{topicId}?mode={mode}&count={count}") {
+        fun createRoute(topicId: String, mode: QuizMode = QuizMode.SPRINT, count: Int = 10) =
+            "quiz_session/$topicId?mode=${mode.name}&count=$count"
+    }
+
+    data object QuizSummary : Route("quiz_summary/{topicId}") {
+        fun createRoute(topicId: String) = "quiz_summary/$topicId"
+    }
     data object DailyWidget : Route("daily_widget")
 
     data object DailyWidgetComplete : Route("daily_widget_complete")

@@ -2,6 +2,7 @@ package com.kotlin.flashlearn.presentation.topic
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -66,6 +68,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.kotlin.flashlearn.domain.model.QuizConfig
+import com.kotlin.flashlearn.domain.model.QuizMode
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.ui.res.stringResource
@@ -80,6 +84,7 @@ fun TopicDetailScreen(
     onBack: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
     onStudyNow: () -> Unit,
+    onTakeQuiz: (QuizConfig) -> Unit,
     onToggleSelectionMode: () -> Unit,
     onToggleCardSelection: (String) -> Unit,
     onSelectAll: () -> Unit,
@@ -95,6 +100,7 @@ fun TopicDetailScreen(
     var showMenu by remember { mutableStateOf(false) }
     var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var showQuizConfig by remember { mutableStateOf(false) }
     
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -323,7 +329,7 @@ fun TopicDetailScreen(
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedButton(
-                    onClick = { /* Quiz */ },
+                    onClick = { showQuizConfig = true },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = FlashRed),
                     border = BorderStroke(1.dp, FlashRed.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(12.dp),
@@ -420,6 +426,16 @@ fun TopicDetailScreen(
             }
         }
     }
+
+    if (showQuizConfig) {
+        QuizConfigBottomSheet(
+            onDismiss = { showQuizConfig = false },
+            onStartQuiz = { config ->
+                showQuizConfig = false
+                onTakeQuiz(config)
+            }
+        )
+    }
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -507,6 +523,57 @@ fun CardItem(
                     modifier = Modifier.size(24.dp)
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun QuizConfigBottomSheet(
+    onDismiss: () -> Unit,
+    onStartQuiz: (QuizConfig) -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Practice Session", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            QuizModeCard(
+                title = "⚡ Quick Sprint",
+                subtitle = "Adaptive difficulty. Best for daily review.",
+                onClick = { onStartQuiz(QuizConfig(QuizMode.SPRINT, 10)) }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            QuizModeCard(
+                title = "🎯 VSTEP Drill",
+                subtitle = "Exam simulation (Reading, Listening, Writing).",
+                onClick = { onStartQuiz(QuizConfig(QuizMode.VSTEP_DRILL, 20)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuizModeCard(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -39,7 +39,7 @@ class LearningSessionViewModel @Inject constructor(
     }
 
     /**
-     * Loads flashcards for the given topic from FlashcardRepository (backed by Datamuse API).
+     * Loads flashcards for the given topic.
      */
     private fun loadFlashcards() {
         viewModelScope.launch {
@@ -47,17 +47,19 @@ class LearningSessionViewModel @Inject constructor(
 
             flashcardRepository.getFlashcardsByTopicId(topicId).fold(
                 onSuccess = { flashcards ->
-                    val initialCard = flashcards.getOrNull(0)
+                    val sessionCards = flashcards
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            flashcards = flashcards,
-                            currentCardIndex = 0
+                            sessionQueue = sessionCards,
+                            initialCardCount = sessionCards.size,
+                            completedCardCount = 0,
+                            previousState = null
                         )
                     }
-                    if (initialCard != null) {
-                        enrichCard(initialCard)
-                    }
+                    
+                    // Enrich the first card
+                    sessionCards.firstOrNull()?.let { enrichCard(it) }
                 },
                 onFailure = { error ->
                     _state.update {
@@ -76,12 +78,15 @@ class LearningSessionViewModel @Inject constructor(
         if (card.imageUrl.isBlank() || card.ipa.isBlank()) {
             viewModelScope.launch {
                 try {
-                    val enrichedCard = (flashcardRepository as com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl).enrichFlashcard(card)
+                    // Cast to implementation to access enrichFlashcard if it's not in interface
+                    val enrichedCard = (flashcardRepository as? com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl)?.enrichFlashcard(card) 
+                        ?: return@launch
+
                     _state.update { currentState ->
-                        val updatedCards = currentState.flashcards.map { 
+                        val updatedQueue = currentState.sessionQueue.map { 
                             if (it.id == enrichedCard.id) enrichedCard else it 
                         }
-                        currentState.copy(flashcards = updatedCards)
+                        currentState.copy(sessionQueue = updatedQueue)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -91,69 +96,80 @@ class LearningSessionViewModel @Inject constructor(
     }
 
     /**
-     * Flips the current card to show definition or word.
+     * Flips the current card.
      */
     fun flipCard() {
         _state.update { it.copy(isCardFlipped = !it.isCardFlipped) }
     }
 
     /**
-     * Handles "Got It" button click - marks card as mastered and moves to next.
+     * Swipe Right - "Remembered"
+     * Card is removed from the session stack.
      */
-    fun onGotIt(userId: String) {
-        viewModelScope.launch {
-            val currentCard = _state.value.currentCard ?: return@launch
-            
-            // Mark as mastered
-            flashcardRepository.markFlashcardAsMastered(currentCard.id, userId)
-            
-            _state.update {
-                it.copy(
-                    masteredCardIds = it.masteredCardIds + currentCard.id
-                )
-            }
-            
-            moveToNextCard()
-        }
-    }
+    fun onSwipeRight() {
+        val currentState = _state.value
+        val currentCard = currentState.currentCard ?: return
 
-    /**
-     * Handles "Study Again" button click - marks for review and moves to next.
-     */
-    fun onStudyAgain(userId: String) {
-        viewModelScope.launch {
-            val currentCard = _state.value.currentCard ?: return@launch
-            
-            // Mark for review
-            flashcardRepository.markFlashcardForReview(currentCard.id, userId)
-            
-            moveToNextCard()
-        }
-    }
+        // Save state for undo (clearing nested previousState to limit history)
+        val stateToSave = currentState.copy(previousState = null)
 
-    /**
-     * Moves to the next flashcard or completes session.
-     */
-    private suspend fun moveToNextCard() {
+        val newQueue = currentState.sessionQueue.drop(1)
+        
         _state.update {
             it.copy(
-                currentCardIndex = it.currentCardIndex + 1,
-                isCardFlipped = false // Reset flip state
+                sessionQueue = newQueue,
+                completedCardCount = it.completedCardCount + 1,
+                isCardFlipped = false,
+                previousState = stateToSave
             )
         }
 
-        // Check if session is complete
-        if (_state.value.isSessionComplete) {
-            _uiEvent.send(LearningSessionUiEvent.SessionComplete)
-        }
+        checkSessionCompletion(newQueue)
+        
+        // Enrich next card
+        newQueue.firstOrNull()?.let { enrichCard(it) }
     }
 
     /**
-     * Handles swipe gesture to move to next card.
+     * Swipe Left - "Not Remembered"
+     * Card is re-queued to the end of the stack.
      */
-    fun onSwipeNext(userId: String) {
-        // For swipe, we treat it as "Study Again" by default
-        onStudyAgain(userId)
+    fun onSwipeLeft() {
+        val currentState = _state.value
+        val currentCard = currentState.currentCard ?: return
+
+        // Save state for undo
+        val stateToSave = currentState.copy(previousState = null)
+
+        val newQueue = currentState.sessionQueue.drop(1) + currentCard
+
+        _state.update {
+            it.copy(
+                sessionQueue = newQueue,
+                isCardFlipped = false,
+                previousState = stateToSave
+            )
+        }
+        
+        // Enrich next card
+        newQueue.firstOrNull()?.let { enrichCard(it) }
+    }
+
+    /**
+     * Undo the last action.
+     */
+    fun onUndo() {
+        _state.update { currentState ->
+            currentState.previousState ?: currentState
+        }
+    }
+
+    private fun checkSessionCompletion(queue: List<com.kotlin.flashlearn.domain.model.Flashcard>) {
+        if (queue.isEmpty()) {
+            viewModelScope.launch {
+                _uiEvent.send(LearningSessionUiEvent.SessionComplete)
+            }
+        }
     }
 
     /**

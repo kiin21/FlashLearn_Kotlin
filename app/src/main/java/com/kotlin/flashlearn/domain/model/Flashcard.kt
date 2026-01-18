@@ -14,5 +14,6 @@ data class Flashcard(
     val exampleSentence: String = "",
     val ipa: String = "",
     val imageUrl: String = "",
+    val synonyms: List<String> = emptyList(),
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -27,7 +27,10 @@ object DatabaseModule {
         context,
         FlashLearnDatabase::class.java,
         FlashLearnDatabase.DATABASE_NAME
-    ).build()
+    )
+        .addMigrations(FlashLearnDatabase.MIGRATION_1_2)
+        .fallbackToDestructiveMigration()
+        .build()
 
     @Provides
     @Singleton
