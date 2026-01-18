@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.domain.model.QuizQuestion
 import com.kotlin.flashlearn.presentation.quiz.components.CheckAnswerButton
+import com.kotlin.flashlearn.presentation.quiz.components.LetterTile
 import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 import kotlinx.coroutines.delay
 
@@ -181,29 +182,13 @@ fun SentenceBuilderView(
                             animationSpec = tween(200)
                         )
                     ) {
-                        OutlinedCard(
-                            onClick = {
-                                if (!showFeedback) {
-                                    isVisible = false
-                                    selectedSegments = selectedSegments + word
-                                    availableSegments = availableSegments - word
-                                }
-                            },
-                            modifier = Modifier,
-                            border = BorderStroke(2.dp, FlashRedDarkest),
-                            colors = CardDefaults.outlinedCardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            enabled = !showFeedback
-                        ) {
-                            Text(
-                                text = word,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium,
-                                color = FlashRedDarkest,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                            )
-                        }
+                        LetterTile(letter = word, onClick = {
+                            if (!showFeedback) {
+                                isVisible = false
+                                selectedSegments = selectedSegments + word
+                                availableSegments = availableSegments - word
+                            }
+                        }, enabled = !showFeedback)
                     }
                 }
             }

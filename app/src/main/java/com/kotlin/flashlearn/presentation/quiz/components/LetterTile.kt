@@ -9,11 +9,13 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,38 +33,37 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 import kotlin.math.roundToInt
 
 @Composable
 fun LetterTile(
-    letter: Char,
+    letter: String,
     modifier: Modifier = Modifier,
-    isGhost: Boolean = false
+    isGhost: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit = {}
 ) {
-    Card(
-        modifier = modifier.size(52.dp),
-        colors = CardDefaults.cardColors(
+    OutlinedCard(
+        onClick = onClick,
+        modifier = modifier,
+        border = BorderStroke(2.dp, FlashRedDarkest),
+        colors = CardDefaults.outlinedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ), border = BorderStroke(
-            2.dp,
-            MaterialTheme.colorScheme.outline
         ),
-        shape = RoundedCornerShape(8.dp),
+        enabled = true,
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isGhost) 10.dp else 2.dp
+            defaultElevation = if (isGhost) 10.dp else 0.dp
         )
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = letter.toString().uppercase(),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        Text(
+            text = letter
+            ,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = FlashRedDarkest,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
     }
 }
 
@@ -70,29 +71,23 @@ fun LetterTile(
 @Composable
 fun LetterTilePreview(
 ) {
-    Card(
-        modifier = Modifier.size(24.dp),
-        colors = CardDefaults.cardColors(
+    OutlinedCard(
+        onClick = {
+        },
+        modifier = Modifier,
+        border = BorderStroke(2.dp, FlashRedDarkest),
+        colors = CardDefaults.outlinedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ), border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline
         ),
-        shape = RoundedCornerShape(4.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (false) 10.dp else 2.dp
-        )
+        enabled = true
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "A".toString().uppercase(),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        Text(
+            text = "Word",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = FlashRedDarkest,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
     }
+
 }

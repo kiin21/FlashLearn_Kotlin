@@ -153,7 +153,7 @@ fun ScrambleView(
                                     alpha = if (index == draggingItemIndex) 0f else 1f
                                 }
                         ) {
-                            LetterTile(letter = letterItem.char)
+                            LetterTile(letter = letterItem.char.toString())
                         }
                     }
                 }
@@ -171,7 +171,7 @@ fun ScrambleView(
             if (draggingItemIndex != null && draggingItemIndex!! < letters.size) {
                 val letter = letters[draggingItemIndex!!]
                 LetterTile(
-                    letter = letter.char,
+                    letter = letter.char.toString(),
                     isGhost = true,
                     modifier = Modifier
                         .offset {
