@@ -3,7 +3,6 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.model.TopicCategory
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
@@ -14,6 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+import com.kotlin.flashlearn.R
+
+/**
+ * Filter options for Topic Screen.
+ */
+enum class TopicFilter(val resId: Int) {
+    ALL(R.string.filter_all),
+    SYSTEM(R.string.filter_system),
+    MY_TOPICS(R.string.filter_my_topics)
+}
 
 /**
  * ViewModel for TopicScreen - manages topic list with visibility awareness.
@@ -48,23 +58,18 @@ class TopicViewModel @Inject constructor(
                     // Categorize topics
                     val systemTopics = topics.filter { it.getCategory() == TopicCategory.SYSTEM }
                     val myTopics = topics.filter { 
-                        it.getCategory() == TopicCategory.PRIVATE && it.createdBy == currentUserId 
-                    }
-                    val sharedTopics = topics.filter { 
-                        it.getCategory() == TopicCategory.SHARED && it.createdBy == currentUserId 
-                    }
-                    val communityTopics = topics.filter {
-                        it.getCategory() == TopicCategory.SHARED && it.createdBy != currentUserId
+                        it.createdBy == currentUserId 
                     }
                     
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         allTopics = topics,
                         systemTopics = systemTopics,
-                        myTopics = myTopics,
-                        mySharedTopics = sharedTopics,
-                        communityTopics = communityTopics
+                        myTopics = myTopics
                     )
+                    
+                    // Apply current filter and search
+                    applyFilterAndSearch()
                     
                     // Load word count for each topic from FlashcardRepository
                     topics.forEach { topic ->
@@ -78,6 +83,50 @@ class TopicViewModel @Inject constructor(
                     )
                 }
         }
+    }
+    
+    /**
+     * Updates search query and filters topics.
+     */
+    fun updateSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+        applyFilterAndSearch()
+    }
+    
+    /**
+     * Updates active filter and filters topics.
+     */
+    fun updateFilter(filter: TopicFilter) {
+        _uiState.value = _uiState.value.copy(activeFilter = filter)
+        applyFilterAndSearch()
+    }
+    
+    /**
+     * Applies both search query and filter to produce displayed topics.
+     */
+    private fun applyFilterAndSearch() {
+        val state = _uiState.value
+        val query = state.searchQuery.lowercase().trim()
+        
+        // Step 1: Apply filter
+        val filteredByCategory = when (state.activeFilter) {
+            TopicFilter.ALL -> state.allTopics
+            TopicFilter.SYSTEM -> state.systemTopics
+            TopicFilter.MY_TOPICS -> state.myTopics
+        }
+        
+        // Step 2: Apply search
+        val filteredBySearch = if (query.isBlank()) {
+            filteredByCategory
+        } else {
+            filteredByCategory.filter { topic ->
+                topic.name.lowercase().contains(query) ||
+                topic.description.lowercase().contains(query) ||
+                topic.creatorName.lowercase().contains(query)
+            }
+        }
+        
+        _uiState.value = state.copy(displayedTopics = filteredBySearch)
     }
     
     private fun loadWordCountForTopic(topicId: String) {
@@ -118,7 +167,8 @@ data class TopicUiState(
     val allTopics: List<Topic> = emptyList(),
     val systemTopics: List<Topic> = emptyList(),
     val myTopics: List<Topic> = emptyList(),
-    val mySharedTopics: List<Topic> = emptyList(),
-    val communityTopics: List<Topic> = emptyList(),
+    val displayedTopics: List<Topic> = emptyList(),
+    val searchQuery: String = "",
+    val activeFilter: TopicFilter = TopicFilter.ALL,
     val error: String? = null
 )

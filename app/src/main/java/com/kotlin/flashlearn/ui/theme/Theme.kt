@@ -54,7 +54,7 @@ private val LightColorScheme = lightColorScheme(
 fun FlashlearnTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Changed to false to use FlashRed theme
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

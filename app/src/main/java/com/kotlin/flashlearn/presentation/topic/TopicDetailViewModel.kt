@@ -55,7 +55,8 @@ class TopicDetailViewModel @Inject constructor(
                         topicTitle = topic.name,
                         topicDescription = topic.description,
                         isOwner = isOwner,
-                        imageUrl = topic.imageUrl ?: ""
+                        imageUrl = topic.imageUrl ?: "",
+                        isPublic = topic.isPublic
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
@@ -79,6 +80,7 @@ class TopicDetailViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     isLoading = false,
                     cards = flashcards,
+                    displayedCards = flashcards,
                     error = null,
                     // Reset selection when reloading
                     isSelectionMode = false,
@@ -97,6 +99,35 @@ class TopicDetailViewModel @Inject constructor(
     
     fun refreshCards() {
         loadTopicAndCards()
+    }
+    
+    /**
+     * Updates search query and filters flashcards.
+     */
+    fun updateSearchQuery(query: String) {
+        _state.value = _state.value.copy(searchQuery = query)
+        applySearch()
+    }
+    
+    /**
+     * Filters flashcards based on search query.
+     * Searches in word, definition, and example sentence.
+     */
+    private fun applySearch() {
+        val query = _state.value.searchQuery.lowercase().trim()
+        val allCards = _state.value.cards
+        
+        val filtered = if (query.isBlank()) {
+            allCards
+        } else {
+            allCards.filter { card ->
+                card.word.lowercase().contains(query) ||
+                card.definition.lowercase().contains(query) ||
+                card.exampleSentence.lowercase().contains(query)
+            }
+        }
+        
+        _state.value = _state.value.copy(displayedCards = filtered)
     }
     
     fun toggleSelectionMode() {
@@ -212,5 +243,82 @@ class TopicDetailViewModel @Inject constructor(
                      )
                  }
         }
+    }
+    
+    /**
+     * Toggle topic public/private status.
+     * When public, topic appears in Community for others to discover.
+     */
+    fun togglePublicStatus() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            val currentTopicResult = topicRepository.getTopicById(topicId)
+            val currentTopic = currentTopicResult.getOrNull()
+            
+            if (currentTopic != null) {
+                val newIsPublic = !currentTopic.isPublic
+                val updatedTopic = currentTopic.copy(isPublic = newIsPublic)
+                
+                topicRepository.updateTopic(updatedTopic)
+                    .onSuccess { topic ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            isPublic = topic.isPublic
+                        )
+                    }
+                    .onFailure { e ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = e.message ?: "Failed to update visibility"
+                        )
+                    }
+            } else {
+                _state.value = _state.value.copy(isLoading = false)
+            }
+        }
+    }
+    
+    /**
+     * Saves a community topic to user's own collection (clone).
+     */
+    fun saveToMyTopics() {
+        val userId = currentUserId ?: run {
+            _state.value = _state.value.copy(error = "Please sign in to save topics")
+            return
+        }
+        
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            val currentUser = firebaseAuth.currentUser
+            val userName = currentUser?.displayName 
+                ?: currentUser?.email?.substringBefore("@") 
+                ?: "Anonymous"
+            
+            topicRepository.cloneTopicToUser(topicId, userId, userName)
+                .onSuccess { clonedTopic ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        successMessage = "Saved to My Topics!"
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to save topic"
+                    )
+                }
+        }
+    }
+    
+    /**
+     * Clears success/error messages after they've been shown.
+     */
+    fun clearMessages() {
+        _state.value = _state.value.copy(
+            successMessage = null,
+            error = null
+        )
     }
 }

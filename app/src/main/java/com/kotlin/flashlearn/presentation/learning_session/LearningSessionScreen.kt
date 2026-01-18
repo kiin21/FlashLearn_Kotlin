@@ -61,6 +61,8 @@ import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -149,7 +151,7 @@ fun LearningSessionScreen(
                     } else {
                         // No cards available
                         Text(
-                            text = "No flashcards available",
+                            text = stringResource(R.string.no_flashcards_available),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.Gray
                         )
@@ -218,7 +220,7 @@ private fun TopBar(
                 IconButton(onClick = onClose) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.close),
                         tint = Color.Black
                     )
                 }

@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,25 +55,34 @@ import com.kotlin.flashlearn.ui.theme.FlashGrey
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun HomeScreen(
     userData: User?,
+    streakDays: Int,
     onNavigateToProfile: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
-    onNavigateToLearningSession: (String) -> Unit = {}
+    onNavigateToLearningSession: (String) -> Unit = {},
+    onNavigateToDailyWidget: () -> Unit = {},
+    onNavigateToDailyWidgetComplete: () -> Unit = {}
 ) {
+    val homeVm: HomeViewModel = hiltViewModel()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     
-    val showNotImplementedMessage: (String) -> Unit = { featureName ->
+    val showNotImplementedMessage: (Int) -> Unit = { resId ->
+        val featureName = context.getString(resId)
         scope.launch {
-            snackbarHostState.showSnackbar("$featureName is coming soon!")
+            snackbarHostState.showSnackbar(context.getString(R.string.coming_soon, featureName))
         }
     }
     
@@ -98,15 +108,24 @@ fun HomeScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            HeaderSection(userData)
+            HeaderSection(
+                user = userData,
+                streakDays = streakDays,
+                onStreakClick = {
+                    homeVm.onStreakClick(
+                        onGoToDailyWidget = onNavigateToDailyWidget,
+                        onGoToDailyWidgetComplete = onNavigateToDailyWidgetComplete
+                    )
+                }
+            )
             Spacer(modifier = Modifier.height(24.dp))
 
             ExamDateCard(userData)
             Spacer(modifier = Modifier.height(24.dp))
 
             DailyWordSection(
-                onViewArchive = { showNotImplementedMessage("View Archive") },
-                onPronounce = { showNotImplementedMessage("Pronunciation") }
+                onViewArchive = { showNotImplementedMessage(R.string.view_archive) },
+                onPronounce = { showNotImplementedMessage(R.string.pronunciation) }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -116,14 +135,18 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             RecommendedSection(
-                onCardClick = { showNotImplementedMessage("Recommended collection") }
+                onCardClick = { showNotImplementedMessage(R.string.recommended_collection) }
             )
         }
     }
 }
 
 @Composable
-fun HeaderSection(user: User?) {
+fun HeaderSection(
+    user: User?,
+    streakDays: Int,
+    onStreakClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -131,12 +154,12 @@ fun HeaderSection(user: User?) {
     ) {
         Column {
             Text(
-                text = "Hello, ${user?.displayName?.split(" ")?.firstOrNull() ?: "Friend"}!",
+                text = stringResource(R.string.hello_greeting, user?.displayName?.split(" ")?.firstOrNull() ?: stringResource(R.string.hello_friend)),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Let's keep the streak alive.",
+                text = stringResource(R.string.streak_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = FlashGrey
             )
@@ -146,6 +169,7 @@ fun HeaderSection(user: User?) {
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFFFF3E0))
+                .clickable { onStreakClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -157,7 +181,7 @@ fun HeaderSection(user: User?) {
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "${user?.streak ?: 0} DAYS",
+                text = "$streakDays DAYS",
                 color = Color(0xFFFF9800),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold
@@ -179,7 +203,7 @@ fun ExamDateCard(user: User?) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "VSTEP EXAM DATE",
+                    text = stringResource(R.string.vstep_exam_date),
                     color = FlashGrey,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -208,7 +232,7 @@ fun ExamDateCard(user: User?) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Days Left",
+                    text = stringResource(R.string.days_left),
                     color = FlashGrey,
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -229,13 +253,13 @@ fun DailyWordSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Daily Word",
+                text = stringResource(R.string.daily_word),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "View Archive",
+                text = stringResource(R.string.view_archive),
                 color = FlashRed,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
@@ -258,7 +282,7 @@ fun DailyWordSection(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "B2 LEVEL",
+                        text = stringResource(R.string.b2_level),
                         color = FlashRed,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
@@ -277,7 +301,7 @@ fun DailyWordSection(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = "Pronounce",
+                            contentDescription = stringResource(R.string.pronounce),
                             tint = FlashRed
                         )
                     }
@@ -311,7 +335,7 @@ fun ContinueLearningSection(
 ) {
     Column {
         Text(
-            text = "Continue Learning",
+            text = stringResource(R.string.continue_learning),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -365,7 +389,7 @@ fun ContinueLearningSection(
                 IconButton(onClick = onStartLearning) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
-                        contentDescription = "Continue",
+                        contentDescription = stringResource(R.string.continue_button),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -380,7 +404,7 @@ fun RecommendedSection(
 ) {
     Column {
         Text(
-            text = "Recommended for You",
+            text = stringResource(R.string.recommended_for_you),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -442,7 +466,7 @@ fun RecommendedCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = counts.getOrElse(index) { "20 words" },
+                text = stringResource(R.string.words, 20),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelSmall
             )

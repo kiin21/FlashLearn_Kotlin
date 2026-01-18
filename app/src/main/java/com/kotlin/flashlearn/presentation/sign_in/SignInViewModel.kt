@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.tasks.await
 
 /**
  * ViewModel for Sign In screen.
@@ -68,11 +71,20 @@ class SignInViewModel @Inject constructor(
                         val isNew = userRepository.isNewUser(userData.userId)
                         
                         if (isNew) {
-                            // Create new user
+                            // Create new user with Google account already linked
+                            val linkedAccount = com.kotlin.flashlearn.domain.model.LinkedAccount(
+                                accountId = userData.userId,
+                                email = userData.email ?: ""
+                            )
                             val newUser = User(
                                 userId = userData.userId,
                                 displayName = userData.username,
-                                photoUrl = userData.profilePictureUrl
+                                photoUrl = userData.profilePictureUrl,
+                                email = userData.email,
+                                googleId = userData.userId,
+                                googleIds = listOf(userData.userId),
+                                linkedGoogleAccounts = listOf(linkedAccount),
+                                linkedProviders = listOf("google.com")
                             )
                             userRepository.createUser(newUser)
                             
@@ -121,5 +133,57 @@ class SignInViewModel @Inject constructor(
      */
     fun resetState() {
         _state.update { SignInState() }
+    }
+
+    // Username/Password handlers
+    fun onUsernameChange(username: String) {
+        _state.update { it.copy(username = username, usernameError = null) }
+    }
+
+    fun onPasswordChange(password: String) {
+        _state.update { it.copy(password = password, passwordError = null) }
+    }
+
+    fun signInWithUsername() {
+        viewModelScope.launch {
+            val username = state.value.username.trim()
+            val password = state.value.password
+
+            // Validate inputs
+            if (username.isBlank()) {
+                _state.update { it.copy(usernameError = "Username is required") }
+                return@launch
+            }
+            if (password.isBlank()) {
+                _state.update { it.copy(passwordError = "Password is required") }
+                return@launch
+            }
+
+            _state.update { it.copy(isLoading = true, signInError = null) }
+
+            authRepository.signInWithUsername(username, password).fold(
+                onSuccess = { userData ->
+                    _state.update { 
+                        it.copy(isLoading = false, isSignInSuccessful = true) 
+                    }
+                    _uiEvent.send(SignInUiEvent.NavigateToHome)
+                },
+                onFailure = { error ->
+                    _state.update { 
+                        it.copy(
+                            isLoading = false,
+                            signInError = error.message
+                        ) 
+                    }
+                    _uiEvent.send(SignInUiEvent.ShowError(error.message ?: "Sign in failed"))
+                }
+            )
+        }
+    }
+
+    fun navigateToRegister() {
+        viewModelScope.launch {
+            _uiEvent.send(SignInUiEvent.NavigateToRegister)
+        }
     }
 }

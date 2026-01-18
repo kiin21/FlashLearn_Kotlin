@@ -8,6 +8,7 @@ import com.kotlin.flashlearn.domain.model.QuizMode
  */
 sealed class Route(val route: String) {
     data object SignIn : Route("sign_in")
+    data object Register : Route("register")
     data object Onboarding : Route("onboarding")
     data object Home : Route("home")
     data object Topic : Route("topic")
@@ -30,6 +31,10 @@ sealed class Route(val route: String) {
     }
     data object Community : Route("community")
     
+    data object UserProfile : Route("user_profile/{userId}") {
+        fun createRoute(userId: String) = "user_profile/$userId"
+    }
+    
     data object AddWord : Route("add_word/{topicId}") {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
@@ -42,4 +47,7 @@ sealed class Route(val route: String) {
     data object QuizSummary : Route("quiz_summary/{topicId}") {
         fun createRoute(topicId: String) = "quiz_summary/$topicId"
     }
+    data object DailyWidget : Route("daily_widget")
+
+    data object DailyWidgetComplete : Route("daily_widget_complete")
 }

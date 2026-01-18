@@ -8,7 +8,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -38,6 +41,8 @@ import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.AddWordScreen
 import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
+import com.kotlin.flashlearn.presentation.widget.WidgetCompletedScreen
+import com.kotlin.flashlearn.presentation.widget.WidgetRevealScreen
 
 /**
  * Navigation host for the app.
@@ -48,6 +53,8 @@ import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
 fun FlashlearnNavHost(
     navController: NavHostController,
     authRepository: AuthRepository,
+    userRepository: com.kotlin.flashlearn.domain.repository.UserRepository,
+    languageManager: com.kotlin.flashlearn.util.LanguageManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -57,14 +64,16 @@ fun FlashlearnNavHost(
         startDestination = Route.SignIn.route,
         modifier = modifier
     ) {
+
         composable(Route.SignIn.route) {
             val viewModel = hiltViewModel<SignInViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
 
-            // Check if already signed in
+            // Check if already signed in and restore session (checks for linked accounts)
             LaunchedEffect(key1 = Unit) {
-                if (authRepository.getSignedInUser() != null) {
+                val userData = authRepository.restoreSession()
+                if (userData != null) {
                     navController.navigate(Route.Home.route) {
                         popUpTo(Route.SignIn.route) { inclusive = true }
                     }
@@ -93,7 +102,9 @@ fun FlashlearnNavHost(
                             }
                             viewModel.resetState()
                         }
-
+                        is SignInUiEvent.NavigateToRegister -> {
+                            navController.navigate(Route.Register.route)
+                        }
                         is SignInUiEvent.ShowError -> {
                             Toast.makeText(
                                 context,
@@ -126,7 +137,44 @@ fun FlashlearnNavHost(
                             )
                         }
                     }
+                },
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onLoginClick = viewModel::signInWithUsername,
+                onRegisterClick = viewModel::navigateToRegister
+            )
+        }
+
+        // Register Screen
+        composable(Route.Register.route) {
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.register.RegisterViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            LaunchedEffect(key1 = Unit) {
+                viewModel.uiEvent.collectLatest { event ->
+                    when (event) {
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.NavigateToOnboarding -> {
+                            navController.navigate(Route.Onboarding.route) {
+                                popUpTo(Route.Register.route) { inclusive = true }
+                            }
+                        }
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.NavigateToSignIn -> {
+                            navController.popBackStack()
+                        }
+                        is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.ShowError -> {
+                            Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
+            }
+
+            com.kotlin.flashlearn.presentation.register.RegisterScreen(
+                state = state,
+                onUsernameChange = viewModel::onUsernameChange,
+                onPasswordChange = viewModel::onPasswordChange,
+                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onRegisterClick = viewModel::register,
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -154,8 +202,12 @@ fun FlashlearnNavHost(
                 )
             }
 
+            val streakVm = hiltViewModel<com.kotlin.flashlearn.presentation.home.HomeStreakViewModel>()
+            val streakDays by streakVm.streakDays.collectAsStateWithLifecycle()
+
             HomeScreen(
                 userData = user,
+                streakDays = streakDays,
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
                 },
@@ -167,6 +219,12 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToLearningSession = { topicId ->
                     navController.navigate(Route.LearningSession.createRoute(topicId, "home"))
+                },
+                onNavigateToDailyWidget = {
+                    navController.navigate(Route.DailyWidget.route)
+                },
+                onNavigateToDailyWidgetComplete = {
+                    navController.navigate(Route.DailyWidgetComplete.route)
                 }
             )
         }
@@ -237,7 +295,11 @@ fun FlashlearnNavHost(
                     }
                 },
                 onUpdateTopic = viewModel::updateTopic,
-                onRegenerateImage = viewModel::regenerateImage
+                onRegenerateImage = viewModel::regenerateImage,
+                onTogglePublic = viewModel::togglePublicStatus,
+                onSaveToMyTopics = viewModel::saveToMyTopics,
+                onClearMessages = viewModel::clearMessages,
+                onSearchQueryChange = viewModel::updateSearchQuery
             )
         }
 
@@ -380,15 +442,208 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
+                },
+                onNavigateToTopicDetail = { topicId ->
+                    navController.navigate(Route.TopicDetail.createRoute(topicId))
+                },
+                onNavigateToUserProfile = { userId ->
+                    navController.navigate(Route.UserProfile.createRoute(userId))
                 }
+            )
+        }
+        
+        // User Public Profile Screen
+        composable(
+            route = Route.UserProfile.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType }
+            )
+        ) {
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.community.UserPublicProfileViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            
+            com.kotlin.flashlearn.presentation.community.UserPublicProfileScreen(
+                state = state,
+                onBack = { navController.popBackStack() },
+                onTopicClick = { topicId ->
+                    navController.navigate(Route.TopicDetail.createRoute(topicId))
+                },
+                onUpvoteClick = viewModel::toggleUpvote,
+                onRetry = viewModel::retry
             )
         }
 
         composable(Route.Profile.route) {
             val scope = rememberCoroutineScope()
+            var isLinkingInProgress by remember { mutableStateOf(false) }
+            // Using LinkedAccount objects now
+            var linkedAccounts by remember { mutableStateOf<List<com.kotlin.flashlearn.domain.model.LinkedAccount>>(emptyList()) }
+            var currentUserData by remember { mutableStateOf(authRepository.getSignedInUser()) }
+            val currentUserId = currentUserData?.userId
+
+            // Fetch linked providers
+            LaunchedEffect(key1 = currentUserId) {
+                currentUserId?.let { userId ->
+                    scope.launch {
+                        val user = userRepository.getUser(userId)
+                        // Use the new list, or helper to convert if needed (for migration could check both? For now clean slate)
+                        linkedAccounts = user?.linkedGoogleAccounts ?: emptyList() 
+                    }
+                }
+            }
+
+            val linkGoogleLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        result.data?.let { intent ->
+                            scope.launch {
+                                isLinkingInProgress = true
+                                authRepository.linkGoogleAccountWithIntent(intent).fold(
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "Google account linked successfully!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        // Refresh state
+                                        currentUserId?.let { userId ->
+                                            val user = userRepository.getUser(userId)
+                                            linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
+                                        }
+                                        currentUserData = authRepository.getSignedInUser()
+                                        isLinkingInProgress = false
+                                    },
+                                    onFailure = { error ->
+                                        Toast.makeText(
+                                            context,
+                                            "Linking failed: ${error.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        isLinkingInProgress = false
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        isLinkingInProgress = false
+                    }
+                }
+            )
 
             ProfileScreen(
-                userData = authRepository.getSignedInUser(),
+                userData = currentUserData,
+                linkedAccounts = linkedAccounts, // Pass the list
+                isLinkingInProgress = isLinkingInProgress,
+                onLinkGoogleAccount = {
+                    scope.launch {
+                        isLinkingInProgress = true
+                        authRepository.linkGoogleAccount().fold(
+                            onSuccess = { intentSender ->
+                                intentSender?.let {
+                                    linkGoogleLauncher.launch(
+                                        IntentSenderRequest.Builder(it).build()
+                                    )
+                                } ?: run {
+                                    Toast.makeText(context, "Linking failed", Toast.LENGTH_SHORT).show()
+                                    isLinkingInProgress = false
+                                }
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(
+                                    context,
+                                    "Linking failed: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                isLinkingInProgress = false
+                            }
+                        )
+                    }
+                },
+                onUnlinkGoogleAccount = { googleId -> // Accepts ID now
+                    scope.launch {
+                        authRepository.unlinkGoogleAccount(googleId).fold(
+                            onSuccess = {
+                                Toast.makeText(
+                                    context,
+                                    "Account unlinked successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // Refresh state
+                                currentUserId?.let { userId ->
+                                    val user = userRepository.getUser(userId)
+                                    linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
+                                }
+                                currentUserData = authRepository.getSignedInUser()
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(
+                                    context,
+                                    "Unlinking failed: ${error.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+                },
+                onUpdateEmail = { newEmail ->
+                    scope.launch {
+                        currentUserId?.let { userId ->
+                            try {
+                                userRepository.updateEmail(userId, newEmail)
+                                // Refresh user data locally
+                                currentUserData = currentUserData?.copy(email = newEmail)
+                                Toast.makeText(context, "Primary email updated", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Failed to update email: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                },
+                onUpdateProfilePicture = { uri ->
+                    scope.launch {
+                        currentUserId?.let { userId ->
+                            try {
+                                Toast.makeText(context, "Uploading image...", Toast.LENGTH_SHORT).show()
+                                val downloadUrl = userRepository.uploadProfilePicture(userId, uri.toString())
+                                
+                                // Refresh user data locally
+                                currentUserData = currentUserData?.copy(profilePictureUrl = downloadUrl)
+                                Toast.makeText(context, "Profile picture updated", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                },
+                onDeleteAccount = {
+                    scope.launch {
+                        authRepository.deleteAccount().fold(
+                            onSuccess = {
+                                Toast.makeText(context, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                                navController.navigate(Route.SignIn.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            },
+                            onFailure = { error ->
+                                Toast.makeText(context, "Delete failed: ${error.message}", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }
+                },
+                onChangePassword = { oldPassword, newPassword, onResult ->
+                    scope.launch {
+                        authRepository.changePassword(oldPassword, newPassword).fold(
+                            onSuccess = {
+                                Toast.makeText(context, "Password changed successfully", Toast.LENGTH_SHORT).show()
+                                onResult(true, null)
+                            },
+                            onFailure = { error ->
+                                onResult(false, error.message)
+                            }
+                        )
+                    }
+                },
                 onSignOut = {
                     scope.launch {
                         authRepository.signOut()
@@ -406,6 +661,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToCommunity = {
                     navController.navigate(Route.Community.route)
+                },
+                onLanguageChange = { languageCode ->
+                    languageManager.setLanguage(languageCode)
                 }
             )
         }
@@ -452,6 +710,30 @@ fun FlashlearnNavHost(
                         launchSingleTop = true
                     }
                 }
+            )
+        }
+        composable(Route.DailyWidget.route) {
+            WidgetRevealScreen(
+                onCompleted = {
+                    navController.navigate(Route.DailyWidgetComplete.route) {
+                        popUpTo(Route.DailyWidget.route) { inclusive = true }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Route.DailyWidgetComplete.route) {
+            WidgetCompletedScreen(
+                onBackHome = {
+                    navController.navigate(Route.Home.route) {
+                        popUpTo(Route.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
     }

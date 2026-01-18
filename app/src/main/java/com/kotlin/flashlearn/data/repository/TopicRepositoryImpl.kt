@@ -8,6 +8,7 @@ import com.google.firebase.firestore.Source
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.PixabayApi
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
@@ -25,14 +26,17 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getPublicTopics(): Result<List<Topic>> {
         return runCatching {
+            // Fetch from server first for Community - needs fresh upvote counts
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             val publicTopics = topicsCollection
                 .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             combineAndSort(systemTopics + publicTopics)
@@ -55,16 +59,13 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getVisibleTopics(userId: String?): Result<List<Topic>> {
         return runCatching {
+            // System topics - built-in learning content
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
                 .getWithCacheFirst()
                 .documents.mapNotNull { it.toTopic() }
 
-            val publicTopics = topicsCollection
-                .whereEqualTo("isPublic", true)
-                .getWithCacheFirst()
-                .documents.mapNotNull { it.toTopic() }
-
+            // User's own topics (both public and private)
             val userTopics = if (!userId.isNullOrBlank()) {
                 topicsCollection
                     .whereEqualTo("createdBy", userId)
@@ -74,7 +75,8 @@ class TopicRepositoryImpl @Inject constructor(
                 emptyList()
             }
 
-            combineAndSort(systemTopics + publicTopics + userTopics)
+            // Note: Public topics from OTHER users are shown in Community, not here
+            combineAndSort(systemTopics + userTopics)
         }.onFailure { 
             if (it is CancellationException) throw it 
         }
@@ -162,6 +164,61 @@ class TopicRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun cloneTopicToUser(
+        originalTopicId: String,
+        targetUserId: String,
+        targetUserName: String
+    ): Result<Topic> {
+        return runCatching {
+            // 1. Fetch original topic
+            val originalTopic = getTopicById(originalTopicId).getOrNull()
+                ?: throw Exception("Topic not found")
+            
+            // 2. Fetch original flashcards
+            val flashcardsSnapshot = topicsCollection
+                .document(originalTopicId)
+                .collection("flashcards")
+                .get(Source.DEFAULT)
+                .await()
+            
+            // 3. Create new topic with new ID
+            val newTopicId = UUID.randomUUID().toString()
+            val clonedTopic = originalTopic.copy(
+                id = newTopicId,
+                createdBy = targetUserId,
+                creatorName = targetUserName,
+                isPublic = false,  // Private by default
+                isSystemTopic = false,
+                upvoteCount = 0,
+                downloadCount = 0,
+                createdAt = System.currentTimeMillis(),
+                clonedFrom = originalTopicId,
+                originalCreator = originalTopic.creatorName.ifEmpty { "Unknown" }
+            )
+            
+            // 4. Save cloned topic
+            topicsCollection.document(newTopicId).set(clonedTopic.toMap()).await()
+            
+            // 5. Clone flashcards
+            val newFlashcardsRef = topicsCollection.document(newTopicId).collection("flashcards")
+            flashcardsSnapshot.documents.forEach { doc ->
+                val newFlashcardId = UUID.randomUUID().toString()
+                val flashcardData = doc.data?.toMutableMap() ?: mutableMapOf()
+                flashcardData["id"] = newFlashcardId
+                newFlashcardsRef.document(newFlashcardId).set(flashcardData).await()
+            }
+            
+            // 6. Increment downloadCount on original topic
+            topicsCollection.document(originalTopicId).update(
+                "downloadCount", com.google.firebase.firestore.FieldValue.increment(1)
+            ).await()
+            
+            clonedTopic
+        }.onFailure {
+            if (it is CancellationException) throw it
+        }
+    }
+
     private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
         val cached = runCatching { 
             get(Source.CACHE).await() 
@@ -215,7 +272,16 @@ class TopicRepositoryImpl @Inject constructor(
                 isSystemTopic = getBoolean("isSystemTopic") ?: false,
                 isPublic = getBoolean("isPublic") ?: true,
                 createdBy = getString("createdBy"),
-                imageUrl = getString("imageUrl")
+                imageUrl = getString("imageUrl"),
+                // Community fields
+                vstepLevel = VSTEPLevel.fromString(getString("vstepLevel")),
+                upvoteCount = getLong("upvoteCount")?.toInt() ?: 0,
+                downloadCount = getLong("downloadCount")?.toInt() ?: 0,
+                creatorName = getString("creatorName") ?: "",
+                createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
+                // Clone attribution
+                clonedFrom = getString("clonedFrom"),
+                originalCreator = getString("originalCreator")
             )
         }.getOrNull()
     }
@@ -229,7 +295,16 @@ class TopicRepositoryImpl @Inject constructor(
             "isSystemTopic" to isSystemTopic,
             "isPublic" to isPublic,
             "createdBy" to createdBy,
-            "imageUrl" to imageUrl
+            "imageUrl" to imageUrl,
+            // Community fields
+            "vstepLevel" to vstepLevel?.name,
+            "upvoteCount" to upvoteCount,
+            "downloadCount" to downloadCount,
+            "creatorName" to creatorName,
+            "createdAt" to createdAt,
+            // Clone attribution
+            "clonedFrom" to clonedFrom,
+            "originalCreator" to originalCreator
         )
     }
 }

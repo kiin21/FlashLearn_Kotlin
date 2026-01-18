@@ -50,4 +50,24 @@ interface FlashcardDao {
      */
     @Query("SELECT * FROM flashcards WHERE topicId = :topicId AND (ipa = '' OR imageUrl = '') LIMIT :limit")
     suspend fun getFlashcardsNeedingEnrichment(topicId: String, limit: Int = 5): List<FlashcardEntity>
+
+    @Query("""
+    SELECT * FROM flashcards
+    WHERE id IN (
+        SELECT flashcardId FROM user_progress
+        WHERE userId = :userId AND status = 'MASTERED'
+    )
+    AND id NOT IN (
+        SELECT flashcardId FROM widget_word_history
+        WHERE userId = :userId AND isCorrect = 1
+    )
+    AND (:excludeSize = 0 OR id NOT IN (:excludeIds))
+    ORDER BY RANDOM()
+    LIMIT 1
+""")
+    suspend fun pickWidgetWord(
+        userId: String,
+        excludeIds: List<String>,
+        excludeSize: Int
+    ): FlashcardEntity?
 }

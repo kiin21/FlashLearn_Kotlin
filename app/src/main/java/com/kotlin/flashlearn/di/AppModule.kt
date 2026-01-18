@@ -14,8 +14,10 @@ import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.TopicRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
+import com.kotlin.flashlearn.data.repository.FavoriteRepositoryImpl
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
+import com.kotlin.flashlearn.domain.repository.FavoriteRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
@@ -46,8 +48,9 @@ object AppModule {
     fun provideAuthRepository(
         @ApplicationContext context: Context,
         oneTapClient: SignInClient,
-        auth: FirebaseAuth
-    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth)
+        auth: FirebaseAuth,
+        userRepository: UserRepository
+    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository)
 
 
     @Provides
@@ -67,9 +70,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService = 
+        com.kotlin.flashlearn.data.remote.CloudinaryService()
+
+    @Provides
+    @Singleton
     fun provideUserRepository(
-        firestore: FirebaseFirestore
-    ): UserRepository = UserRepositoryImpl(firestore)
+        firestore: FirebaseFirestore,
+        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
+    ): UserRepository = UserRepositoryImpl(firestore, cloudinaryService)
 
     @Provides
     @Singleton
@@ -101,4 +110,15 @@ object AppModule {
     fun provideDatamuseRepository(
         datamuseApi: DatamuseApi
     ): DatamuseRepository = DatamuseRepositoryImpl(datamuseApi)
+
+    @Provides
+    @Singleton
+    fun provideFavoriteRepository(
+        firestore: FirebaseFirestore
+    ): FavoriteRepository = FavoriteRepositoryImpl(firestore)
+    @Provides
+    @Singleton
+    fun provideLanguageManager(
+        @ApplicationContext context: Context
+    ): com.kotlin.flashlearn.util.LanguageManager = com.kotlin.flashlearn.util.LanguageManager(context)
 }

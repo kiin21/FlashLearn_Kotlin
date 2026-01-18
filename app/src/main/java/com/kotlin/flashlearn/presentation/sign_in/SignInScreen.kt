@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
@@ -65,13 +67,13 @@ import com.kotlin.flashlearn.ui.theme.FlashRedLight
 fun SignInScreen(
     state: SignInState,
     onSignInClick: () -> Unit,
+    onUsernameChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onLoginClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    
-    // Mock states for email/password (UI only, not functional)
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     
     LaunchedEffect(key1 = state.signInError) {
@@ -87,23 +89,30 @@ fun SignInScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
-        // Header Image Area (Pink/Red gradient placeholder)
-        Box(
+        // Header with App Logo and Welcome Title
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .background(FlashRedLight),
-            contentAlignment = Alignment.Center
+                .padding(vertical = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Placeholder icon for image
-            Icon(
-                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
-                contentDescription = "Header Image",
-                modifier = Modifier.size(48.dp),
-                tint = FlashRed
+            // App logo
+            Image(
+                painter = painterResource(id = R.mipmap.ic_launcher),
+                contentDescription = stringResource(R.string.app_logo),
+                modifier = Modifier.size(100.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            // Welcome Title
+            Text(
+                text = stringResource(R.string.welcome),
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
         }
         
@@ -112,57 +121,51 @@ fun SignInScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(top = 32.dp)
         ) {
-            // Welcome Title
-            Text(
-                text = "Welcome!",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Email Field (Mock UI)
+            // Username Field
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email Address") },
+                value = state.username,
+                onValueChange = onUsernameChange,
+                label = { Text(stringResource(R.string.username)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = state.usernameError != null,
+                supportingText = state.usernameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = FlashRed,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Password Field (Mock UI)
+            // Password Field
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
+                value = state.password,
+                onValueChange = onPasswordChange,
+                label = { Text(stringResource(R.string.password)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
+                isError = state.passwordError != null,
+                supportingText = state.passwordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                            tint = Color.Gray
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = FlashRed,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
@@ -170,30 +173,36 @@ fun SignInScreen(
             
             // Forgot Password Link
             Text(
-                text = "Forgot password?",
-                color = FlashRed,
-                fontSize = 14.sp,
-                modifier = Modifier.clickable { /* Mock - no action */ }
+                text = stringResource(R.string.forgot_password),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { /* TODO: Implement later */ }
             )
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Login Button (Mock - shows toast)
+            // Login Button
             Button(
-                onClick = {
-                    Toast.makeText(context, "Email/Password login coming soon!", Toast.LENGTH_SHORT).show()
-                },
+                onClick = onLoginClick,
+                enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = FlashRed)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text(
-                    text = "Login",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.login),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -204,16 +213,16 @@ fun SignInScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Not a member? ",
-                    color = Color.Gray,
-                    fontSize = 14.sp
+                    text = stringResource(R.string.not_a_member),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Register now",
-                    color = FlashRed,
-                    fontSize = 14.sp,
+                    text = stringResource(R.string.register_now),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { /* Mock - no action */ }
+                    modifier = Modifier.clickable { onRegisterClick() }
                 )
             }
             
@@ -224,18 +233,18 @@ fun SignInScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(
-                    text = "  Or continue with  ",
-                    color = Color.Gray,
-                    fontSize = 12.sp
+                    text = "  ${stringResource(R.string.or_continue_with)}  ",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Google Sign In Button (Functional)
+            // Google Sign In Button
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -243,7 +252,7 @@ fun SignInScreen(
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(40.dp),
-                        color = FlashRed
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             } else {
@@ -252,7 +261,7 @@ fun SignInScreen(
                         .fillMaxWidth()
                         .height(50.dp)
                         .clip(RoundedCornerShape(25.dp))
-                        .border(1.dp, Color.LightGray, RoundedCornerShape(25.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(25.dp))
                         .clickable { onSignInClick() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -263,14 +272,14 @@ fun SignInScreen(
                         // Google logo with proper colors
                         Image(
                             painter = painterResource(id = R.drawable.ic_google_logo),
-                            contentDescription = "Google Logo",
+                            contentDescription = stringResource(R.string.google_logo),
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(
-                            text = "Sign in with Google",
-                            fontSize = 14.sp,
-                            color = Color.Black
+                            text = stringResource(R.string.sign_in_with_google),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

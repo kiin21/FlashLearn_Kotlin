@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -32,6 +33,8 @@ import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashResultText
+import androidx.compose.ui.res.stringResource
+import com.kotlin.flashlearn.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +49,7 @@ fun AddWordScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -53,7 +57,7 @@ fun AddWordScreen(
             CenterAlignedTopAppBar(
                 title = { 
                     Text(
-                        "Create New Topic",
+                        stringResource(R.string.create_new_topic),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -63,7 +67,7 @@ fun AddWordScreen(
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             tint = FlashRed,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -81,7 +85,7 @@ fun AddWordScreen(
                         viewModel.createTopic(
                             onSuccess = {
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Topic created successfully!")
+                                    snackbarHostState.showSnackbar(context.getString(R.string.topic_created_success))
                                 }
                                 onWordAdded()
                             },
@@ -110,7 +114,7 @@ fun AddWordScreen(
                     } else {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Create Topic (${uiState.selectedWords.size} words)")
+                        Text(stringResource(R.string.create_topic_words, uiState.selectedWords.size))
                     }
                 }
             }
@@ -126,7 +130,7 @@ fun AddWordScreen(
             // Topic Name Section
             item {
                 Text(
-                    text = "Topic Name *",
+                    text = stringResource(R.string.topic_name),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -135,7 +139,7 @@ fun AddWordScreen(
                 OutlinedTextField(
                     value = uiState.newTopicName,
                     onValueChange = { viewModel.onNewTopicNameChange(it) },
-                    placeholder = { Text("Enter topic name...") },
+                    placeholder = { Text(stringResource(R.string.enter_topic_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
@@ -145,7 +149,7 @@ fun AddWordScreen(
             // Topic Description (Optional)
             item {
                 Text(
-                    text = "Description (Optional)",
+                    text = stringResource(R.string.description_optional),
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -155,7 +159,7 @@ fun AddWordScreen(
                 OutlinedTextField(
                     value = uiState.newTopicDescription,
                     onValueChange = { viewModel.onNewTopicDescriptionChange(it) },
-                    placeholder = { Text("Add description...") },
+                    placeholder = { Text(stringResource(R.string.add_description)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     minLines = 2,
@@ -167,7 +171,7 @@ fun AddWordScreen(
             if (uiState.selectedWords.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Selected Words (${uiState.selectedWords.size})",
+                        text = stringResource(R.string.selected_words, uiState.selectedWords.size),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
@@ -194,7 +198,7 @@ fun AddWordScreen(
             // Search Section
             item {
                 Text(
-                    text = "Search for a word",
+                    text = stringResource(R.string.search_for_word),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -203,7 +207,7 @@ fun AddWordScreen(
                 OutlinedTextField(
                     value = uiState.searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder = { Text("Type to search...") },
+                    placeholder = { Text(stringResource(R.string.type_to_search)) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -265,7 +269,7 @@ fun AddWordScreen(
                 ) {
                     HorizontalDivider(modifier = Modifier.weight(1f))
                     Text(
-                        text = "  OR  ",
+                        text = "  ${stringResource(R.string.or)}  ",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
@@ -276,7 +280,7 @@ fun AddWordScreen(
             // Topic Selection Section
             item {
                 Text(
-                    text = "Get words by topic",
+                    text = stringResource(R.string.get_words_by_topic),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -289,7 +293,7 @@ fun AddWordScreen(
                         onExpandedChange = { viewModel.toggleTopicDropdown() }
                     ) {
                         OutlinedTextField(
-                            value = uiState.selectedTopic?.name ?: "Choose a topic...",
+                            value = uiState.selectedTopic?.name ?: stringResource(R.string.choose_topic),
                             onValueChange = {},
                             readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.showTopicDropdown) },
@@ -329,7 +333,7 @@ fun AddWordScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text(
-                        text = "Or enter manually:",
+                        text = stringResource(R.string.or_enter_manually),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -343,7 +347,7 @@ fun AddWordScreen(
                     OutlinedTextField(
                         value = uiState.topicQuery,
                         onValueChange = { viewModel.onTopicQueryChange(it) },
-                        placeholder = { Text("e.g. environment, technology...") },
+                        placeholder = { Text(stringResource(R.string.topic_query_placeholder)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -357,7 +361,7 @@ fun AddWordScreen(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.height(56.dp)
                     ) {
-                        Text("Get")
+                        Text(stringResource(R.string.get_button))
                     }
                 }
             }
@@ -375,7 +379,7 @@ fun AddWordScreen(
             } else if (uiState.topicSuggestions.isNotEmpty()) {
                 item {
                     Text(
-                        text = "Available Words (${uiState.topicSuggestions.size})",
+                        text = stringResource(R.string.available_words, uiState.topicSuggestions.size),
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
@@ -422,7 +426,7 @@ fun SelectedWordChip(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "Remove",
+                    contentDescription = stringResource(R.string.remove),
                     tint = FlashRed,
                     modifier = Modifier.size(14.dp)
                 )
@@ -496,7 +500,7 @@ fun TopicWordCard(
             if (isSelected) {
                 Icon(
                     Icons.Default.Check,
-                    contentDescription = "Selected",
+                    contentDescription = stringResource(R.string.selected_txt),
                     tint = FlashRed
                 )
             }
