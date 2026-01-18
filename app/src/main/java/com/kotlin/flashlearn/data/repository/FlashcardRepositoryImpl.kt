@@ -60,14 +60,14 @@ class FlashcardRepositoryImpl @Inject constructor(
             }
 
             val uniqueFlashcards = flashcards.distinctBy { it.word.lowercase() }
-            
+
             if (uniqueFlashcards.isNotEmpty()) {
                 flashcardCache[topicId] = uniqueFlashcards
             }
 
             uniqueFlashcards
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -89,7 +89,7 @@ class FlashcardRepositoryImpl @Inject constructor(
 
     private suspend fun getFlashcardsFromDatamuse(topicId: String): List<Flashcard> {
         val topic = topicRepository.getTopicById(topicId).getOrNull() ?: return emptyList()
-        
+
         val keyword = extractKeyword(topic.name)
         val response = datamuseApi.getWordsByMeaning(keyword)
 
@@ -103,35 +103,40 @@ class FlashcardRepositoryImpl @Inject constructor(
                 partOfSpeech = firstDef?.partOfSpeech?.uppercase() ?: "",
                 definition = firstDef?.definition ?: "",
                 exampleSentence = "",
-                pronunciationUrl = null,
                 synonyms = emptyList()
             )
         }
     }
 
-    override suspend fun saveFlashcardsForTopic(topicId: String, flashcards: List<Flashcard>): Result<Unit> {
+    override suspend fun saveFlashcardsForTopic(
+        topicId: String,
+        flashcards: List<Flashcard>
+    ): Result<Unit> {
         return runCatching {
             val enrichedFlashcards = flashcards.map { enrichFlashcardData(it) }
-            
+
             enrichedFlashcards.forEach { flashcard ->
                 saveFlashcardToFirestore(flashcard, topicId)
             }
-            
+
             flashcardCache[topicId] = enrichedFlashcards
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
     override suspend fun getFlashcardById(cardId: String): Result<Flashcard?> {
         return runCatching {
             flashcardCache.values.flatten().find { it.id == cardId }
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
-    override suspend fun markFlashcardAsMastered(flashcardId: String, userId: String): Result<Unit> {
+    override suspend fun markFlashcardAsMastered(
+        flashcardId: String,
+        userId: String
+    ): Result<Unit> {
         return saveProgress(flashcardId, userId, ProgressStatus.MASTERED)
     }
 
@@ -139,7 +144,11 @@ class FlashcardRepositoryImpl @Inject constructor(
         return saveProgress(flashcardId, userId, ProgressStatus.REVIEW)
     }
 
-    private suspend fun saveProgress(flashcardId: String, userId: String, status: ProgressStatus): Result<Unit> {
+    private suspend fun saveProgress(
+        flashcardId: String,
+        userId: String,
+        status: ProgressStatus
+    ): Result<Unit> {
         return runCatching {
             val progress = UserProgressEntity(
                 id = "${userId}_${flashcardId}",
@@ -158,7 +167,7 @@ class FlashcardRepositoryImpl @Inject constructor(
             if (flashcardIds.isEmpty()) return Result.success(Unit)
 
             val topicId = findTopicIdForFlashcards(flashcardIds)
-            
+
             if (topicId != null) {
                 val flashcardsRef = topicsCollection.document(topicId).collection("flashcards")
                 flashcardIds.forEach { id ->
@@ -168,8 +177,8 @@ class FlashcardRepositoryImpl @Inject constructor(
 
             flashcardCache.clear()
             Unit
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -195,7 +204,12 @@ class FlashcardRepositoryImpl @Inject constructor(
                 async {
                     enrichmentSemaphore.withPermit {
                         runCatching { enrichFlashcardData(card) }
-                            .onFailure { Log.w(TAG, "Enrichment failed for ${card.word}: ${it.message}") }
+                            .onFailure {
+                                Log.w(
+                                    TAG,
+                                    "Enrichment failed for ${card.word}: ${it.message}"
+                                )
+                            }
                             .getOrDefault(card)
                     }
                 }
@@ -234,8 +248,8 @@ class FlashcardRepositoryImpl @Inject constructor(
         return runCatching {
             val response = freeDictionaryApi.getWordDetails(word)
             val entry = response.firstOrNull()
-            entry?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text 
-                ?: entry?.phonetic 
+            entry?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text
+                ?: entry?.phonetic
                 ?: ""
         }.getOrDefault("")
     }
@@ -249,7 +263,7 @@ class FlashcardRepositoryImpl @Inject constructor(
 
     private suspend fun saveFlashcardToFirestore(flashcard: Flashcard, topicId: String) {
         val flashcardMap = flashcard.toMap()
-        
+
         topicsCollection.document(topicId)
             .collection("flashcards")
             .document(flashcard.id)
@@ -268,7 +282,6 @@ class FlashcardRepositoryImpl @Inject constructor(
             "exampleSentence" to exampleSentence,
             "ipa" to ipa,
             "imageUrl" to imageUrl,
-            "pronunciationUrl" to (pronunciationUrl ?: ""),
             "synonyms" to synonyms
         )
     }
@@ -285,8 +298,8 @@ class FlashcardRepositoryImpl @Inject constructor(
                 exampleSentence = getString("exampleSentence") ?: "",
                 ipa = getString("ipa") ?: "",
                 imageUrl = getString("imageUrl") ?: "",
-                pronunciationUrl = getString("pronunciationUrl"),
-                synonyms = (get("synonyms") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+                synonyms = (get("synonyms") as? List<*>)?.mapNotNull { it as? String }
+                    ?: emptyList()
             )
         }.getOrNull()
     }
@@ -298,7 +311,11 @@ class FlashcardRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateProficiencyScore(flashcardId: String, userId: String, newScore: Int): Result<Unit> {
+    override suspend fun updateProficiencyScore(
+        flashcardId: String,
+        userId: String,
+        newScore: Int
+    ): Result<Unit> {
         return runCatching {
             val currentProgress = userProgressDao.getProgress(userId, flashcardId)
             val newStatus = when {

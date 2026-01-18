@@ -20,14 +20,15 @@ class GenerateQuestionUseCase @Inject constructor(
         mode: QuizMode = QuizMode.SPRINT
     ): QuizQuestion {
 
+        return generateGapFill(flashcard, cardPool)
         if (mode == QuizMode.VSTEP_DRILL) {
             return when ((1..3).random()) {
                 1 -> generateGapFill(flashcard, cardPool)
                 2 -> generateSentenceBuilder(flashcard)
-                else -> if (!flashcard.pronunciationUrl.isNullOrBlank()) {
+                else -> if (!flashcard.pronunciation.isNullOrBlank()) {
                     QuizQuestion.Dictation(
                         flashcard = flashcard,
-                        audioUrl = flashcard.pronunciationUrl
+                        audioUrl = flashcard.pronunciation
                     )
                 } else {
                     generateGapFill(flashcard, cardPool)

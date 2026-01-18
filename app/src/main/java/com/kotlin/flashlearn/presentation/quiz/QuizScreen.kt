@@ -48,6 +48,7 @@ import com.kotlin.flashlearn.ui.theme.BrandRed
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import java.util.Collections
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 
@@ -732,24 +733,23 @@ fun ContextualGapFillView(
                             .padding(vertical = 6.dp),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = when {
-                                !showFeedback && isCorrectAnswer(option) -> FlashSuccessMed // Choose correct answer
-                                !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorLight // Choose not correct answer
-                                isSelectedOption -> FlashSuccessLight // Selected
+                                showFeedback && isSelectedOption && isCorrectAnswer(option) -> FlashSuccessMed // Choose correct answer
+                                showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorLight // Choose not correct answer
                                 else -> MaterialTheme.colorScheme.surface
                             }
                         ),
                         border = when {
-                            !showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                            showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
                                 2.dp,
                                 FlashSuccessDark
                             )
 
-                            !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                            showFeedback && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
                                 2.dp,
                                 FlashErrorMed
                             )
 
-                            isSelectedOption -> androidx.compose.foundation.BorderStroke(
+                            !showFeedback && isSelectedOption -> androidx.compose.foundation.BorderStroke(
                                 2.dp,
                                 FlashSuccessLight
                             )
@@ -768,8 +768,8 @@ fun ContextualGapFillView(
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = when {
-                                    !showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
-                                    !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
+                                    showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                    showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                     else -> MaterialTheme.colorScheme.onSurface
                                 },
                                 modifier = Modifier.padding(end = 12.dp)
@@ -778,8 +778,8 @@ fun ContextualGapFillView(
                                 text = option,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = when {
-                                    !showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
-                                    !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
+                                    showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                    showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                     else -> MaterialTheme.colorScheme.onSurface
                                 },
                                 modifier = Modifier.weight(1f)
@@ -790,7 +790,7 @@ fun ContextualGapFillView(
                     }
 
                     // Show checkmark icon for correct answer in feedback state
-                    if (!showFeedback && option == selectedOption) {
+                    if (showFeedback && option == selectedOption) {
                         if (isCorrectAnswer(selectedOption)) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
@@ -824,6 +824,11 @@ fun ContextualGapFillView(
             }
         }
     }
+}
+
+@Composable
+fun MultipleChoiceQuestionView() {
+
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -905,7 +910,7 @@ fun DictationView(
         ) {
             IconButton(onClick = {
                 runCatching {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(question.audioUrl))
+                    val intent = Intent(Intent.ACTION_VIEW, question.audioUrl.toUri())
                     context.startActivity(intent)
                 }
             }) {
