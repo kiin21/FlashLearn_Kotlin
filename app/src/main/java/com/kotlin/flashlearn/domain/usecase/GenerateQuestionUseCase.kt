@@ -110,4 +110,11 @@ class GenerateQuestionUseCase @Inject constructor(
             correctSentence = sentence
         )
     }
+
+    private fun generateExactTyping(card: Flashcard): QuizQuestion.ExactTyping {
+        return QuizQuestion.ExactTyping(
+            flashcard = card,
+            hint = card.word.slice(IntRange(0, 3))
+        )
+    }
 }

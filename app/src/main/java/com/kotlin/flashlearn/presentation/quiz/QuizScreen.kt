@@ -649,7 +649,7 @@ fun ExactTypingView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Letter tiles area - single row
             Column {

@@ -63,7 +63,14 @@ class QuizViewModel @Inject constructor(
 
     private fun loadFlashcards() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isCompleted = false, results = emptyList(), currentStreak = 0) }
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    isCompleted = false,
+                    results = emptyList(),
+                    currentStreak = 0
+                )
+            }
             flashcardRepository.getFlashcardsByTopicId(topicId).fold(
                 onSuccess = { cards ->
                     flashcards = cards.shuffled()
@@ -71,7 +78,12 @@ class QuizViewModel @Inject constructor(
                         totalQuestions = minOf(quizConfig.questionCount, flashcards.size)
                         loadNextQuestion()
                     } else {
-                        _uiState.update { it.copy(isLoading = false, error = "No flashcards found") }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "No flashcards found"
+                            )
+                        }
                     }
                 },
                 onFailure = { error ->
@@ -106,7 +118,7 @@ class QuizViewModel @Inject constructor(
         viewModelScope.launch {
             val score = flashcardRepository.getProficiencyScore(card.id, userId).getOrDefault(0)
             val question = generateQuestionUseCase(card, score, flashcards, quizConfig.mode)
-            
+
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -146,9 +158,11 @@ class QuizViewModel @Inject constructor(
             }
 
             // Update Logic
-            val currentScore = flashcardRepository.getProficiencyScore(question.flashcard.id, userId).getOrDefault(0)
+            val currentScore =
+                flashcardRepository.getProficiencyScore(question.flashcard.id, userId)
+                    .getOrDefault(0)
             val newScore = if (isCorrect) currentScore + 1 else 0 // Reset on error as per PRD
-            
+
             flashcardRepository.updateProficiencyScore(question.flashcard.id, userId, newScore)
         }
     }
@@ -162,13 +176,17 @@ class QuizViewModel @Inject constructor(
         return when (question) {
             is QuizQuestion.MultipleChoice -> input == question.flashcard.word
             is QuizQuestion.Scramble -> input.equals(question.flashcard.word, ignoreCase = true)
-            is QuizQuestion.ExactTyping -> input.trim() == question.flashcard.word // Strict
+            is QuizQuestion.ExactTyping -> input.equals(question.flashcard.word, ignoreCase = true)
             is QuizQuestion.ContextualGapFill -> {
                 val correct = question.options.getOrNull(question.correctOptionIndex)
                 input.equals(correct, ignoreCase = true)
             }
-            is QuizQuestion.SentenceBuilder -> input.trim().equals(question.correctSentence.trim(), ignoreCase = true)
-            is QuizQuestion.Dictation -> input.trim().equals(question.flashcard.word, ignoreCase = true)
+
+            is QuizQuestion.SentenceBuilder -> input.trim()
+                .equals(question.correctSentence.trim(), ignoreCase = true)
+
+            is QuizQuestion.Dictation -> input.trim()
+                .equals(question.flashcard.word, ignoreCase = true)
         }
     }
 
