@@ -2,16 +2,23 @@ package com.kotlin.flashlearn.presentation.quiz
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,14 +37,17 @@ import kotlin.math.roundToInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kotlin.flashlearn.domain.model.QuizQuestion
 import com.kotlin.flashlearn.presentation.quiz.components.CheckAnswerButton
-import com.kotlin.flashlearn.presentation.quiz.components.DraggableLetterTile
+import com.kotlin.flashlearn.presentation.quiz.components.LetterTile
 import com.kotlin.flashlearn.ui.theme.FlashSuccessLight
 import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
 import com.kotlin.flashlearn.ui.theme.FlashErrorLight
 import com.kotlin.flashlearn.ui.theme.FlashErrorMed
 import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 import com.kotlin.flashlearn.ui.theme.FlashSuccessDark
+import com.kotlin.flashlearn.ui.theme.BrandRed
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.delay
+import java.util.Collections
 
 @OptIn(ExperimentalMaterial3Api::class)
 
@@ -49,6 +59,7 @@ fun QuizScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showAnswerSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
@@ -59,12 +70,19 @@ fun QuizScreen(
         }
     }
 
+    // Show answer sheet when feedback is available
+    LaunchedEffect(state.showFeedback) {
+        showAnswerSheet = state.showFeedback
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
-        Box(modifier = Modifier
-            .padding(padding)
-            .fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (state.isCompleted) {
@@ -92,9 +110,24 @@ fun QuizScreen(
                         currentIndex = state.currentIndex,
                         totalQuestions = state.totalQuestions,
                         currentStreak = state.currentStreak,
-                        onAnswer = viewModel::submitAnswer
+                        onAnswer = viewModel::submitAnswer,
+                        onExit = onNavigateBack
                     )
                 }
+            }
+        }
+
+        // Show answer notification sheet when feedback is ready
+        if (showAnswerSheet && state.showFeedback && state.isAnswerCorrect != null) {
+            state.currentQuestion?.let { question ->
+                AnswerNotificationSheet(
+                    isCorrect = state.isAnswerCorrect ?: false,
+                    correctAnswer = question.flashcard.word,
+                    onContinue = {
+                        showAnswerSheet = false
+                        viewModel.continueToNext()
+                    }
+                )
             }
         }
     }
@@ -109,42 +142,178 @@ fun QuestionContent(
     currentIndex: Int,
     totalQuestions: Int,
     currentStreak: Int,
-    onAnswer: (String) -> Unit
+    onAnswer: (String) -> Unit,
+    onExit: () -> Unit
 ) {
+    // Timer state - 60 seconds per question
+    var timeRemaining by remember(question) { mutableStateOf(60) }
+    var isTimeUp by remember(question) { mutableStateOf(false) }
+
+    // Timer countdown
+    LaunchedEffect(question, showFeedback) {
+        if (!showFeedback && !isTimeUp) {
+            while (timeRemaining > 0) {
+                delay(1000L)
+                timeRemaining--
+            }
+            // Time's up - auto-submit wrong answer
+            if (!showFeedback) {
+                isTimeUp = true
+                onAnswer("") // Empty answer to trigger wrong feedback
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                LinearProgressIndicator(progress = progress)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text("Question ${currentIndex + 1} of $totalQuestions", style = MaterialTheme.typography.bodySmall)
+        // Progress bar at the top
+        Column(modifier = Modifier.fillMaxWidth()) {
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = FlashRedDarkest,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Bottom row with 3 elements: Exit button | Timer | Question count
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Exit button (leftmost)
+                IconButton(onClick = onExit) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Exit Quiz",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // Timer badge (center)
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = "Timer",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "${timeRemaining}s",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Question count (rightmost)
+                Text(
+                    text = "${currentIndex + 1}/$totalQuestions",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Text("🔥 $currentStreak", style = MaterialTheme.typography.titleMedium)
         }
 
         when (question) {
             is QuizQuestion.MultipleChoice -> MultipleChoiceView(question, showFeedback, onAnswer)
             is QuizQuestion.Scramble -> ScrambleView(question, showFeedback, onAnswer)
             is QuizQuestion.ExactTyping -> ExactTypingView(question, showFeedback, onAnswer)
-            is QuizQuestion.ContextualGapFill -> ContextualGapFillView(question, showFeedback, onAnswer)
+            is QuizQuestion.ContextualGapFill -> ContextualGapFillView(
+                question,
+                showFeedback,
+                onAnswer
+            )
+
             is QuizQuestion.SentenceBuilder -> SentenceBuilderView(question, showFeedback, onAnswer)
             is QuizQuestion.Dictation -> DictationView(question, showFeedback, onAnswer)
         }
+    }
+}
 
-        if (showFeedback) {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnswerNotificationSheet(
+    isCorrect: Boolean,
+    correctAnswer: String,
+    onContinue: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = { /* Prevent dismissal by swipe/tap outside - force user to click Continue */ },
+        containerColor = if (isCorrect) FlashSuccessLight else FlashErrorLight
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                    contentDescription = if (isCorrect) "Correct" else "Incorrect",
+                    tint = if (isCorrect) FlashSuccessMed else FlashErrorMed,
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (isCorrect) "Correct!" else "Incorrect",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isCorrect) FlashSuccessDark else FlashErrorMed
+                    )
+                    if (!isCorrect) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Correct answer: $correctAnswer",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = FlashErrorMed
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onContinue,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isCorrect) FlashSuccessMed else FlashErrorMed
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "Continue",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = if (isAnswerCorrect == true) "Correct!" else "Wrong! Answer: ${question.flashcard.word}",
-                color = if (isAnswerCorrect == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            )
         }
     }
 }
@@ -155,7 +324,7 @@ fun MultipleChoiceView(
     showFeedback: Boolean,
     onAnswer: (String) -> Unit
 ) {
-   var selectedOption by remember { mutableStateOf<String?>(null) }
+    var selectedOption by remember(question) { mutableStateOf<String?>(null) }
 
     MaterialTheme {
         Column(
@@ -171,14 +340,14 @@ fun MultipleChoiceView(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = question.flashcard.word,
+                text = question.flashcard.definition,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(32.dp))
 
             fun isCorrectAnswer(option: String?): Boolean {
-                return option == question.flashcard.definition
+                return option == question.flashcard.word
             }
 
             val labels = listOf("A.", "B.", "C.", "D.")
@@ -201,16 +370,27 @@ fun MultipleChoiceView(
                             .padding(vertical = 6.dp),
                         colors = CardDefaults.outlinedCardColors(
                             containerColor = when {
-                                !showFeedback && isCorrectAnswer(option) -> FlashSuccessMed // Choose correct answer
-                                !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorLight // Choose not correct answer
-                                isSelectedOption -> FlashSuccessLight // Selected
+                                showFeedback && isSelectedOption && isCorrectAnswer(option) -> FlashSuccessMed // Choose correct answer
+                                showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorLight // Choose not correct answer
                                 else -> MaterialTheme.colorScheme.surface
                             }
                         ),
                         border = when {
-                            !showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(2.dp, FlashSuccessDark)
-                            !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(2.dp, FlashErrorMed)
-                            isSelectedOption -> androidx.compose.foundation.BorderStroke(2.dp, FlashSuccessLight)
+                            showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashSuccessDark
+                            )
+
+                            showFeedback && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashErrorMed
+                            )
+
+                            !showFeedback && isSelectedOption -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashSuccessLight
+                            )
+
                             else -> CardDefaults.outlinedCardBorder()
                         }
                     ) {
@@ -225,8 +405,8 @@ fun MultipleChoiceView(
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = when {
-                                    !showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
-                                    !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
+                                    showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                    showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                     else -> MaterialTheme.colorScheme.onSurface
                                 },
                                 modifier = Modifier.padding(end = 12.dp)
@@ -235,8 +415,8 @@ fun MultipleChoiceView(
                                 text = option,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = when {
-                                    !showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
-                                    !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
+                                    showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                    showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                     else -> MaterialTheme.colorScheme.onSurface
                                 },
                                 modifier = Modifier.weight(1f)
@@ -247,7 +427,7 @@ fun MultipleChoiceView(
                     }
 
                     // Show checkmark icon for correct answer in feedback state
-                    if (!showFeedback && option == selectedOption) {
+                    if (showFeedback && option == selectedOption) {
                         if (isCorrectAnswer(selectedOption)) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
@@ -273,7 +453,11 @@ fun MultipleChoiceView(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            selectedOption?.let { CheckAnswerButton { onAnswer(selectedOption!!) } }
+            selectedOption?.let {
+                CheckAnswerButton(
+                    onClick = { onAnswer(selectedOption!!) }
+                )
+            }
         }
     }
 }
@@ -285,68 +469,150 @@ fun ScrambleView(
     showFeedback: Boolean,
     onAnswer: (String) -> Unit
 ) {
-    var letters by remember(question) { mutableStateOf(question.shuffledLetters.toList()) }
-    var draggedIndex by remember { mutableStateOf<Int?>(null) }
+    // Create unique IDs for each letter to track them properly during reordering
+    data class LetterItem(val id: String, val char: Char)
+
+    // State: The list of letter items with stable IDs
+    val letterItems by remember(question) {
+        mutableStateOf(
+            question.shuffledLetters.mapIndexed { index, char ->
+                LetterItem(id = "${question.flashcard.id}_$index", char = char)
+            }
+        )
+    }
+    var letters by remember(question) { mutableStateOf(letterItems) }
+
+    // State: Dragging tracking
+    var draggingItemIndex by remember { mutableStateOf<Int?>(null) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var itemInitialOffset by remember { mutableStateOf(Offset.Zero) }
+
+    val gridState = rememberLazyGridState()
+
+    // Layout constants for ghost positioning
+    val headerPadding = 24.dp
+    val titleHeight = 32.dp
+    val spacerHeight = 32.dp
+
+    // Helper to find valid index from offset
+    fun findIndexByOffset(offset: Offset): Int? {
+        return gridState.layoutInfo.visibleItemsInfo
+            .firstOrNull { item ->
+                offset.x.toInt() in item.offset.x..(item.offset.x + item.size.width) &&
+                        offset.y.toInt() in item.offset.y..(item.offset.y + item.size.height)
+            }?.index
+    }
 
     MaterialTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
-        ) {
-            // Question header
-            Text(
-                text = "QUESTION",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Rebuild the Word",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Drag the tiles to reorder",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.weight(1f))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.padding(headerPadding)) {
+                Text(
+                    text = "Rebuild the Word",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(spacerHeight))
 
-            // Letter tiles area - single row
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                letters.forEachIndexed { index, letter ->
-                    DraggableLetterTile(
-                        letter = letter,
-                        index = index,
-                        isDragging = draggedIndex == index,
-                        enabled = showFeedback,
-                        onDragStart = { draggedIndex = index },
-                        onDragEnd = {
-                            draggedIndex = null
-                        },
-                        onDrop = { targetIndex ->
-                            if (targetIndex != index && targetIndex in letters.indices) {
-                                letters = letters.toMutableList().apply {
-                                    val item = removeAt(index)
-                                    add(targetIndex, item)
-                                }
-                            }
-                            draggedIndex = null
+                // The draggable grid - Adaptive with 52dp tiles + 12dp spacing allows 5-7 tiles per row
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 52.dp),
+                    state = gridState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .pointerInput(showFeedback) {
+                            // Disable dragging when feedback is shown
+                            if (showFeedback) return@pointerInput
+
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    val index = findIndexByOffset(offset)
+                                    if (index != null) {
+                                        draggingItemIndex = index
+                                        val itemInfo = gridState.layoutInfo.visibleItemsInfo
+                                            .find { it.index == index }
+                                        itemInfo?.let {
+                                            itemInitialOffset = Offset(
+                                                it.offset.x.toFloat(),
+                                                it.offset.y.toFloat()
+                                            )
+                                            dragOffset = itemInitialOffset
+                                        }
+                                    }
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragOffset += dragAmount
+
+                                    // Swap logic: Check if hovering over a new slot
+                                    val targetIndex = findIndexByOffset(change.position)
+                                    if (targetIndex != null &&
+                                        draggingItemIndex != null &&
+                                        targetIndex != draggingItemIndex
+                                    ) {
+                                        val currentList = letters.toMutableList()
+                                        Collections.swap(
+                                            currentList,
+                                            draggingItemIndex!!,
+                                            targetIndex
+                                        )
+                                        letters = currentList
+                                        draggingItemIndex = targetIndex
+                                    }
+                                },
+                                onDragEnd = { draggingItemIndex = null },
+                                onDragCancel = { draggingItemIndex = null }
+                            )
                         }
-                    )
+                ) {
+                    itemsIndexed(
+                        items = letters,
+                        key = { _, item -> item.id } // Use stable ID for proper tracking
+                    ) { index, letterItem ->
+                        Box(
+                            modifier = Modifier
+                                .animateItem() // Smooth reorder animations
+                                .graphicsLayer {
+                                    // Hide the item being dragged (ghost replaces it)
+                                    alpha = if (index == draggingItemIndex) 0f else 1f
+                                }
+                        ) {
+                            LetterTile(letter = letterItem.char)
+                        }
+                    }
                 }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Submit button
+                CheckAnswerButton(
+                    enabled = !showFeedback,
+                    onClick = { onAnswer(letters.map { it.char }.joinToString("")) }
+                )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Check Answer Button
-            CheckAnswerButton { onAnswer(letters.joinToString("")) }
+            // Ghost tile that follows the finger during drag
+            if (draggingItemIndex != null && draggingItemIndex!! < letters.size) {
+                val letter = letters[draggingItemIndex!!]
+                LetterTile(
+                    letter = letter.char,
+                    isGhost = true,
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                dragOffset.x.roundToInt(),
+                                dragOffset.y.roundToInt()
+                            )
+                        }
+                        .offset(
+                            x = headerPadding,
+                            y = headerPadding + titleHeight + spacerHeight
+                        )
+                        .zIndex(10f) // Ensure ghost is always on top
+                )
+            }
         }
     }
 }
@@ -357,8 +623,8 @@ fun ExactTypingView(
     showFeedback: Boolean,
     onAnswer: (String) -> Unit
 ) {
-    var input by remember { mutableStateOf("") }
-    
+    var input by remember(question) { mutableStateOf("") }
+
     MaterialTheme {
         Column(
             modifier = Modifier
@@ -400,7 +666,9 @@ fun ExactTypingView(
 
             // Check Answer Button
             if (input != "") {
-                CheckAnswerButton { onAnswer(input) }
+                CheckAnswerButton(
+                    onClick = { onAnswer(input) }
+                )
             }
         }
     }
@@ -412,7 +680,7 @@ fun ContextualGapFillView(
     showFeedback: Boolean,
     onAnswer: (String) -> Unit
 ) {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
+    var selectedOption by remember(question) { mutableStateOf<String?>(null) }
 
     MaterialTheme {
         Column(
@@ -471,9 +739,21 @@ fun ContextualGapFillView(
                             }
                         ),
                         border = when {
-                            !showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(2.dp, FlashSuccessDark)
-                            !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(2.dp, FlashErrorMed)
-                            isSelectedOption -> androidx.compose.foundation.BorderStroke(2.dp, FlashSuccessLight)
+                            !showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashSuccessDark
+                            )
+
+                            !showFeedback && isSelectedOption && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashErrorMed
+                            )
+
+                            isSelectedOption -> androidx.compose.foundation.BorderStroke(
+                                2.dp,
+                                FlashSuccessLight
+                            )
+
                             else -> CardDefaults.outlinedCardBorder()
                         }
                     ) {
@@ -537,7 +817,11 @@ fun ContextualGapFillView(
             Spacer(modifier = Modifier.weight(1f))
 
             // Check Answer Button
-            selectedOption?.let { CheckAnswerButton { onAnswer(selectedOption!!) } }
+            selectedOption?.let {
+                CheckAnswerButton(
+                    onClick = { onAnswer(selectedOption!!) }
+                )
+            }
         }
     }
 }
@@ -556,9 +840,11 @@ fun SentenceBuilderView(
         Text("Construct the sentence:", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
 
-        Card(modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 80.dp)) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 80.dp)
+        ) {
             FlowRow(modifier = Modifier.padding(8.dp)) {
                 selectedSegments.forEach { word ->
                     AssistChip(
@@ -610,10 +896,13 @@ fun DictationView(
     onAnswer: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var input by remember { mutableStateOf("") }
+    var input by remember(question) { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             IconButton(onClick = {
                 runCatching {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(question.audioUrl))

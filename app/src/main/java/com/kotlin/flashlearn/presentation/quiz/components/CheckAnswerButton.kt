@@ -12,11 +12,14 @@ import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 
 @Composable
 fun CheckAnswerButton(
-    onClick: (String) -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     Button(
-        onClick = { onClick },
-        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = FlashRedDarkest,
             contentColor = androidx.compose.ui.graphics.Color.White
@@ -29,4 +32,5 @@ fun CheckAnswerButton(
         )
     }
 }
+
 

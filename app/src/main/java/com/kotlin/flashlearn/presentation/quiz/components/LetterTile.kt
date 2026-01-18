@@ -61,7 +61,6 @@ fun DraggableLetterTile(
     )
 
     Card(
-        onClick = { /* Optional: could add tap to swap functionality */ },
         modifier = Modifier
             .size(64.dp)
             .offset { IntOffset(animatedOffset.x.roundToInt(), animatedOffset.y.roundToInt()) }

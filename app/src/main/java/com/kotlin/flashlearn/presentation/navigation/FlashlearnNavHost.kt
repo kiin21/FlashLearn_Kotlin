@@ -51,7 +51,7 @@ fun FlashlearnNavHost(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    
+
     NavHost(
         navController = navController,
         startDestination = Route.SignIn.route,
@@ -81,6 +81,7 @@ fun FlashlearnNavHost(
                             }
                             viewModel.resetState()
                         }
+
                         is SignInUiEvent.NavigateToHome -> {
                             Toast.makeText(
                                 context,
@@ -92,6 +93,7 @@ fun FlashlearnNavHost(
                             }
                             viewModel.resetState()
                         }
+
                         is SignInUiEvent.ShowError -> {
                             Toast.makeText(
                                 context,
@@ -127,7 +129,7 @@ fun FlashlearnNavHost(
                 }
             )
         }
-        
+
         composable(Route.Onboarding.route) {
             OnboardingScreen(
                 onFinish = {
@@ -142,7 +144,7 @@ fun FlashlearnNavHost(
             val userData = authRepository.getSignedInUser()
             // In a real app, we might want to fetch full user details from Firestore here
             // using a HomeViewModel, but passing basic auth data works for now.
-            
+
             // Map UserData to User domain model partially for UI
             val user = userData?.let {
                 com.kotlin.flashlearn.domain.model.User(
@@ -209,7 +211,12 @@ fun FlashlearnNavHost(
                     navController.navigate(Route.CardDetail.createRoute(cardId))
                 },
                 onStudyNow = {
-                    navController.navigate(Route.LearningSession.createRoute(topicId, returnTo = "topic"))
+                    navController.navigate(
+                        Route.LearningSession.createRoute(
+                            topicId,
+                            returnTo = "topic"
+                        )
+                    )
                 },
                 onTakeQuiz = { config ->
                     navController.navigate(
@@ -243,7 +250,7 @@ fun FlashlearnNavHost(
         ) { backStackEntry ->
             val viewModel = hiltViewModel<CardDetailViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
-            
+
             CardDetailScreen(
                 state = state,
                 onFlip = { viewModel.flip() },
@@ -259,7 +266,7 @@ fun FlashlearnNavHost(
             )
         ) { backStackEntry ->
             val topicId = backStackEntry.arguments?.getString("topicId")
-            
+
             AddWordScreen(
                 topicId = topicId,
                 onBack = { navController.popBackStack() },
@@ -294,9 +301,16 @@ fun FlashlearnNavHost(
                         is LearningSessionUiEvent.NavigateToHome -> {
                             navController.popBackStack()
                         }
+
                         is LearningSessionUiEvent.SessionComplete -> {
-                            navController.navigate(Route.SessionComplete.createRoute(topicId, returnTo))
+                            navController.navigate(
+                                Route.SessionComplete.createRoute(
+                                    topicId,
+                                    returnTo
+                                )
+                            )
                         }
+
                         is LearningSessionUiEvent.ShowError -> {
                             Toast.makeText(
                                 context,
@@ -424,15 +438,14 @@ fun FlashlearnNavHost(
         ) { backStackEntry ->
             // Reuse QuizViewModel scoped to quiz session for summary data
             val quizBackStackEntry = navController.previousBackStackEntry
-            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.quiz.QuizViewModel>(quizBackStackEntry!!)
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.quiz.QuizViewModel>(
+                quizBackStackEntry!!
+            )
             val state by viewModel.uiState.collectAsStateWithLifecycle()
             val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
 
             com.kotlin.flashlearn.presentation.quiz.QuizSummaryScreen(
                 results = state.results,
-                onRestart = {
-                    navController.popBackStack(Route.QuizSession.createRoute(topicId, viewModel.currentMode, state.totalQuestions), inclusive = false)
-                },
                 onBackToTopic = {
                     navController.navigate(Route.TopicDetail.createRoute(topicId)) {
                         popUpTo(Route.TopicDetail.createRoute(topicId)) { inclusive = true }

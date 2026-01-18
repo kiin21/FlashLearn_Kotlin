@@ -32,7 +32,6 @@ import com.kotlin.flashlearn.domain.model.QuizResult
 @Composable
 fun QuizSummaryScreen(
     results: List<QuizResult>,
-    onRestart: () -> Unit,
     onBackToTopic: () -> Unit
 ) {
     val mastered = results.filter { it.isCorrect }
@@ -80,7 +79,10 @@ fun QuizSummaryScreen(
                             Icon(Icons.Default.Warning, contentDescription = null)
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(result.flashcard.word, fontWeight = FontWeight.Bold)
-                                Text(result.flashcard.definition, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    result.flashcard.definition,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
@@ -101,10 +103,17 @@ fun QuizSummaryScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(result.flashcard.word, fontWeight = FontWeight.Bold)
-                                Text(result.flashcard.definition, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    result.flashcard.definition,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                             }
                         }
                     }
@@ -112,9 +121,6 @@ fun QuizSummaryScreen(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onRestart, modifier = Modifier.fillMaxWidth()) {
-                Text("Practice missed words")
-            }
             Button(onClick = onBackToTopic, modifier = Modifier.fillMaxWidth()) {
                 Text("Back to topic")
             }

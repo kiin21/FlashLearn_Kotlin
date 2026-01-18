@@ -12,7 +12,6 @@ import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.usecase.GenerateQuestionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -151,12 +150,12 @@ class QuizViewModel @Inject constructor(
             val newScore = if (isCorrect) currentScore + 1 else 0 // Reset on error as per PRD
             
             flashcardRepository.updateProficiencyScore(question.flashcard.id, userId, newScore)
-
-            // Wait and advance
-            delay(1500)
-            currentCardIndex++
-            loadNextQuestion()
         }
+    }
+
+    fun continueToNext() {
+        currentCardIndex++
+        loadNextQuestion()
     }
 
     private fun validateAnswer(question: QuizQuestion, input: String): Boolean {
