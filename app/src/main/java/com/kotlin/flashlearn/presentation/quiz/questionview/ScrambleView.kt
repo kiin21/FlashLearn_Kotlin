@@ -89,7 +89,7 @@ fun ScrambleView(
 
                 // The draggable grid - Adaptive with 52dp tiles + 12dp spacing allows 5-7 tiles per row
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 52.dp),
+                    columns = GridCells.Adaptive(minSize = 40.dp),
                     state = gridState,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

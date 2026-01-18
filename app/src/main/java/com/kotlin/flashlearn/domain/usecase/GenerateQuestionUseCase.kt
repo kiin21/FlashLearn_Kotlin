@@ -20,12 +20,11 @@ class GenerateQuestionUseCase @Inject constructor(
         mode: QuizMode = QuizMode.SPRINT
     ): QuizQuestion {
 
-        return generateGapFill(flashcard, cardPool)
         if (mode == QuizMode.VSTEP_DRILL) {
             return when ((1..3).random()) {
                 1 -> generateGapFill(flashcard, cardPool)
                 2 -> generateSentenceBuilder(flashcard)
-                else -> if (!flashcard.pronunciation.isNullOrBlank()) {
+                else -> if (flashcard.pronunciation.isNotBlank()) {
                     QuizQuestion.Dictation(
                         flashcard = flashcard,
                         audioUrl = flashcard.pronunciation
@@ -101,8 +100,9 @@ class GenerateQuestionUseCase @Inject constructor(
     }
 
     private fun generateSentenceBuilder(card: Flashcard): QuizQuestion.SentenceBuilder {
-        val sentence =
-            card.exampleSentence.takeIf { it.isNotBlank() } ?: "${'$'}{card.word} is the answer."
+//        val sentence =
+//            card.exampleSentence.takeIf { it.isNotBlank() } ?: "${'$'}{card.word} is the answer."
+        val sentence = "A random sentence that have the word ${card.word} inside it"
         val segments = sentence.split(" ").shuffled()
 
         return QuizQuestion.SentenceBuilder(
