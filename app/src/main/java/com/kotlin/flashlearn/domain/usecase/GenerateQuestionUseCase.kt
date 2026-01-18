@@ -39,7 +39,13 @@ class GenerateQuestionUseCase @Inject constructor(
             ProficiencyLevel.NEW -> {
                 return when ((1..2).random()) {
                     1 -> generateMultipleChoice(flashcard, cardPool)
-                    else -> generateScramble(flashcard)
+                    else -> {
+                        if (flashcard.word.length > 7) return generateMultipleChoice(
+                            flashcard,
+                            cardPool
+                        )
+                        return generateScramble(flashcard)
+                    }
                 }
             }
 
@@ -51,7 +57,10 @@ class GenerateQuestionUseCase @Inject constructor(
         }
     }
 
-    private suspend fun generateMultipleChoice(card: Flashcard, pool: List<Flashcard>): QuizQuestion.MultipleChoice {
+    private suspend fun generateMultipleChoice(
+        card: Flashcard,
+        pool: List<Flashcard>
+    ): QuizQuestion.MultipleChoice {
         val distractors = distractorGenerator.getDistractors(card, pool)
         val options = (distractors + card.word).shuffled()
         val correctIndex = options.indexOf(card.word)
@@ -66,12 +75,15 @@ class GenerateQuestionUseCase @Inject constructor(
     private suspend fun generateScramble(card: Flashcard): QuizQuestion.Scramble {
         val word = card.word
         val scrambleChars: List<Char> = word.toList().shuffled()
-        return QuizQuestion.Scramble (
-            card,scrambleChars
+        return QuizQuestion.Scramble(
+            card, scrambleChars
         )
     }
 
-    private suspend fun generateGapFill(card: Flashcard, pool: List<Flashcard>): QuizQuestion.ContextualGapFill {
+    private suspend fun generateGapFill(
+        card: Flashcard,
+        pool: List<Flashcard>
+    ): QuizQuestion.ContextualGapFill {
         val baseSentence = card.exampleSentence.takeIf { it.isNotBlank() }
             ?: "Definition: ${'$'}{card.definition}\nWord: _______"
 
@@ -88,7 +100,8 @@ class GenerateQuestionUseCase @Inject constructor(
     }
 
     private fun generateSentenceBuilder(card: Flashcard): QuizQuestion.SentenceBuilder {
-        val sentence = card.exampleSentence.takeIf { it.isNotBlank() } ?: "${'$'}{card.word} is the answer."
+        val sentence =
+            card.exampleSentence.takeIf { it.isNotBlank() } ?: "${'$'}{card.word} is the answer."
         val segments = sentence.split(" ").shuffled()
 
         return QuizQuestion.SentenceBuilder(

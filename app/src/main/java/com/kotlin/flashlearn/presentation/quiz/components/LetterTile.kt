@@ -25,80 +25,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlin.math.roundToInt
 
 @Composable
-fun DraggableLetterTile(
+fun LetterTile(
     letter: Char,
-    index: Int,
-    isDragging: Boolean,
-    enabled: Boolean,
-    onDragStart: () -> Unit,
-    onDragEnd: () -> Unit,
-    onDrop: (Int) -> Unit
+    modifier: Modifier = Modifier,
+    isGhost: Boolean = false
 ) {
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val animatedOffset by animateOffsetAsState(
-        targetValue = if (isDragging) offset else Offset.Zero,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "offset"
-    )
-
-    val scale by animateFloatAsState(
-        targetValue = if (isDragging) 1.1f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "scale"
-    )
-
     Card(
-        modifier = Modifier
-            .size(64.dp)
-            .offset { IntOffset(animatedOffset.x.roundToInt(), animatedOffset.y.roundToInt()) }
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .zIndex(if (isDragging) 1f else 0f)
-            .pointerInput(enabled) {
-                if (!enabled) return@pointerInput
-                detectDragGestures(
-                    onDragStart = {
-                        onDragStart()
-                    },
-                    onDragEnd = {
-                        offset = Offset.Zero
-                        onDragEnd()
-                    },
-                    onDragCancel = {
-                        offset = Offset.Zero
-                        onDragEnd()
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        offset += dragAmount
-                    }
-                )
-            },
+        modifier = modifier.size(52.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(
-            width = 2.dp,
-            color = MaterialTheme.colorScheme.outline
+        ), border = BorderStroke(
+            2.dp,
+            MaterialTheme.colorScheme.outline
         ),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isDragging) 8.dp else 2.dp
+            defaultElevation = if (isGhost) 10.dp else 2.dp
         )
     ) {
         Box(
@@ -108,6 +59,37 @@ fun DraggableLetterTile(
             Text(
                 text = letter.toString().uppercase(),
                 style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun LetterTilePreview(
+) {
+    Card(
+        modifier = Modifier.size(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ), border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline
+        ),
+        shape = RoundedCornerShape(4.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (false) 10.dp else 2.dp
+        )
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "A".toString().uppercase(),
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
