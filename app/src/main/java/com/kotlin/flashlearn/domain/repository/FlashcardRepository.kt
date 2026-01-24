@@ -64,4 +64,12 @@ interface FlashcardRepository {
      * @param newScore The new proficiency score.
      */
     suspend fun updateProficiencyScore(flashcardId: String, userId: String, newScore: Int): Result<Unit>
+
+    /**
+     * Enriches a flashcard with IPA and Image data.
+     * @param card The flashcard to enrich.
+     * @param force If true, fetches new data even if existing data is present.
+     * @return The enriched flashcard.
+     */
+    suspend fun enrichFlashcard(card: Flashcard, force: Boolean = false): Flashcard
 }

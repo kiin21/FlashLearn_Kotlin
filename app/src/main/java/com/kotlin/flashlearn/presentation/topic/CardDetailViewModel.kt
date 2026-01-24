@@ -66,11 +66,24 @@ class CardDetailViewModel @Inject constructor(
         if (card.imageUrl.isBlank() || card.ipa.isBlank()) {
             viewModelScope.launch {
                 try {
-                    val enrichedCard = (flashcardRepository as com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl).enrichFlashcard(card)
+                    val enrichedCard = flashcardRepository.enrichFlashcard(card, false)
                     _state.value = _state.value.copy(flashcard = enrichedCard)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
+            }
+        }
+    }
+
+    fun regenerateImage() {
+        val currentCard = _state.value.flashcard ?: return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            try {
+                val enrichedCard = flashcardRepository.enrichFlashcard(currentCard, force = true)
+                _state.value = _state.value.copy(flashcard = enrichedCard, isLoading = false)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = "Failed to regenerate image: ${e.message}")
             }
         }
     }

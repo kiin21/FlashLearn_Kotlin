@@ -190,10 +190,14 @@ class FlashcardRepositoryImpl @Inject constructor(
         }
     }
 
-    suspend fun enrichFlashcard(card: Flashcard): Flashcard {
-        val enriched = enrichFlashcardData(card)
+    override suspend fun enrichFlashcard(card: Flashcard, force: Boolean): Flashcard {
+        val enriched = enrichFlashcardData(card, force)
         if (enriched != card) {
-            saveFlashcardToFirestore(enriched, card.topicId)
+            runCatching {
+                saveFlashcardToFirestore(enriched, card.topicId)
+            }.onFailure {
+                Log.w(TAG, "Failed to persist enriched card (likely permission issue): ${it.message}")
+            }
         }
         return enriched
     }
@@ -203,7 +207,7 @@ class FlashcardRepositoryImpl @Inject constructor(
             cards.map { card ->
                 async {
                     enrichmentSemaphore.withPermit {
-                        runCatching { enrichFlashcardData(card) }
+                        runCatching { enrichFlashcardData(card, false) }
                             .onFailure {
                                 Log.w(
                                     TAG,
@@ -229,7 +233,7 @@ class FlashcardRepositoryImpl @Inject constructor(
             ?.key
     }
 
-    private suspend fun enrichFlashcardData(card: Flashcard): Flashcard {
+    private suspend fun enrichFlashcardData(card: Flashcard, force: Boolean = false): Flashcard {
         var ipa = card.ipa
         var imageUrl = card.imageUrl
 
@@ -237,8 +241,11 @@ class FlashcardRepositoryImpl @Inject constructor(
             ipa = fetchIpa(card.word)
         }
 
-        if (imageUrl.isBlank()) {
-            imageUrl = fetchImage(card.word)
+        if (imageUrl.isBlank() || force) {
+            val newImage = fetchImage(card.word)
+            if (newImage.isNotBlank()) {
+                imageUrl = newImage
+            }
         }
 
         return card.copy(ipa = ipa, imageUrl = imageUrl)

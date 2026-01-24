@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ fun CardDetailScreen(
     state: CardDetailState,
     onFlip: () -> Unit,
     onBack: () -> Unit,
+    onRegenerateImage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -45,6 +47,11 @@ fun CardDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ChevronLeft, contentDescription = "Back", tint = FlashRed)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onRegenerateImage) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Regenerate Image", tint = FlashRed)
                     }
                 }
             )

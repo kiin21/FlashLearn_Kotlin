@@ -316,7 +316,8 @@ fun FlashlearnNavHost(
             CardDetailScreen(
                 state = state,
                 onFlip = { viewModel.flip() },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onRegenerateImage = { viewModel.regenerateImage() }
             )
         }
 
@@ -354,7 +355,6 @@ fun FlashlearnNavHost(
 
             val viewModel = hiltViewModel<LearningSessionViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
-            val currentUserId = authRepository.getSignedInUser()?.userId ?: ""
 
             // Handle one-time events
             LaunchedEffect(key1 = Unit) {
