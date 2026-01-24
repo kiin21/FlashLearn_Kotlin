@@ -74,6 +74,10 @@ import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
+import android.speech.tts.TextToSpeech
+import java.util.Locale
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,6 +105,27 @@ fun TopicDetailScreen(
     var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showQuizConfig by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    DisposableEffect(context) {
+        var textToSpeech: TextToSpeech? = null
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                textToSpeech?.let { ttsInstance ->
+                    val result = ttsInstance.setLanguage(Locale.US)
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        // Handle error if needed
+                    }
+                }
+            }
+        }
+        tts = textToSpeech
+        onDispose {
+            textToSpeech?.shutdown()
+        }
+    }
     
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -406,6 +431,9 @@ fun TopicDetailScreen(
                                 imageUrl = card.imageUrl,
                                 isSelectionMode = state.isSelectionMode,
                                 isSelected = state.selectedCardIds.contains(card.id),
+                                onPlayAudio = {
+                                    tts?.speak(card.word, TextToSpeech.QUEUE_FLUSH, null, null)
+                                },
                                 onClick = { 
                                     if (state.isSelectionMode) {
                                         onToggleCardSelection(card.id)
@@ -447,6 +475,7 @@ fun CardItem(
     imageUrl: String,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
+    onPlayAudio: () -> Unit = {},
     onClick: () -> Unit,
     onLongClick: () -> Unit = {}
 ) {
@@ -516,12 +545,14 @@ fun CardItem(
             
             if (!isSelectionMode) {
                 // Audio Icon
-                Icon(
-                    Icons.AutoMirrored.Filled.VolumeUp,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
+                IconButton(onClick = onPlayAudio) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = stringResource(R.string.play_audio),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
