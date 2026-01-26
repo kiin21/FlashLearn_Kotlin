@@ -59,10 +59,10 @@ fun PreferencesSection(
     onLinkGoogleAccount: () -> Unit,
     onUnlinkAccount: (String) -> Unit,
     onSignOut: () -> Unit,
-    onDeleteAccount: () -> Unit
+    onDeleteAccount: () -> Unit,
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: (Boolean) -> Unit = {}
 ) {
-    var darkModeEnabled by remember { mutableStateOf(false) }
-    
     val languages = remember {
         listOf(
             Language("en", R.string.english, "🇺🇸"),
@@ -102,8 +102,8 @@ fun PreferencesSection(
                 ProfileRowSwitch(
                     icon = Icons.Default.NightsStay,
                     text = stringResource(R.string.dark_mode),
-                    isChecked = darkModeEnabled,
-                    onCheckedChange = { darkModeEnabled = it },
+                    isChecked = isDarkMode,
+                    onCheckedChange = { onToggleDarkMode(it) },
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 

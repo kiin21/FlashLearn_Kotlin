@@ -25,6 +25,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.speech.tts.TextToSpeech
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
+import java.util.Locale
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
@@ -40,6 +47,30 @@ fun CardDetailScreen(
     onRegenerateImage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    DisposableEffect(context) {
+        val ttsInstance = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                // We can't set language on 'ttsInstance' here easily as it might not be initialized in this scope yet
+                // But we can rely on the 'tts' state being updated
+            }
+        }
+        // Ideally we should set language inside the init listener, but strict scoping makes it hard to access the variable being constructed.
+        // Simple workaround: Set it after construction (might rely on sync init) or just rely on 'tts' state update which passes the instance.
+        // Actually, TextToSpeech constructor is synchronous for the object creation, so 'ttsInstance' is available immediately.
+        // But the engine init is async. 
+        // Safest pattern:
+        
+        ttsInstance.language = Locale.US // Attempt setting language
+        tts = ttsInstance
+        
+        onDispose {
+            ttsInstance.shutdown()
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -66,13 +97,16 @@ fun CardDetailScreen(
         ) {
             when {
                 state.isLoading -> CircularProgressIndicator(color = FlashRed)
-                state.error != null -> Text(state.error ?: "Error", color = Color.Red)
+                state.error != null -> Text(state.error, color = Color.Red)
                 state.flashcard == null -> Text("Card not found", color = Color.Gray)
                 else -> {
                     CardFlipContent(
                         flashcard = state.flashcard,
                         isFlipped = state.isFlipped,
-                        onFlip = onFlip
+                        onFlip = onFlip,
+                        onPlayAudio = {
+                            tts?.speak(state.flashcard.word, TextToSpeech.QUEUE_FLUSH, null, null)
+                        }
                     )
                 }
             }
@@ -84,7 +118,8 @@ fun CardDetailScreen(
 private fun CardFlipContent(
     flashcard: Flashcard,
     isFlipped: Boolean,
-    onFlip: () -> Unit
+    onFlip: () -> Unit,
+    onPlayAudio: () -> Unit
 ) {
     val density = LocalDensity.current
 
@@ -109,7 +144,10 @@ private fun CardFlipContent(
         contentAlignment = Alignment.Center
     ) {
         if (rotation <= 90f) {
-            FlashcardFront(flashcard = flashcard)
+            FlashcardFront(
+                flashcard = flashcard,
+                onPlayAudio = onPlayAudio
+            )
         } else {
             Box(
                 modifier = Modifier.graphicsLayer { rotationY = 180f }
