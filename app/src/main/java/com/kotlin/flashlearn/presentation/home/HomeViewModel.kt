@@ -13,14 +13,19 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userStreakDao: UserStreakDao
+    private val userStreakDao: UserStreakDao,
+    private val topicRepository: com.kotlin.flashlearn.domain.repository.TopicRepository
 ) : ViewModel() {
 
     private val _streakDays = MutableStateFlow(0)
     val streakDays = _streakDays.asStateFlow()
 
+    private val _recommendedTopics = MutableStateFlow<List<com.kotlin.flashlearn.domain.model.Topic>>(emptyList())
+    val recommendedTopics = _recommendedTopics.asStateFlow()
+
     init {
         loadStreak()
+        fetchRecommendedTopics()
     }
 
     private fun loadStreak() {
@@ -34,6 +39,22 @@ class HomeViewModel @Inject constructor(
             val entity = userStreakDao.getByUserId(user.userId)
 
             _streakDays.value = entity?.currentStreak ?: 0
+        }
+    }
+
+    private fun fetchRecommendedTopics() {
+        viewModelScope.launch {
+            try {
+                topicRepository.getTopRecommendedTopics()
+                    .onSuccess { topics ->
+                        _recommendedTopics.value = topics
+                    }
+                    .onFailure { e ->
+                        e.printStackTrace()
+                    }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

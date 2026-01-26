@@ -68,4 +68,8 @@ interface TopicRepository {
         targetUserId: String,
         targetUserName: String
     ): Result<Topic>
+    /**
+     * Get top recommended public topics based on upvote count.
+     */
+    suspend fun getTopRecommendedTopics(limit: Int = 5): Result<List<Topic>>
 }

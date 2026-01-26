@@ -63,13 +63,17 @@ import java.util.Date
 import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.widget.Toast
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.*
+import coil.compose.AsyncImage
 import com.kotlin.flashlearn.presentation.noti.ExamDatePrefs
+import com.kotlin.flashlearn.ui.theme.BrandRed
+import com.kotlin.flashlearn.ui.theme.BrandRedDark
 import com.kotlin.flashlearn.utils.DateUtils
 
 @Composable
@@ -79,9 +83,11 @@ fun HomeScreen(
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToLearningSession: (String) -> Unit = {},
+    onNavigateToTopicDetail: (String) -> Unit = {}
 ) {
     val homeVm: HomeViewModel = hiltViewModel()
     val streakDays by homeVm.streakDays.collectAsState(initial = 0)
+    val recommendedTopics = homeVm.recommendedTopics
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -136,7 +142,10 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             RecommendedSection(
-                onCardClick = { showNotImplementedMessage(R.string.recommended_collection) }
+                topics = recommendedTopics.collectAsState(initial = emptyList()).value,
+                onTopicClick = { topicId -> 
+                    onNavigateToTopicDetail(topicId)
+                }
             )
         }
     }
@@ -449,8 +458,11 @@ fun ContinueLearningSection(
 
 @Composable
 fun RecommendedSection(
-    onCardClick: () -> Unit = {}
+    topics: List<com.kotlin.flashlearn.domain.model.Topic>,
+    onTopicClick: (String) -> Unit = {}
 ) {
+    if (topics.isEmpty()) return
+
     Column {
         Text(
             text = stringResource(R.string.recommended_for_you),
@@ -461,12 +473,13 @@ fun RecommendedSection(
         Spacer(modifier = Modifier.height(12.dp))
         
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(end = 16.dp)
         ) {
-            items(3) { index ->
+            items(topics.size) { index ->
                 RecommendedCard(
-                    index = index,
-                    onClick = onCardClick
+                    topic = topics[index],
+                    onClick = { onTopicClick(topics[index].id) }
                 )
             }
         }
@@ -475,50 +488,111 @@ fun RecommendedSection(
 
 @Composable
 fun RecommendedCard(
-    index: Int,
+    topic: com.kotlin.flashlearn.domain.model.Topic,
     onClick: () -> Unit = {}
 ) {
-    val titles = listOf("VSTEP C1 Vocab", "Listening Part 2", "Writing Task 1")
-    val counts = listOf("20 words", "20 words", "20 words")
-    
     Card(
         modifier = Modifier
-            .width(140.dp)
+            .width(100.dp)
+            .height(150.dp)
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Priority 2/3: Fallback Background (always there)
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(FlashGreen.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(BrandRed, BrandRedDark)
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Book,
-                    contentDescription = null,
-                    tint = FlashGreen
+                val fallbackText = when {
+                    topic.vstepLevel != null -> topic.vstepLevel.displayName
+                    topic.name.isNotBlank() -> topic.name.first().uppercase()
+                    else -> "?"
+                }
+                Text(
+                    text = fallbackText,
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White.copy(alpha = 0.6f),
+                    modifier = Modifier.offset(y = (-12).dp)
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = titles.getOrElse(index) { "Collection" },
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
+
+            // Priority 1: Image (if exists)
+            if (!topic.imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = topic.imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            }
+
+            // Universal Gradient Overlay for text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            startY = 100f
+                        )
+                    )
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.words, 20),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall
-            )
+
+            // Bottom Content
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = topic.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Level or General tag
+                    Text(
+                        text = topic.vstepLevel?.displayName ?: "General",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
+                    // Upvotes
+                    Icon(
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = null,
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "${topic.upvoteCount}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
         }
     }
 }

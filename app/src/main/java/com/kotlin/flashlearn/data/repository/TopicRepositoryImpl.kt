@@ -219,6 +219,19 @@ class TopicRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getTopRecommendedTopics(limit: Int): Result<List<Topic>> {
+        return runCatching {
+            topicsCollection
+                .whereEqualTo("isPublic", true)
+                .orderBy("upvoteCount", Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .getWithCacheFirst()
+                .documents.mapNotNull { it.toTopic() }
+        }.onFailure {
+            if (it is CancellationException) throw it
+        }
+    }
+
     private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
         val cached = runCatching { 
             get(Source.CACHE).await() 
