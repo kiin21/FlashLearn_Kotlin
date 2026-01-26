@@ -62,19 +62,26 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
+import android.widget.Toast
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.*
+import com.kotlin.flashlearn.presentation.noti.ExamDatePrefs
+import com.kotlin.flashlearn.utils.DateUtils
 
 @Composable
 fun HomeScreen(
     userData: User?,
-    streakDays: Int,
     onNavigateToProfile: () -> Unit,
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToLearningSession: (String) -> Unit = {},
-    onNavigateToDailyWidget: () -> Unit = {},
-    onNavigateToDailyWidgetComplete: () -> Unit = {}
 ) {
     val homeVm: HomeViewModel = hiltViewModel()
+    val streakDays by homeVm.streakDays.collectAsState(initial = 0)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -111,16 +118,10 @@ fun HomeScreen(
             HeaderSection(
                 user = userData,
                 streakDays = streakDays,
-                onStreakClick = {
-                    homeVm.onStreakClick(
-                        onGoToDailyWidget = onNavigateToDailyWidget,
-                        onGoToDailyWidgetComplete = onNavigateToDailyWidgetComplete
-                    )
-                }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            ExamDateCard(userData)
+            ExamDateCard()
             Spacer(modifier = Modifier.height(24.dp))
 
             DailyWordSection(
@@ -145,7 +146,6 @@ fun HomeScreen(
 fun HeaderSection(
     user: User?,
     streakDays: Int,
-    onStreakClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -169,7 +169,6 @@ fun HeaderSection(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFFFF3E0))
-                .clickable { onStreakClick() }
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -181,7 +180,7 @@ fun HeaderSection(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "$streakDays DAYS",
+                text = "$streakDays days",
                 color = Color(0xFFFF9800),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold
@@ -190,10 +189,29 @@ fun HeaderSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExamDateCard(user: User?) {
+fun ExamDateCard() {
+    val context = LocalContext.current
+
+    var showPicker by remember { mutableStateOf(false) }
+    var examMillis by remember { mutableStateOf<Long?>(null) }
+
+    LaunchedEffect(Unit) {
+        examMillis = ExamDatePrefs.get(context)
+    }
+
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.US) }
+    val dateText = examMillis?.let { dateFormat.format(Date(it)) } ?: "Tap to set"
+
+    val daysLeft = remember(examMillis) {
+        examMillis?.let { DateUtils.daysBetweenTodayAnd(it) }
+    }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { showPicker = true },
         colors = CardDefaults.cardColors(containerColor = FlashDarkGrey),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -209,16 +227,14 @@ fun ExamDateCard(user: User?) {
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                val date = user?.examDate?.let { Date(it) } ?: Date()
-                val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
                 Text(
-                    text = dateFormat.format(date),
+                    text = dateText,
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -226,7 +242,7 @@ fun ExamDateCard(user: User?) {
                     .padding(12.dp)
             ) {
                 Text(
-                    text = "14",
+                    text = daysLeft?.toString() ?: "--",
                     color = FlashRed,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -237,6 +253,39 @@ fun ExamDateCard(user: User?) {
                     style = MaterialTheme.typography.labelSmall
                 )
             }
+        }
+    }
+
+    if (showPicker) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = examMillis
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val picked = pickerState.selectedDateMillis ?: return@TextButton
+
+                    if (picked < System.currentTimeMillis()) {
+                        Toast.makeText(
+                            context,
+                            "The exam date is invalid. Please choose a date in the future!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@TextButton
+                    }
+
+                    ExamDatePrefs.set(context, picked)
+                    examMillis = picked
+                    showPicker = false
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = pickerState)
         }
     }
 }

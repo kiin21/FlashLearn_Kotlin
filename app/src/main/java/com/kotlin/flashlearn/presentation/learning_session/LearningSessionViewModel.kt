@@ -3,7 +3,11 @@ package com.kotlin.flashlearn.presentation.learning_session
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.flashlearn.domain.model.Flashcard
+import com.kotlin.flashlearn.domain.model.StreakResult
+import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
+import com.kotlin.flashlearn.domain.usecase.UpdateStreakOnSessionCompleteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LearningSessionViewModel @Inject constructor(
     private val flashcardRepository: FlashcardRepository,
+    private val updateStreakUseCase: UpdateStreakOnSessionCompleteUseCase,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -33,6 +39,8 @@ class LearningSessionViewModel @Inject constructor(
 
     private val _uiEvent = Channel<LearningSessionUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
+    private val _streakResult = MutableStateFlow<StreakResult?>(null)
+    val streakResult = _streakResult.asStateFlow()
 
     init {
         loadFlashcards()
@@ -164,11 +172,18 @@ class LearningSessionViewModel @Inject constructor(
         }
     }
 
-    private fun checkSessionCompletion(queue: List<com.kotlin.flashlearn.domain.model.Flashcard>) {
-        if (queue.isEmpty()) {
-            viewModelScope.launch {
-                _uiEvent.send(LearningSessionUiEvent.SessionComplete)
+    private fun checkSessionCompletion(queue: List<Flashcard>) {
+        if (queue.isNotEmpty()) return
+
+        viewModelScope.launch {
+            val user = authRepository.getSignedInUser()
+
+            if (user != null) {
+                val result = updateStreakUseCase(user.userId)
+                _streakResult.value = result
             }
+
+            _uiEvent.send(LearningSessionUiEvent.SessionComplete)
         }
     }
 

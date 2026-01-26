@@ -19,7 +19,7 @@ class DailyReminderWorker @AssistedInject constructor(
         val hour = inputData.getInt(KEY_HOUR, 20)
         val minute = inputData.getInt(KEY_MINUTE, 0)
         val title = inputData.getString(KEY_TITLE) ?: "FlashLearn"
-        val body = inputData.getString(KEY_BODY) ?: "Đến giờ học rồi nè 👀"
+        val body = inputData.getString(KEY_BODY) ?: "It's time to study"
 
         // Show local notification
         NotificationHelper.show(applicationContext, title, body)
