@@ -47,7 +47,4 @@ sealed class Route(val route: String) {
     data object QuizSummary : Route("quiz_summary/{topicId}") {
         fun createRoute(topicId: String) = "quiz_summary/$topicId"
     }
-    data object DailyWidget : Route("daily_widget")
-
-    data object DailyWidgetComplete : Route("daily_widget_complete")
 }

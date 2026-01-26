@@ -5,17 +5,40 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.kotlin.flashlearn.data.local.entity.UserStreakEntity
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserStreakDao {
 
+    @Query("SELECT * FROM user_streak WHERE userId = :userId LIMIT 1")
+    suspend fun getByUserId(userId: String): UserStreakEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(entity: UserStreakEntity)
+    suspend fun insert(entity: UserStreakEntity)
 
-    @Query("SELECT * FROM user_streak WHERE userId = :userId LIMIT 1")
-    suspend fun get(userId: String): UserStreakEntity?
+    suspend fun insert(
+        userId: String,
+        currentStreak: Int,
+        best: Int,
+        lastActiveDate: String
+    ) = insert(
+        UserStreakEntity(
+            userId = userId,
+            currentStreak = currentStreak,
+            lastActiveDate = lastActiveDate
+        )
+    )
 
-    @Query("SELECT * FROM user_streak WHERE userId = :userId LIMIT 1")
-    fun observe(userId: String): Flow<UserStreakEntity?>
+    @Query("""
+        UPDATE user_streak 
+        SET currentStreak = :currentStreak,
+            lastActiveDate = :lastActiveDate,
+            updatedAt = :updatedAt
+        WHERE userId = :userId
+    """)
+    suspend fun update(
+        userId: String,
+        currentStreak: Int,
+        lastActiveDate: String,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 }

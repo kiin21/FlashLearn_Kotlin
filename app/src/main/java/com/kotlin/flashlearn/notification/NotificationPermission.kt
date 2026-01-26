@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.kotlin.flashlearn.notification.daily.DailyReminderScheduler
 import com.kotlin.flashlearn.presentation.noti.AutoReminderPrefs
+import com.kotlin.flashlearn.notification.exam.ExamReminderScheduler
+import com.kotlin.flashlearn.presentation.noti.ExamReminderPrefs
 
 /**
  * Call this once in MainActivity.onCreate().
@@ -53,6 +55,37 @@ class DailyReminderPermissionGate(
             scheduleOnce()
         } else {
             onGranted = { scheduleOnce() }
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    fun ensureExamReminder(
+        hour: Int = 7,
+        minute: Int = 0,
+        title: String = "FlashLearn"
+    ) {
+        val ctx = activity.applicationContext
+
+        fun scheduleOnce() {
+            if (ExamReminderPrefs.wasScheduled(ctx)) return
+            ExamReminderScheduler.schedule(ctx, hour, minute, title)
+            ExamReminderPrefs.markScheduled(ctx)
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            scheduleOnce()
+            return
+        }
+
+        val granted = ContextCompat.checkSelfPermission(
+            activity,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (granted) {
+            scheduleOnce()
+        } else {
+            onGranted = { scheduleOnce() } // reuse the same callback slot
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }

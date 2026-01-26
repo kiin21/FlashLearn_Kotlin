@@ -7,6 +7,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,9 +41,6 @@ import com.kotlin.flashlearn.presentation.topic.TopicScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
 import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.AddWordScreen
-import com.kotlin.flashlearn.presentation.components.NotImplementedScreen
-import com.kotlin.flashlearn.presentation.widget.WidgetCompletedScreen
-import com.kotlin.flashlearn.presentation.widget.WidgetRevealScreen
 
 /**
  * Navigation host for the app.
@@ -202,12 +200,8 @@ fun FlashlearnNavHost(
                 )
             }
 
-            val streakVm = hiltViewModel<com.kotlin.flashlearn.presentation.home.HomeStreakViewModel>()
-            val streakDays by streakVm.streakDays.collectAsStateWithLifecycle()
-
             HomeScreen(
                 userData = user,
-                streakDays = streakDays,
                 onNavigateToProfile = {
                     navController.navigate(Route.Profile.route)
                 },
@@ -220,12 +214,6 @@ fun FlashlearnNavHost(
                 onNavigateToLearningSession = { topicId ->
                     navController.navigate(Route.LearningSession.createRoute(topicId, "home"))
                 },
-                onNavigateToDailyWidget = {
-                    navController.navigate(Route.DailyWidget.route)
-                },
-                onNavigateToDailyWidgetComplete = {
-                    navController.navigate(Route.DailyWidgetComplete.route)
-                }
             )
         }
 
@@ -408,13 +396,16 @@ fun FlashlearnNavHost(
             val returnTo = backStackEntry.arguments?.getString("returnTo") ?: "home"
 
             val previousBackStackEntry = navController.previousBackStackEntry
-            val state = previousBackStackEntry?.let {
-                hiltViewModel<LearningSessionViewModel>(it).state.collectAsStateWithLifecycle().value
-            }
+            val learningVm = previousBackStackEntry?.let { hiltViewModel<LearningSessionViewModel>(it) }
+
+            val state = learningVm?.state?.collectAsStateWithLifecycle()?.value
+            val streakResult by (learningVm?.streakResult?.collectAsStateWithLifecycle()
+                ?: remember { mutableStateOf(null) })
 
             SessionCompleteScreen(
                 masteredCount = state?.completedCardCount ?: 0,
                 totalCount = state?.initialCardCount ?: 0,
+                streakResult = streakResult,
                 onBackToHome = {
                     if (returnTo == "topic") {
                         navController.navigate(Route.TopicDetail.createRoute(topicId)) {
@@ -710,30 +701,6 @@ fun FlashlearnNavHost(
                         launchSingleTop = true
                     }
                 }
-            )
-        }
-        composable(Route.DailyWidget.route) {
-            WidgetRevealScreen(
-                onCompleted = {
-                    navController.navigate(Route.DailyWidgetComplete.route) {
-                        popUpTo(Route.DailyWidget.route) { inclusive = true }
-                    }
-                },
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-        
-        composable(Route.DailyWidgetComplete.route) {
-            WidgetCompletedScreen(
-                onBackHome = {
-                    navController.navigate(Route.Home.route) {
-                        popUpTo(Route.Home.route) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onBack = { navController.popBackStack() }
             )
         }
     }

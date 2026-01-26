@@ -39,13 +39,21 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         reminderGate = DailyReminderPermissionGate(this)
-        reminderGate.ensureDailyReminder(
-            hour = 9,
-            minute = 0,
-            title = "FlashLearn",
-            body = "It's time for class!"
-        )
-        
+        reminderGate.apply {
+            ensureDailyReminder(
+                hour = 9,
+                minute = 0,
+                title = "FlashLearn",
+                body = "It's time for class!"
+            )
+            ensureExamReminder(
+                hour = 7,
+                minute = 0,
+                title = "FlashLearn"
+            )
+        }
+
+
         setContent {    
             FlashlearnTheme {
                 Surface(
