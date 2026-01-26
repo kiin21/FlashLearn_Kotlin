@@ -13,6 +13,7 @@ interface UserRepository {
     // Username/Password auth
     suspend fun getUserByLoginUsername(loginUsername: String): User?
     suspend fun isLoginUsernameTaken(loginUsername: String): Boolean
+    suspend fun getUserByEmail(email: String): User?
     
     // Google linking
     suspend fun getUserByGoogleId(googleId: String): User?

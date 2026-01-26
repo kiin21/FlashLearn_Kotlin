@@ -42,7 +42,7 @@ interface AuthRepository {
     suspend fun linkGoogleAccount(): Result<IntentSender?>
     suspend fun linkGoogleAccountWithIntent(intent: Intent): Result<Unit>
     suspend fun unlinkGoogleAccount(googleId: String): Result<Unit>
-    fun getLinkedProviders(): List<String>
+
     
     // Session management for custom auth
     fun setCurrentUser(userData: UserData?)
@@ -63,5 +63,12 @@ interface AuthRepository {
      * @param oldPassword The current password for verification.
      * @param newPassword The new password to set.
      */
+    /**
+     * Checks if the account is eligible for password reset (checks by email).
+     * @param email The email to check.
+     * @return Result containing the email to send reset details to, or error.
+     */
+    suspend fun checkPasswordResetEligibility(email: String): Result<String>
+
     suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit>
 }

@@ -14,8 +14,10 @@ class UserRepositoryImpl @Inject constructor(
     private val cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
 ) : UserRepository {
 
-    private val usersCollection = firestore.collection("users")
-    
+    companion object {
+        private const val COLLECTION_LINKED_EMAILS = "linked_emails"
+    }
+
     override suspend fun isNewUser(userId: String): Boolean {
         val document = usersCollection.document(userId)
             .get(Source.SERVER)
@@ -24,9 +26,15 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createUser(user: User) {
+        // Create user doc
         usersCollection.document(user.userId)
             .set(user)
             .await()
+            
+        // Initial email to subcollection if exists
+        user.email?.let { email ->
+             addEmailToSubcollection(user.userId, email)
+        }
     }
 
     override suspend fun getUser(userId: String): User? {
@@ -60,6 +68,30 @@ class UserRepositoryImpl @Inject constructor(
         return getUserByLoginUsername(loginUsername) != null
     }
 
+    override suspend fun getUserByEmail(email: String): User? {
+        // Strategy: 
+        // 1. Try finding directly in users (Root email) - Optimization
+        val rootMatch = usersCollection
+            .whereEqualTo("email", email)
+            .get()
+            .await()
+            .documents.firstOrNull()
+            ?.toObject(User::class.java)
+            
+        if (rootMatch != null) return rootMatch
+
+        // 2. Collection Group Query on linked_emails subcollection
+        val subCollectionMatch = firestore.collectionGroup(COLLECTION_LINKED_EMAILS)
+            .whereEqualTo("email", email)
+            .get()
+            .await()
+            .documents.firstOrNull()
+            
+        return subCollectionMatch?.reference?.parent?.parent?.let { userRef ->
+             userRef.get().await().toObject(User::class.java)
+        }
+    }
+
     override suspend fun getUserByGoogleId(googleId: String): User? {
         return usersCollection
             .whereArrayContains("googleIds", googleId)
@@ -77,43 +109,72 @@ class UserRepositoryImpl @Inject constructor(
         
         usersCollection.document(userId).update(
             mapOf(
-                "googleId" to googleId, // Keep for backward compat
                 "googleIds" to com.google.firebase.firestore.FieldValue.arrayUnion(googleId),
                 "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayUnion(linkedAccount),
-                "email" to email, // Update main email if needed, or keep? Let's keep for now.
-                "linkedProviders" to com.google.firebase.firestore.FieldValue.arrayUnion("google.com")
+                "email" to email // Update main email if needed
             )
         ).await()
+        
+        // Add to subcollection
+        addEmailToSubcollection(userId, email)
     }
 
     override suspend fun unlinkGoogleAccount(userId: String, googleId: String) {
         // We need to remove the specific LinkedAccount object.
-        // Firestore arrayRemove requires exact object match.
-        // So we first fetch the user to get the correct object to remove.
         val user = getUser(userId) ?: return
         val accountToRemove = user.linkedGoogleAccounts.find { it.accountId == googleId }
+        val emailToRemove = accountToRemove?.email
         
         if (accountToRemove != null) {
             usersCollection.document(userId).update(
                 mapOf(
-                    "googleId" to null,
                     "googleIds" to com.google.firebase.firestore.FieldValue.arrayRemove(googleId),
-                    "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayRemove(accountToRemove),
-                    "linkedProviders" to com.google.firebase.firestore.FieldValue.arrayRemove("google.com") // Only if no Google accounts left? 
-                    // Logic for "linkedProviders" flag: If list is empty after removal, remove "google.com" flag.
-                    // Complex with just one update call. Let's simplify: 
-                    // If we support multiple, "linkedProviders" having "google.com" is true if AT LEAST ONE exists.
-                    // For now, let's just remove the specific ID and Account object.
+                    "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayRemove(accountToRemove)
                 )
             ).await()
             
-            // cleanup if no more google accounts
-            // This requires a second write or a transaction, but for now simplistic approach.
+            // cleanup from subcollection
+            if (emailToRemove != null) {
+                 removeEmailFromSubcollection(userId, emailToRemove)
+            }
         }
     }
 
     override suspend fun updateEmail(userId: String, email: String) {
         usersCollection.document(userId).update("email", email).await()
+        // Improve: Add new email to subcollection? 
+        // Logic: Should we keep history or just current? 
+        // Rule: Subcollection represents ALL currently valid emails for this user.
+        // If main email updates, we add it. 
+        // Ideally we should remove old main email from subcollection if it's no longer linked, 
+        // but distinguishing "main email" vs "google email" in subcollection is tricky unless we store type.
+        // For simplicity: Add new email.
+        addEmailToSubcollection(userId, email)
+    }
+    
+    // Helpers
+    private suspend fun addEmailToSubcollection(userId: String, email: String) {
+        val data = mapOf("email" to email, "uid" to userId)
+        // Set document ID as email (sanitize?) or auto-id?
+        // Auto-id allows duplicates if needed, but cleaner if unique per user-email pair.
+        // Use a deterministic ID or query to check existence? 
+        // Just add() for now, simpler.
+        usersCollection.document(userId)
+            .collection(COLLECTION_LINKED_EMAILS)
+            .add(data)
+            .await()
+    }
+
+    private suspend fun removeEmailFromSubcollection(userId: String, email: String) {
+         val query = usersCollection.document(userId)
+            .collection(COLLECTION_LINKED_EMAILS)
+            .whereEqualTo("email", email)
+            .get()
+            .await()
+            
+         for (doc in query.documents) {
+             doc.reference.delete().await()
+         }
     }
 
     override suspend fun uploadProfilePicture(userId: String, uriString: String): String {

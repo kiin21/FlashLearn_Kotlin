@@ -85,10 +85,9 @@ class SignInViewModel @Inject constructor(
                                 displayName = userData.username,
                                 photoUrl = userData.profilePictureUrl,
                                 email = userData.email,
-                                googleId = userData.userId,
+
                                 googleIds = listOf(userData.userId),
-                                linkedGoogleAccounts = listOf(linkedAccount),
-                                linkedProviders = listOf("google.com")
+                                linkedGoogleAccounts = listOf(linkedAccount)
                             )
                             userRepository.createUser(newUser)
                             syncRepository.syncAll(userData.userId)

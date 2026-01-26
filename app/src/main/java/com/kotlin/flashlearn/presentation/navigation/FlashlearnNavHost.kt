@@ -144,7 +144,16 @@ fun FlashlearnNavHost(
                 onUsernameChange = viewModel::onUsernameChange,
                 onPasswordChange = viewModel::onPasswordChange,
                 onLoginClick = viewModel::signInWithUsername,
-                onRegisterClick = viewModel::navigateToRegister
+                onRegisterClick = viewModel::navigateToRegister,
+                onForgotPasswordClick = {
+                    navController.navigate(Route.ForgotPassword.route)
+                }
+            )
+        }
+
+        composable(Route.ForgotPassword.route) {
+            com.kotlin.flashlearn.presentation.sign_in.ForgotPasswordScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

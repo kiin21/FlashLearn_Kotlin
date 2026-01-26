@@ -71,6 +71,7 @@ fun SignInScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -176,7 +177,7 @@ fun SignInScreen(
                 text = stringResource(R.string.forgot_password),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { /* TODO: Implement later */ }
+                modifier = Modifier.clickable { onForgotPasswordClick() }
             )
             
             Spacer(modifier = Modifier.height(24.dp))

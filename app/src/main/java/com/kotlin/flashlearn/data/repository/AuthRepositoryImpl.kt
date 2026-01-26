@@ -253,11 +253,7 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getLinkedProviders(): List<String> {
-        // This is deprecated/unused now that we use the list of objects.
-        // But for completeness:
-        return emptyList()
-    }
+
 
     override suspend fun unlinkGoogleAccount(googleId: String): Result<Unit> {
         return runCatching {
@@ -379,6 +375,30 @@ class AuthRepositoryImpl @Inject constructor(
         // Hash and update new password
         val newHash = com.kotlin.flashlearn.data.util.PasswordUtils.hashPassword(newPassword)
         userRepository.updatePasswordHash(userId, newHash)
+    }
+
+    override suspend fun checkPasswordResetEligibility(email: String): Result<String> = runCatching {
+        // Query by email
+        val user = userRepository.getUserByEmail(email)
+            ?: throw Exception("No account found with this email")
+            
+        // If query succeeded, it means we found a user with this email (either in primary email field)
+        // Check if logic requires Google link explicitly? Plan said "if found -> Success".
+        // But the previous requirement was "linked to Google".
+        // If checking by email, finding the user implies we know the email.
+        // But do we need to verify if it's a "Google linked" account?
+        // Since we are simulating "Reset link sent", finding the user is enough.
+        // BUT, if the user registered with username/password and NO email (which is possible in current system),
+        // query by email will fail (User not found), which is correct.
+        // If query succeeds, user HAS an email.
+        // So we just return the email.
+        
+        // Confirm the account is actually linked to Google (as per requirement)
+        if (user.linkedGoogleAccounts.isEmpty()) {
+            throw Exception("This account is not linked to a Google account. Please log in with your password or contact support.")
+        }
+        
+        email
     }
 
     private fun buildSignInRequest(): BeginSignInRequest {
