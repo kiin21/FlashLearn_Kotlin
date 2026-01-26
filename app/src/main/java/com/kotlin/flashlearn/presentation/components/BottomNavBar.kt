@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.annotation.StringRes
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
 
@@ -35,7 +36,7 @@ fun BottomNavBar(
     onNavigate: (String) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         BottomNavItem.entries.forEach { item ->
             val isSelected = currentRoute == item.route
@@ -52,11 +53,11 @@ fun BottomNavBar(
                 label = { Text(text = label) },
                 alwaysShowLabel = true,
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = FlashRed,
-                    selectedTextColor = FlashRed,
-                    indicatorColor = Color.Transparent,
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f),
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

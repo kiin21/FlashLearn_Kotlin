@@ -46,6 +46,8 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -106,6 +108,7 @@ fun ProfileScreen(
     onDeleteAccount: () -> Unit = {},
     onChangePassword: (oldPassword: String, newPassword: String, onResult: (success: Boolean, error: String?) -> Unit) -> Unit = { _, _, _ -> },
     onLanguageChange: (String) -> Unit = {},
+    themeManager: com.kotlin.flashlearn.util.ThemeManager,
     isLinkingInProgress: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -115,6 +118,21 @@ fun ProfileScreen(
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showProfilePictureDialog by remember { mutableStateOf(false) }
+
+    val themeMode by themeManager.themeMode.collectAsStateWithLifecycle()
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkMode = when (themeMode) {
+        com.kotlin.flashlearn.util.ThemeManager.MODE_DARK -> true
+        com.kotlin.flashlearn.util.ThemeManager.MODE_LIGHT -> false
+        else -> isSystemDark
+    }
+    
+    val onToggleDarkMode: (Boolean) -> Unit = { isDark ->
+        themeManager.setThemeMode(
+            if (isDark) com.kotlin.flashlearn.util.ThemeManager.MODE_DARK 
+            else com.kotlin.flashlearn.util.ThemeManager.MODE_LIGHT
+        )
+    }
     
     // Image picker launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -253,7 +271,9 @@ fun ProfileScreen(
                 onLinkGoogleAccount = onLinkGoogleAccount,
                 onUnlinkAccount = { accountId -> showUnlinkDialog = accountId },
                 onSignOut = onSignOut,
-                onDeleteAccount = { showDeleteAccountDialog = true }
+                onDeleteAccount = { showDeleteAccountDialog = true },
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode
             )
             Spacer(modifier = Modifier.height(32.dp))
         }

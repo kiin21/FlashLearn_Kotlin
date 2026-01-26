@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +54,7 @@ fun FlashlearnNavHost(
     authRepository: AuthRepository,
     userRepository: com.kotlin.flashlearn.domain.repository.UserRepository,
     languageManager: com.kotlin.flashlearn.util.LanguageManager,
+    themeManager: com.kotlin.flashlearn.util.ThemeManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -655,7 +657,8 @@ fun FlashlearnNavHost(
                 },
                 onLanguageChange = { languageCode ->
                     languageManager.setLanguage(languageCode)
-                }
+                },
+                themeManager = themeManager
             )
         }
 
