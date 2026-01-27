@@ -6,7 +6,7 @@ import com.kotlin.flashlearn.domain.model.CommunityFilter
 import com.kotlin.flashlearn.domain.model.CommunitySortOption
 import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.repository.AuthRepository
-import com.kotlin.flashlearn.domain.repository.FavoriteRepository
+import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,12 +20,12 @@ import javax.inject.Inject
 
 /**
  * ViewModel for the Community screen.
- * Manages loading public topics, filtering, sorting, and favorite operations.
+ * Manages loading public topics, filtering, sorting, and bookmark/upvote operations.
  */
 @HiltViewModel
 class CommunityViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
-    private val favoriteRepository: FavoriteRepository,
+    private val communityInteractionRepository: CommunityInteractionRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -67,8 +67,8 @@ class CommunityViewModel @Inject constructor(
                 }
                 loadTopics()
             }
-            is CommunityAction.OnToggleFavorite -> {
-                toggleFavorite(action.topicId)
+            is CommunityAction.OnToggleBookmark -> {
+                toggleBookmark(action.topicId)
             }
             is CommunityAction.OnToggleUpvote -> {
                 toggleUpvote(action.topicId)
@@ -126,13 +126,13 @@ class CommunityViewModel @Inject constructor(
             result.fold(
                 onSuccess = { topics ->
                     val userId = currentUserId
-                    val favoriteIds = if (userId != null) {
-                        favoriteRepository.getFavoriteTopicIdsOnce(userId).getOrNull() ?: emptyList()
+                    val bookmarkIds = if (userId != null) {
+                        communityInteractionRepository.getBookmarkedTopicIdsOnce(userId).getOrNull() ?: emptyList()
                     } else {
                         emptyList()
                     }
                     val upvotedIds = if (userId != null) {
-                        favoriteRepository.getUpvotedTopicIdsOnce(userId).getOrNull() ?: emptyList()
+                        communityInteractionRepository.getUpvotedTopicIdsOnce(userId).getOrNull() ?: emptyList()
                     } else {
                         emptyList()
                     }
@@ -185,7 +185,7 @@ class CommunityViewModel @Inject constructor(
                     val topicItems = sortedTopics.map { topic ->
                         CommunityTopicItem(
                             topic = topic,
-                            isFavorited = topic.id in favoriteIds,
+                            isBookmarked = topic.id in bookmarkIds,
                             isUpvoted = topic.id in upvotedIds
                         )
                     }
@@ -213,10 +213,10 @@ class CommunityViewModel @Inject constructor(
     }
 
     /**
-     * Toggle favorite status (private save for "Favorites" tab).
+     * Toggle bookmark status (private save for "Saved" tab).
      * Does NOT affect upvote count.
      */
-    private fun toggleFavorite(topicId: String) {
+    private fun toggleBookmark(topicId: String) {
         val userId = currentUserId ?: run {
             viewModelScope.launch {
                 _uiEvent.emit(CommunityUiEvent.ShowError("Please sign in to save topics"))
@@ -225,16 +225,16 @@ class CommunityViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result = favoriteRepository.toggleFavorite(userId, topicId)
+            val result = communityInteractionRepository.toggleBookmark(userId, topicId)
 
             result.fold(
-                onSuccess = { isFavorited ->
+                onSuccess = { isBookmarked ->
                     // Update local state immediately for responsive UI
                     _state.update { state ->
                         state.copy(
                             topics = state.topics.map { item ->
                                 if (item.topic.id == topicId) {
-                                    item.copy(isFavorited = isFavorited)
+                                    item.copy(isBookmarked = isBookmarked)
                                 } else {
                                     item
                                 }
@@ -242,7 +242,7 @@ class CommunityViewModel @Inject constructor(
                         )
                     }
 
-                    val message = if (isFavorited) "Saved" else "Removed from saved"
+                    val message = if (isBookmarked) "Saved" else "Removed from saved"
                     _uiEvent.emit(CommunityUiEvent.ShowSuccess(message))
                 },
                 onFailure = { error ->
@@ -265,7 +265,7 @@ class CommunityViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result = favoriteRepository.toggleUpvote(userId, topicId)
+            val result = communityInteractionRepository.toggleUpvote(userId, topicId)
 
             result.fold(
                 onSuccess = { isUpvoted ->

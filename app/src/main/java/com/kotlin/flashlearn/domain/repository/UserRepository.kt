@@ -25,4 +25,7 @@ interface UserRepository {
     
     // Firebase Anonymous Auth UID storage
     suspend fun addFirebaseUid(userId: String, firebaseUid: String)
+    
+    // Topic Likes/Favorites (Home Screen bookmarks)
+    suspend fun toggleTopicLike(userId: String, topicId: String, isLiked: Boolean)
 }

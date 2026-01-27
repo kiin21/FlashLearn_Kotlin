@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -43,7 +45,9 @@ fun TopicItem(
     imageUrl: String,
     progress: Float = 0f,
     isOwner: Boolean = false,
+    isLiked: Boolean = false,
     onClick: () -> Unit,
+    onToggleLike: () -> Unit = {},
     onDelete: () -> Unit = {}
 ) {
     Card(
@@ -123,16 +127,32 @@ fun TopicItem(
                         }
                     }
 
-                    if (isOwner) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IconButton(
-                            onClick = onDelete,
+                            onClick = onToggleLike,
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Topic",
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = "Toggle Favorite",
+                                tint = if (isLiked) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+
+                        if (isOwner) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = onDelete,
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Delete Topic",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                                )
+                            }
                         }
                     }
                 }

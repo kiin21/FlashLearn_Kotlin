@@ -4,7 +4,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Source
-import com.kotlin.flashlearn.domain.repository.FavoriteRepository
+import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -14,46 +14,46 @@ import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Firestore implementation of FavoriteRepository.
+ * Firestore implementation of CommunityInteractionRepository.
  * 
  * Firestore structure:
- * - users/{userId}/favoriteTopics/{topicId} -> { addedAt: timestamp }  (Private save)
+ * - users/{userId}/savedCommunityTopics/{topicId} -> { addedAt: timestamp }  (Private save/bookmark)
  * - users/{userId}/upvotedTopics/{topicId} -> { addedAt: timestamp }   (Public vote)
  * - topics/{topicId} -> { upvoteCount: number }
  * 
  * Two separate concepts:
- * - Favorite: Personal save, does NOT affect upvoteCount
+ * - Bookmark: Personal save, does NOT affect upvoteCount (previously Favorite in Community)
  * - Upvote: Public vote, DOES affect upvoteCount
  */
 @Singleton
-class FavoriteRepositoryImpl @Inject constructor(
+class CommunityInteractionRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
-) : FavoriteRepository {
+) : CommunityInteractionRepository {
 
     private val usersCollection = firestore.collection("users")
     private val topicsCollection = firestore.collection("topics")
 
-    // ==================== FAVORITE (Private Save) ====================
+    // ==================== BOOKMARK (Private Save) ====================
 
-    override suspend fun toggleFavorite(userId: String, topicId: String): Result<Boolean> {
+    override suspend fun toggleBookmark(userId: String, topicId: String): Result<Boolean> {
         return runCatching {
             var newStatus = false
             
-            val favoriteRef = usersCollection
+            val bookmarkRef = usersCollection
                 .document(userId)
-                .collection("favoriteTopics")
+                .collection("savedCommunityTopics")
                 .document(topicId)
             
             // Check current status
-            val favoriteDoc = favoriteRef.get(Source.DEFAULT).await()
+            val bookmarkDoc = bookmarkRef.get(Source.DEFAULT).await()
             
-            if (favoriteDoc.exists()) {
+            if (bookmarkDoc.exists()) {
                 // Currently saved -> remove
-                favoriteRef.delete().await()
+                bookmarkRef.delete().await()
                 newStatus = false
             } else {
                 // Not saved -> add
-                favoriteRef.set(mapOf(
+                bookmarkRef.set(mapOf(
                     "addedAt" to System.currentTimeMillis()
                 )).await()
                 newStatus = true
@@ -65,11 +65,11 @@ class FavoriteRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getFavoriteTopicIdsOnce(userId: String): Result<List<String>> {
+    override suspend fun getBookmarkedTopicIdsOnce(userId: String): Result<List<String>> {
         return runCatching {
             val snapshot = usersCollection
                 .document(userId)
-                .collection("favoriteTopics")
+                .collection("savedCommunityTopics")
                 .get(Source.DEFAULT)
                 .await()
             
@@ -79,13 +79,13 @@ class FavoriteRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getFavoriteTopicIds(userId: String): Flow<List<String>> = callbackFlow {
+    override fun getBookmarkedTopicIds(userId: String): Flow<List<String>> = callbackFlow {
         var registration: ListenerRegistration? = null
         
         try {
             registration = usersCollection
                 .document(userId)
-                .collection("favoriteTopics")
+                .collection("savedCommunityTopics")
                 .addSnapshotListener { snapshot, error ->
                     if (error != null) {
                         close(error)
@@ -120,6 +120,14 @@ class FavoriteRepositoryImpl @Inject constructor(
                 // ===== ALL READS FIRST =====
                 val upvoteDoc = transaction.get(upvoteRef)
                 val topicDoc = transaction.get(topicRef)
+                
+                // If topic doesn't exist, we can't upvote it
+                if (!topicDoc.exists()) {
+                     // Transaction will fail automatically if we don't handle this but let's be safe.
+                     // Can throw exception to abort.
+                     throw IllegalStateException("Topic not found")
+                }
+                
                 val currentCount = topicDoc.getLong("upvoteCount") ?: 0
                 
                 // ===== ALL WRITES AFTER =====
@@ -127,6 +135,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                     // Currently upvoted -> remove upvote
                     transaction.delete(upvoteRef)
                     
+                    // Only decrement if > 0
                     if (currentCount > 0) {
                         transaction.update(topicRef, "upvoteCount", FieldValue.increment(-1))
                     }
@@ -136,6 +145,7 @@ class FavoriteRepositoryImpl @Inject constructor(
                     transaction.set(upvoteRef, mapOf(
                         "addedAt" to System.currentTimeMillis()
                     ))
+                    // Increment
                     transaction.update(topicRef, "upvoteCount", FieldValue.increment(1))
                     newStatus = true
                 }

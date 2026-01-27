@@ -3,37 +3,37 @@ package com.kotlin.flashlearn.domain.repository
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repository interface for managing user interactions with topics.
+ * Repository interface for managing user interactions with community topics.
  * 
  * Two types of interactions:
- * 1. Favorite (Private) - Save topics for later, shown in "Favorites" tab
+ * 1. Bookmark (Private) - Save topics for later, shown in "Saved" tab in Community (previously Favorites)
  * 2. Upvote (Public) - Vote for topics, affects ranking
  * 
  * Storage:
- * - Favorites: users/{userId}/favoriteTopics
+ * - Bookmarks: users/{userId}/savedCommunityTopics
  * - Upvotes: users/{userId}/upvotedTopics
  */
-interface FavoriteRepository {
+interface CommunityInteractionRepository {
     
-    // ==================== FAVORITE (Private Save) ====================
+    // ==================== BOOKMARK (Private Save) ====================
     
     /**
-     * Toggles the favorite status of a topic.
-     * Favorite = personal save, does NOT affect upvote count.
+     * Toggles the bookmark status of a topic (Save for later).
+     * Bookmark = personal save, does NOT affect upvote count.
      * 
-     * @return Result containing the new favorite status (true = saved)
+     * @return Result containing the new bookmark status (true = saved)
      */
-    suspend fun toggleFavorite(userId: String, topicId: String): Result<Boolean>
+    suspend fun toggleBookmark(userId: String, topicId: String): Result<Boolean>
     
     /**
-     * Gets all favorited topic IDs for a user (one-time fetch).
+     * Gets all bookmarked topic IDs for a user (one-time fetch).
      */
-    suspend fun getFavoriteTopicIdsOnce(userId: String): Result<List<String>>
+    suspend fun getBookmarkedTopicIdsOnce(userId: String): Result<List<String>>
     
     /**
-     * Gets all favorited topic IDs as a Flow (real-time updates).
+     * Gets all bookmarked topic IDs as a Flow (real-time updates).
      */
-    fun getFavoriteTopicIds(userId: String): Flow<List<String>>
+    fun getBookmarkedTopicIds(userId: String): Flow<List<String>>
     
     // ==================== UPVOTE (Public Voting) ====================
     
