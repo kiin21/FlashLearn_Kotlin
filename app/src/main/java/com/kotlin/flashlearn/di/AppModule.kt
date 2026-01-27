@@ -89,14 +89,16 @@ object AppModule {
         topicRepository: TopicRepository,
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
         pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi,
-        userProgressDao: UserProgressDao
+        userProgressDao: UserProgressDao,
+        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
     ): FlashcardRepository = FlashcardRepositoryImpl(
         firestore,
         datamuseApi,
         topicRepository,
         freeDictionaryApi,
         pixabayApi,
-        userProgressDao
+        userProgressDao,
+        cloudinaryService
     )
 
     @Provides

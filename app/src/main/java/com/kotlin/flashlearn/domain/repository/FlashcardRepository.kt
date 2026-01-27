@@ -72,4 +72,19 @@ interface FlashcardRepository {
      * @return The enriched flashcard.
      */
     suspend fun enrichFlashcard(card: Flashcard, force: Boolean = false): Flashcard
+
+    /**
+     * Updates an existing flashcard.
+     * @param topicId The ID of the topic the flashcard belongs to.
+     * @param flashcard The updated flashcard object.
+     */
+    suspend fun updateFlashcard(topicId: String, flashcard: Flashcard): Result<Unit>
+
+    /**
+     * Uploads an image for a flashcard.
+     * @param uriString The URI of the image to upload.
+     * @param flashcardId The ID of the flashcard (for naming).
+     * @return The URL of the uploaded image.
+     */
+    suspend fun uploadImage(uriString: String, flashcardId: String): Result<String>
 }

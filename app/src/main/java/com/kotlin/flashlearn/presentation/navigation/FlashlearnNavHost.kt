@@ -292,7 +292,9 @@ fun FlashlearnNavHost(
                 onTogglePublic = viewModel::togglePublicStatus,
                 onSaveToMyTopics = viewModel::saveToMyTopics,
                 onClearMessages = viewModel::clearMessages,
-                onSearchQueryChange = viewModel::updateSearchQuery
+                onSearchQueryChange = viewModel::updateSearchQuery,
+                onUpdateFlashcard = viewModel::updateFlashcard,
+                onDeleteFlashcard = viewModel::deleteFlashcard
             )
         }
 

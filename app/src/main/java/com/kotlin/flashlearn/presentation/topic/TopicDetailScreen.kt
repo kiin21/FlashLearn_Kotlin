@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -67,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.QuizConfig
 import com.kotlin.flashlearn.domain.model.QuizMode
 import com.kotlin.flashlearn.presentation.components.SearchBar
@@ -98,12 +100,16 @@ fun TopicDetailScreen(
     onTogglePublic: () -> Unit,
     onSaveToMyTopics: () -> Unit,
     onClearMessages: () -> Unit,
-    onSearchQueryChange: (String) -> Unit
+
+    onSearchQueryChange: (String) -> Unit,
+    onUpdateFlashcard: (Flashcard) -> Unit,
+    onDeleteFlashcard: (String) -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showQuizConfig by remember { mutableStateOf(false) }
+    var editingFlashcard by remember { mutableStateOf<Flashcard?>(null) }
     
     val context = LocalContext.current
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
@@ -154,6 +160,17 @@ fun TopicDetailScreen(
                 showEditDialog = false
             },
             onRegenerateImage = onRegenerateImage
+        )
+    }
+
+    if (editingFlashcard != null) {
+        EditFlashcardDialog(
+            flashcard = editingFlashcard!!,
+            onDismiss = { editingFlashcard = null },
+            onConfirm = { updatedCard ->
+                onUpdateFlashcard(updatedCard)
+                editingFlashcard = null
+            }
         )
     }
 
@@ -421,6 +438,7 @@ fun TopicDetailScreen(
                                 imageUrl = card.imageUrl,
                                 isSelectionMode = state.isSelectionMode,
                                 isSelected = state.selectedCardIds.contains(card.id),
+                                isOwner = state.isOwner,
                                 onPlayAudio = {
                                     tts?.speak(card.word, TextToSpeech.QUEUE_FLUSH, null, null)
                                 },
@@ -436,7 +454,9 @@ fun TopicDetailScreen(
                                         onToggleSelectionMode()
                                         onToggleCardSelection(card.id)
                                     }
-                                }
+                                },
+                                onEditClick = { editingFlashcard = card },
+                                onDeleteClick = { onDeleteFlashcard(card.id) }
                             )
                         }
                     }
@@ -465,10 +485,15 @@ fun CardItem(
     imageUrl: String,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
+    isOwner: Boolean = false,
     onPlayAudio: () -> Unit = {},
     onClick: () -> Unit,
-    onLongClick: () -> Unit = {}
+    onLongClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {}
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -514,11 +539,20 @@ fun CardItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    word.take(1).uppercase(), 
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (imageUrl.isNotBlank()) {
+                     AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        word.take(1).uppercase(), 
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -534,7 +568,7 @@ fun CardItem(
             }
             
             if (!isSelectionMode) {
-                // Audio Icon
+                // Audio
                 IconButton(onClick = onPlayAudio) {
                     Icon(
                         Icons.AutoMirrored.Filled.VolumeUp,
@@ -542,6 +576,45 @@ fun CardItem(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
+                }
+                
+                // Owner actions (Edit/Delete)
+                if (isOwner) {
+                     Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                onClick = {
+                                    showMenu = false
+                                    onEditClick()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    showMenu = false
+                                    onDeleteClick()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

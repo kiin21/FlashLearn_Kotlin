@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
@@ -310,6 +311,59 @@ class TopicDetailViewModel @Inject constructor(
                     _state.value = _state.value.copy(
                         isLoading = false,
                         error = e.message ?: "Failed to save topic"
+                    )
+                }
+        }
+    }
+    
+    fun updateFlashcard(flashcard: Flashcard) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            var cardToUpdate = flashcard
+            
+            // Check if image needs upload (starts with content://)
+            if (flashcard.imageUrl.startsWith("content://")) {
+                val uploadResult = flashcardRepository.uploadImage(flashcard.imageUrl, flashcard.id)
+                uploadResult.fold(
+                    onSuccess = { newUrl ->
+                        cardToUpdate = flashcard.copy(imageUrl = newUrl)
+                    },
+                    onFailure = { e ->
+                        _state.value = _state.value.copy(
+                            isLoading = false,
+                            error = "Image upload failed: ${e.message}"
+                        )
+                        return@launch
+                    }
+                )
+            }
+            
+            flashcardRepository.updateFlashcard(topicId, cardToUpdate)
+                .onSuccess {
+                    loadFlashcards() // Reload list
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to update card"
+                    )
+                }
+        }
+    }
+    
+    fun deleteFlashcard(flashcardId: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true)
+            
+            flashcardRepository.deleteFlashcards(listOf(flashcardId))
+                .onSuccess {
+                    loadFlashcards()
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to delete card"
                     )
                 }
         }
