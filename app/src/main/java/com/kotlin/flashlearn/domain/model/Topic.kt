@@ -19,14 +19,15 @@ data class Topic(
     val wordCount: Int = 0,
     val imageUrl: String? = null,
     // New fields for Community feature
-    val vstepLevel: VSTEPLevel? = null,
     val upvoteCount: Int = 0,
     val downloadCount: Int = 0,
     val creatorName: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     // Clone attribution
     val clonedFrom: String? = null,       // Original topic ID if cloned
-    val originalCreator: String? = null   // Original creator name for attribution
+    val originalCreator: String? = null,  // Original creator name for attribution
+    // Word-level data (denormalized from flashcards)
+    val wordLevels: List<String> = emptyList() // Unique levels from flashcards: ["B1", "B2"]
 ) {
     /**
      * Returns true if this topic should be visible to the given user.

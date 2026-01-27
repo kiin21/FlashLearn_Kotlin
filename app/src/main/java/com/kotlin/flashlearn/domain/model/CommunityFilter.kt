@@ -4,24 +4,23 @@ import com.kotlin.flashlearn.R
 
 /**
  * Filter options for Community screen.
- * Supports filtering by search query, VSTEP levels, and creator.
+ * Supports filtering by VSTEP levels.
  */
 data class CommunityFilter(
     val query: String = "",
-    val levels: List<VSTEPLevel> = emptyList(),
-    val creatorId: String? = null
+    val levels: List<VSTEPLevel> = emptyList()
 ) {
     /**
      * Returns the count of active filters (for badge display).
      */
     val activeFilterCount: Int
-        get() = levels.size + (if (creatorId != null) 1 else 0)
+        get() = levels.size
     
     /**
      * Returns true if any filter is active.
      */
     val hasActiveFilters: Boolean
-        get() = levels.isNotEmpty() || creatorId != null
+        get() = levels.isNotEmpty()
     
     /**
      * Clears all filters.

@@ -289,7 +289,8 @@ class FlashcardRepositoryImpl @Inject constructor(
             "exampleSentence" to exampleSentence,
             "ipa" to ipa,
             "imageUrl" to imageUrl,
-            "synonyms" to synonyms
+            "synonyms" to synonyms,
+            "level" to level
         )
     }
 
@@ -306,7 +307,8 @@ class FlashcardRepositoryImpl @Inject constructor(
                 ipa = getString("ipa") ?: "",
                 imageUrl = getString("imageUrl") ?: "",
                 synonyms = (get("synonyms") as? List<*>)?.mapNotNull { it as? String }
-                    ?: emptyList()
+                    ?: emptyList(),
+                level = getString("level") ?: ""
             )
         }.getOrNull()
     }

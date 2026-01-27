@@ -109,23 +109,24 @@ fun CommunityTopicCard(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Tags (VSTEP Level + Category)
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // VSTEP Level tag
-                    val levelTag = topic.vstepLevel?.displayName 
-                        ?: extractLevelFromName(topic.name)
-                    
-                    if (levelTag != null) {
-                        TopicTag(text = levelTag)
-                    }
-                    
-                    // Category tag
-                    val categoryTag = extractCategoryFromName(topic.name)
-                    if (categoryTag != null) {
-                        TopicTag(text = categoryTag)
+                // Tags (Word levels from flashcards + Category)
+                val categoryTag = extractCategoryFromName(topic.name)
+                val hasLevels = topic.wordLevels.isNotEmpty()
+                
+                if (hasLevels || categoryTag != null) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // Show word levels (e.g., B1, B2)
+                        topic.wordLevels.forEach { level ->
+                            TopicTag(text = level)
+                        }
+                        
+                        // Category tag
+                        if (categoryTag != null) {
+                            TopicTag(text = categoryTag)
+                        }
                     }
                 }
                 
