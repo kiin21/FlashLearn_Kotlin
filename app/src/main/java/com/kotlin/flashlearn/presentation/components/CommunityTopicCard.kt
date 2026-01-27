@@ -162,9 +162,9 @@ fun CommunityTopicCard(
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    imageVector = if (item.isFavorited) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
-                    contentDescription = if (item.isFavorited) "Remove from saved" else "Save for later",
-                    tint = if (item.isFavorited) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
+                    imageVector = if (item.isBookmarked) Icons.Filled.Bookmark else Icons.Outlined.BookmarkBorder,
+                    contentDescription = if (item.isBookmarked) "Remove from saved" else "Save for later",
+                    tint = if (item.isBookmarked) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

@@ -35,6 +35,6 @@ data class CommunityState(
  */
 data class CommunityTopicItem(
     val topic: Topic,
-    val isFavorited: Boolean = false,
+    val isBookmarked: Boolean = false,
     val isUpvoted: Boolean = false
 )

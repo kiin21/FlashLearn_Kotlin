@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.repository.AuthRepository
-import com.kotlin.flashlearn.domain.repository.FavoriteRepository
+import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class UserPublicProfileViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
-    private val favoriteRepository: FavoriteRepository,
+    private val communityInteractionRepository: CommunityInteractionRepository,
     private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
@@ -54,7 +54,7 @@ class UserPublicProfileViewModel @Inject constructor(
                     
                     // Fetch upvoted topic IDs for current user
                     val upvotedIds = currentUserId?.let { uid ->
-                        favoriteRepository.getUpvotedTopicIdsOnce(uid).getOrNull() ?: emptyList()
+                        communityInteractionRepository.getUpvotedTopicIdsOnce(uid).getOrNull() ?: emptyList()
                     } ?: emptyList()
                     
                     // Create topic items with upvote state
@@ -90,7 +90,7 @@ class UserPublicProfileViewModel @Inject constructor(
         val uid = currentUserId ?: return
         
         viewModelScope.launch {
-            favoriteRepository.toggleUpvote(uid, topicId)
+            communityInteractionRepository.toggleUpvote(uid, topicId)
                 .onSuccess { isNowUpvoted ->
                     // Update local state
                     val updatedItems = _state.value.topicItems.map { item ->

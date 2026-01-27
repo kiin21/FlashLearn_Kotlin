@@ -207,7 +207,7 @@ fun CommunityScreen(
                     val displayedTopics = if (selectedTabIndex == 0) {
                         state.topics // Discover: all topics
                     } else {
-                        state.topics.filter { it.isFavorited } // Favorites: only liked topics
+                        state.topics.filter { it.isBookmarked } // Favorites: only liked topics
                     }
                     
                     if (displayedTopics.isEmpty()) {
@@ -234,7 +234,7 @@ fun CommunityScreen(
                                         viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id)) 
                                     },
                                     onFavoriteClick = { 
-                                        viewModel.onAction(CommunityAction.OnToggleFavorite(item.topic.id)) 
+                                        viewModel.onAction(CommunityAction.OnToggleBookmark(item.topic.id)) 
                                     },
                                     onUpvoteClick = {
                                         viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
