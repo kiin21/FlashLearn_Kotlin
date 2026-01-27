@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,7 @@ import javax.inject.Inject
 class TopicDetailViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
+    private val authRepository: AuthRepository,
     private val firebaseAuth: com.google.firebase.auth.FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -23,7 +25,7 @@ class TopicDetailViewModel @Inject constructor(
     private val topicId: String = savedStateHandle.get<String>("topicId").orEmpty()
     
     private val currentUserId: String?
-        get() = firebaseAuth.currentUser?.uid
+        get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
 
     private val _state = MutableStateFlow(TopicDetailState())
     val state: StateFlow<TopicDetailState> = _state.asStateFlow()
@@ -56,7 +58,8 @@ class TopicDetailViewModel @Inject constructor(
                         topicDescription = topic.description,
                         isOwner = isOwner,
                         imageUrl = topic.imageUrl ?: "",
-                        isPublic = topic.isPublic
+                        isPublic = topic.isPublic,
+                        isSystemTopic = topic.isSystemTopic
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
@@ -111,7 +114,7 @@ class TopicDetailViewModel @Inject constructor(
     
     /**
      * Filters flashcards based on search query.
-     * Searches in word, definition, and example sentence.
+     * Searches only by word (vocabulary term).
      */
     private fun applySearch() {
         val query = _state.value.searchQuery.lowercase().trim()
@@ -121,9 +124,7 @@ class TopicDetailViewModel @Inject constructor(
             allCards
         } else {
             allCards.filter { card ->
-                card.word.lowercase().contains(query) ||
-                card.definition.lowercase().contains(query) ||
-                card.exampleSentence.lowercase().contains(query)
+                card.word.lowercase().contains(query)
             }
         }
         
@@ -291,9 +292,11 @@ class TopicDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             
-            val currentUser = firebaseAuth.currentUser
-            val userName = currentUser?.displayName 
-                ?: currentUser?.email?.substringBefore("@") 
+            // Get username from AuthRepository (works for username/password users)
+            val signedInUser = authRepository.getSignedInUser()
+            val userName = signedInUser?.username 
+                ?: firebaseAuth.currentUser?.displayName
+                ?: firebaseAuth.currentUser?.email?.substringBefore("@") 
                 ?: "Anonymous"
             
             topicRepository.cloneTopicToUser(topicId, userId, userName)

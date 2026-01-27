@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.SaveAlt
@@ -248,36 +247,27 @@ fun TopicDetailScreen(
                                 }
                             }
                         } else {
-                            // Non-owner: 3-dot menu with Save/Share options
-                            Box {
-                                IconButton(onClick = { showNonOwnerMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
-                                }
-                                DropdownMenu(
-                                    expanded = showNonOwnerMenu,
-                                    onDismissRequest = { showNonOwnerMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.save_to_my_topics)) },
-                                        onClick = {
-                                            showNonOwnerMenu = false
-                                            onSaveToMyTopics()
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.SaveAlt, contentDescription = null, tint = FlashRed)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.share), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                                        onClick = {
-                                            showNonOwnerMenu = false
-                                            // TODO: Implement share when app is released
-                                        },
-                                        leadingIcon = {
-                                            Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        },
-                                        enabled = false // Disabled until app release
-                                    )
+                            // Non-owner: 3-dot menu with Save option (not for system topics)
+                            if (!state.isSystemTopic) {
+                                Box {
+                                    IconButton(onClick = { showNonOwnerMenu = true }) {
+                                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
+                                    }
+                                    DropdownMenu(
+                                        expanded = showNonOwnerMenu,
+                                        onDismissRequest = { showNonOwnerMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.save_to_my_topics)) },
+                                            onClick = {
+                                                showNonOwnerMenu = false
+                                                onSaveToMyTopics()
+                                            },
+                                            leadingIcon = {
+                                                Icon(Icons.Default.SaveAlt, contentDescription = null, tint = FlashRed)
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }

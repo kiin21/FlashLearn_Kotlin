@@ -156,21 +156,19 @@ class CommunityViewModel @Inject constructor(
                         }
                     }
 
-                    // Filter by VSTEP level - check vstepLevel field FIRST, then fallback to name
+                    // Filter by level (OR logic - show topic if it has ANY matching level)
                     if (currentState.activeFilter.levels.isNotEmpty()) {
+                        val selectedLevelNames = currentState.activeFilter.levels.map { it.displayName }
                         filteredTopics = filteredTopics.filter { topic ->
-                            // Primary: check vstepLevel field
-                            topic.vstepLevel in currentState.activeFilter.levels ||
-                            // Fallback: check if name contains level string
-                            currentState.activeFilter.levels.any { level ->
-                                topic.name.contains(level.displayName, ignoreCase = true)
+                            // Check if topic's wordLevels contains any selected level
+                            topic.wordLevels.any { wordLevel -> 
+                                wordLevel in selectedLevelNames 
+                            } ||
+                            // Fallback: check topic name for level keywords
+                            selectedLevelNames.any { level ->
+                                topic.name.contains(level, ignoreCase = true)
                             }
                         }
-                    }
-
-                    // Filter by creator
-                    currentState.activeFilter.creatorId?.let { creatorId ->
-                        filteredTopics = filteredTopics.filter { it.createdBy == creatorId }
                     }
 
                     // Sort topics (all descending - most/newest first)

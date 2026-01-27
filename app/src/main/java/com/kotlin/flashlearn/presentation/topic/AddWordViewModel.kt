@@ -8,6 +8,7 @@ import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.domain.model.WordSuggestion
+import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
@@ -31,12 +32,13 @@ class AddWordViewModel @Inject constructor(
     private val datamuseRepository: DatamuseRepository,
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
+    private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     
     private val currentUserId: String?
-        get() = firebaseAuth.currentUser?.uid
+        get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
     
     private val _uiState = MutableStateFlow(AddWordUiState())
     val uiState: StateFlow<AddWordUiState> = _uiState.asStateFlow()
@@ -259,10 +261,11 @@ class AddWordViewModel @Inject constructor(
             
             val topicId = UUID.randomUUID().toString()
             
-            // Get creator name from Firebase Auth
-            val currentUser = firebaseAuth.currentUser
-            val creatorName = currentUser?.displayName 
-                ?: currentUser?.email?.substringBefore("@") 
+            // Get creator name from AuthRepository (works for username/password users)
+            val signedInUser = authRepository.getSignedInUser()
+            val creatorName = signedInUser?.username 
+                ?: firebaseAuth.currentUser?.displayName
+                ?: firebaseAuth.currentUser?.email?.substringBefore("@") 
                 ?: "Anonymous"
             
             val newTopic = Topic(

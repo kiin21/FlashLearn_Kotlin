@@ -35,6 +35,7 @@ data class FlashcardEntity(
     val imageUrl: String,
     val pronunciationUrl: String = "",
     val synonyms: List<String> = emptyList(),
+    val level: String = "", // VSTEP/CEFR level
     val createdAt: Long,
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
@@ -49,6 +50,7 @@ data class FlashcardEntity(
         ipa = ipa,
         imageUrl = imageUrl,
         synonyms = synonyms,
+        level = level,
         createdAt = createdAt
     )
 
@@ -64,6 +66,7 @@ data class FlashcardEntity(
             ipa = flashcard.ipa,
             imageUrl = flashcard.imageUrl,
             synonyms = flashcard.synonyms,
+            level = flashcard.level,
             createdAt = flashcard.createdAt
         )
     }

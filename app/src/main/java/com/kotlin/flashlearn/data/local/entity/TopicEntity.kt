@@ -3,7 +3,7 @@ package com.kotlin.flashlearn.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.kotlin.flashlearn.domain.model.Topic
-import com.kotlin.flashlearn.domain.model.VSTEPLevel
+
 
 /**
  * Room entity for caching topics locally.
@@ -23,11 +23,13 @@ data class TopicEntity(
     val imageUrl: String?,
     val lastUpdated: Long = System.currentTimeMillis(),
     // New fields for Community feature
-    val vstepLevel: String? = null,
+
     val upvoteCount: Int = 0,
     val downloadCount: Int = 0,
     val creatorName: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // Word-level data
+    val wordLevels: List<String> = emptyList()
 ) {
     fun toDomain(): Topic = Topic(
         id = id,
@@ -39,11 +41,12 @@ data class TopicEntity(
         createdBy = createdBy,
         wordCount = wordCount,
         imageUrl = imageUrl,
-        vstepLevel = VSTEPLevel.fromString(vstepLevel),
+
         upvoteCount = upvoteCount,
         downloadCount = downloadCount,
         creatorName = creatorName,
-        createdAt = createdAt
+        createdAt = createdAt,
+        wordLevels = wordLevels
     )
 
     companion object {
@@ -57,12 +60,12 @@ data class TopicEntity(
             createdBy = topic.createdBy,
             wordCount = topic.wordCount,
             imageUrl = topic.imageUrl,
-            vstepLevel = topic.vstepLevel?.name,
+
             upvoteCount = topic.upvoteCount,
             downloadCount = topic.downloadCount,
             creatorName = topic.creatorName,
-            createdAt = topic.createdAt
+            createdAt = topic.createdAt,
+            wordLevels = topic.wordLevels
         )
     }
 }
-

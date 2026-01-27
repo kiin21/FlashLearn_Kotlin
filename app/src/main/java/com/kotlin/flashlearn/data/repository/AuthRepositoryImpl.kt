@@ -127,18 +127,25 @@ class AuthRepositoryImpl @Inject constructor(
                 throw Exception("Username already taken")
             }
             
+            // Sign in anonymously FIRST to get Firebase UID for security rules
+            val anonResult = auth.signInAnonymously().await()
+            val anonUid = anonResult.user?.uid
+            
             // Generate UUID v7
             val userId = Generators.timeBasedEpochGenerator().generate().toString()
             
-            // Create user with hashed password
+            // Create user with hashed password AND anonymous UID
             val user = User(
                 userId = userId,
                 loginUsername = loginUsername,
                 loginPasswordHash = PasswordUtils.hashPassword(password),
                 displayName = loginUsername,
-                linkedProviders = listOf("password")
+                linkedProviders = listOf("password"),
+                firebaseUids = if (anonUid != null) listOf(anonUid) else emptyList()
             )
             userRepository.createUser(user)
+            
+            android.util.Log.d("Auth", "Registered user $userId with Firebase UID: $anonUid")
             
             val userData = UserData(
                 userId = userId,
@@ -160,6 +167,20 @@ class AuthRepositoryImpl @Inject constructor(
             
             if (!PasswordUtils.verifyPassword(password, user.loginPasswordHash ?: "")) {
                 throw Exception("Invalid password")
+            }
+            
+            // Sign in anonymously to Firebase for Security Rules
+            val anonResult = auth.signInAnonymously().await()
+            val anonUid = anonResult.user?.uid
+            
+            // Store anonymous UID in user document for rule verification
+            if (anonUid != null) {
+                try {
+                    userRepository.addFirebaseUid(user.userId, anonUid)
+                    android.util.Log.d("Auth", "Added Firebase anonymous UID: $anonUid to user: ${user.userId}")
+                } catch (e: Exception) {
+                    android.util.Log.w("Auth", "Failed to store anonymous UID: ${e.message}")
+                }
             }
             
             val userData = UserData(

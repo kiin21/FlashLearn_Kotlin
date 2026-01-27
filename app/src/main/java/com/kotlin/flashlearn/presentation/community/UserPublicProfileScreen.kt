@@ -284,7 +284,7 @@ private fun UserTopicCard(
     onUpvoteClick: () -> Unit
 ) {
     val topic = item.topic
-    
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -326,9 +326,9 @@ private fun UserTopicCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             // Topic info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -339,7 +339,7 @@ private fun UserTopicCard(
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 if (topic.description.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -350,26 +350,8 @@ private fun UserTopicCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                
-                // VSTEP level badge
-                topic.vstepLevel?.let { level ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(FlashRed.copy(alpha = 0.1f))
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = level.displayName,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = FlashRed,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
             }
-            
+
             // Upvote button
             IconButton(onClick = onUpvoteClick) {
                 Row(
@@ -423,3 +405,4 @@ private fun formatCount(count: Int): String {
         else -> count.toString()
     }
 }
+

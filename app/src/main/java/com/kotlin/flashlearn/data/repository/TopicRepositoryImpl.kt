@@ -287,14 +287,16 @@ class TopicRepositoryImpl @Inject constructor(
                 createdBy = getString("createdBy"),
                 imageUrl = getString("imageUrl"),
                 // Community fields
-                vstepLevel = VSTEPLevel.fromString(getString("vstepLevel")),
+
                 upvoteCount = getLong("upvoteCount")?.toInt() ?: 0,
                 downloadCount = getLong("downloadCount")?.toInt() ?: 0,
                 creatorName = getString("creatorName") ?: "",
                 createdAt = getLong("createdAt") ?: System.currentTimeMillis(),
                 // Clone attribution
                 clonedFrom = getString("clonedFrom"),
-                originalCreator = getString("originalCreator")
+                originalCreator = getString("originalCreator"),
+                // Word-level data
+                wordLevels = (get("wordLevels") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
             )
         }.getOrNull()
     }
@@ -310,14 +312,16 @@ class TopicRepositoryImpl @Inject constructor(
             "createdBy" to createdBy,
             "imageUrl" to imageUrl,
             // Community fields
-            "vstepLevel" to vstepLevel?.name,
+
             "upvoteCount" to upvoteCount,
             "downloadCount" to downloadCount,
             "creatorName" to creatorName,
             "createdAt" to createdAt,
             // Clone attribution
             "clonedFrom" to clonedFrom,
-            "originalCreator" to originalCreator
+            "originalCreator" to originalCreator,
+            // Word-level data
+            "wordLevels" to wordLevels
         )
     }
 }

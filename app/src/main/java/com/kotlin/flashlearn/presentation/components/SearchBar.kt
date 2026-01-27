@@ -39,7 +39,7 @@ fun SearchBar(
         onValueChange = onQueryChange,
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(56.dp),
         placeholder = {
             Text(
                 text = placeholder,
@@ -66,6 +66,7 @@ fun SearchBar(
             }
         },
         singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),

@@ -512,7 +512,7 @@ fun RecommendedCard(
                 contentAlignment = Alignment.Center
             ) {
                 val fallbackText = when {
-                    topic.vstepLevel != null -> topic.vstepLevel.displayName
+                    topic.wordLevels.isNotEmpty() -> topic.wordLevels.first()
                     topic.name.isNotBlank() -> topic.name.first().uppercase()
                     else -> "?"
                 }
@@ -567,7 +567,7 @@ fun RecommendedCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Level or General tag
                     Text(
-                        text = topic.vstepLevel?.displayName ?: "General",
+                        text = topic.wordLevels.joinToString(", ").ifEmpty { "General" },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
