@@ -14,6 +14,7 @@ data class User(
     val linkedProviders: List<String> = emptyList(), // Deprecated
     val googleIds: List<String> = emptyList(), // For backend lookup
     val linkedGoogleAccounts: List<LinkedAccount> = emptyList(), // For UI info
+    val firebaseUids: List<String> = emptyList(), // Anonymous Firebase Auth UIDs for security rules
     val streak: Int = 0,
     val examDate: Long? = null,
     val createdAt: Long = System.currentTimeMillis()

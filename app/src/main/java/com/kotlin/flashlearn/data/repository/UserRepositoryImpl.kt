@@ -149,4 +149,10 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun updatePasswordHash(userId: String, newPasswordHash: String) {
         usersCollection.document(userId).update("loginPasswordHash", newPasswordHash).await()
     }
+    
+    override suspend fun addFirebaseUid(userId: String, firebaseUid: String) {
+        usersCollection.document(userId).update(
+            "firebaseUids", com.google.firebase.firestore.FieldValue.arrayUnion(firebaseUid)
+        ).await()
+    }
 }
