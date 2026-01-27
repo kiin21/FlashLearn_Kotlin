@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.model.TopicCategory
+import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ enum class TopicFilter(val resId: Int) {
 class TopicViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
+    private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     
@@ -43,7 +45,7 @@ class TopicViewModel @Inject constructor(
     val topicWordCounts: StateFlow<Map<String, Int>> = _topicWordCounts.asStateFlow()
     
     val currentUserId: String?
-        get() = firebaseAuth.currentUser?.uid
+        get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
     
     init {
         loadTopics()

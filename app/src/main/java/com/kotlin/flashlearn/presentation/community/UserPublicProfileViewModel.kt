@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FavoriteRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class UserPublicProfileViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
     private val favoriteRepository: FavoriteRepository,
+    private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -31,7 +33,7 @@ class UserPublicProfileViewModel @Inject constructor(
     val state: StateFlow<UserPublicProfileState> = _state.asStateFlow()
     
     private val currentUserId: String?
-        get() = firebaseAuth.currentUser?.uid
+        get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
     
     init {
         loadUserProfile()
