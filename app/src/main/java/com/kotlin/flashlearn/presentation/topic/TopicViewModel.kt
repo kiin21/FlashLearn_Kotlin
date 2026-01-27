@@ -7,14 +7,14 @@ import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.domain.model.TopicCategory
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
+import com.kotlin.flashlearn.domain.repository.UserRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-
 import com.kotlin.flashlearn.R
 
 /**
@@ -22,6 +22,7 @@ import com.kotlin.flashlearn.R
  */
 enum class TopicFilter(val resId: Int) {
     ALL(R.string.filter_all),
+    FAVORITES(R.string.favorites),
     SYSTEM(R.string.filter_system),
     MY_TOPICS(R.string.filter_my_topics)
 }
@@ -34,6 +35,7 @@ class TopicViewModel @Inject constructor(
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
     private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     
@@ -55,6 +57,7 @@ class TopicViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
+            // Fetch topics
             topicRepository.getVisibleTopics(currentUserId)
                 .onSuccess { topics ->
                     // Categorize topics
@@ -63,11 +66,17 @@ class TopicViewModel @Inject constructor(
                         it.createdBy == currentUserId 
                     }
                     
+                    // Fetch user favorites
+                    val likedIds = currentUserId?.let { userId ->
+                        userRepository.getUser(userId)?.likedTopicIds?.toSet()
+                    } ?: emptySet()
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         allTopics = topics,
                         systemTopics = systemTopics,
-                        myTopics = myTopics
+                        myTopics = myTopics,
+                        likedTopicIds = likedIds
                     )
                     
                     // Apply current filter and search
@@ -84,6 +93,35 @@ class TopicViewModel @Inject constructor(
                         error = e.message ?: "Failed to load topics"
                     )
                 }
+        }
+    }
+    
+    /**
+     * Toggles the favorite status of a topic.
+     */
+    fun toggleTopicLike(topicId: String) {
+        val userId = currentUserId ?: return
+        val currentLikedIds = _uiState.value.likedTopicIds
+        val isLiked = topicId in currentLikedIds
+        
+        // Optimistic update
+        val newLikedIds = if (isLiked) {
+            currentLikedIds - topicId
+        } else {
+            currentLikedIds + topicId
+        }
+        
+        _uiState.value = _uiState.value.copy(likedTopicIds = newLikedIds)
+        applyFilterAndSearch() // Re-apply filter if viewing favorites
+        
+        viewModelScope.launch {
+            try {
+                userRepository.toggleTopicLike(userId, topicId, !isLiked)
+            } catch (e: Exception) {
+                // Revert on failure
+                _uiState.value = _uiState.value.copy(likedTopicIds = currentLikedIds)
+                applyFilterAndSearch()
+            }
         }
     }
     
@@ -113,6 +151,7 @@ class TopicViewModel @Inject constructor(
         // Step 1: Apply filter
         val filteredByCategory = when (state.activeFilter) {
             TopicFilter.ALL -> state.allTopics
+            TopicFilter.FAVORITES -> state.allTopics.filter { it.id in state.likedTopicIds }
             TopicFilter.SYSTEM -> state.systemTopics
             TopicFilter.MY_TOPICS -> state.myTopics
         }
@@ -170,6 +209,7 @@ data class TopicUiState(
     val systemTopics: List<Topic> = emptyList(),
     val myTopics: List<Topic> = emptyList(),
     val displayedTopics: List<Topic> = emptyList(),
+    val likedTopicIds: Set<String> = emptySet(),
     val searchQuery: String = "",
     val activeFilter: TopicFilter = TopicFilter.ALL,
     val error: String? = null

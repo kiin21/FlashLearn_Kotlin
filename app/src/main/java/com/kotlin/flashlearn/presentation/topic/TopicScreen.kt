@@ -153,6 +153,7 @@ fun TopicScreen(
                     TopicList(
                         topics = uiState.displayedTopics,
                         topicWordCounts = topicWordCounts,
+                        likedTopicIds = uiState.likedTopicIds,
                         onTopicClick = onNavigateToTopicDetail,
                         viewModel = viewModel
                     )
@@ -229,6 +230,7 @@ private fun FilterChipItem(
 fun TopicList(
     topics: List<Topic>,
     topicWordCounts: Map<String, Int>,
+    likedTopicIds: Set<String> = emptySet(),
     onTopicClick: (String) -> Unit,
     viewModel: TopicViewModel
 ) {
@@ -239,6 +241,7 @@ fun TopicList(
         items(topics, key = { it.id }) { topic ->
             val wordCount = topicWordCounts[topic.id] ?: 0
             val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
+            val isLiked = topic.id in likedTopicIds
             
             com.kotlin.flashlearn.presentation.components.TopicItem(
                 title = topic.name,
@@ -247,7 +250,9 @@ fun TopicList(
                 imageUrl = topic.imageUrl ?: "",
                 progress = 0f, // TODO: Calculate from user progress
                 isOwner = isOwner,
+                isLiked = isLiked,
                 onClick = { onTopicClick(topic.id) },
+                onToggleLike = { viewModel.toggleTopicLike(topic.id) },
                 onDelete = { viewModel.deleteTopic(topic.id) }
             )
         }
