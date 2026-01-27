@@ -56,7 +56,8 @@ class TopicDetailViewModel @Inject constructor(
                         topicDescription = topic.description,
                         isOwner = isOwner,
                         imageUrl = topic.imageUrl ?: "",
-                        isPublic = topic.isPublic
+                        isPublic = topic.isPublic,
+                        isSystemTopic = topic.isSystemTopic
                     )
                     
                     // Load flashcards from repository (backed by Datamuse API)
