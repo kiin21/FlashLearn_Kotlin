@@ -33,7 +33,8 @@ class FlashcardRepositoryImpl @Inject constructor(
     private val topicRepository: TopicRepository,
     private val freeDictionaryApi: FreeDictionaryApi,
     private val pixabayApi: PixabayApi,
-    private val userProgressDao: UserProgressDao
+    private val userProgressDao: UserProgressDao,
+    private val cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
 ) : FlashcardRepository {
 
     companion object {
@@ -44,6 +45,25 @@ class FlashcardRepositoryImpl @Inject constructor(
     private val enrichmentSemaphore = Semaphore(5)
 
     private val topicsCollection = firestore.collection("topics")
+
+    override suspend fun updateFlashcard(topicId: String, flashcard: Flashcard): Result<Unit> {
+        return runCatching {
+            saveFlashcardToFirestore(flashcard, topicId)
+            
+            // Update cache safely
+            val currentCache = flashcardCache[topicId]
+            if (currentCache != null) {
+                val updatedCache = currentCache.map { 
+                    if (it.id == flashcard.id) flashcard else it 
+                }
+                flashcardCache[topicId] = updatedCache
+            }
+            
+            Unit
+        }.onFailure {
+             if (it is CancellationException) throw it
+        }
+    }
 
     override suspend fun getFlashcardsByTopicId(topicId: String): Result<List<Flashcard>> {
         return runCatching {
@@ -350,5 +370,12 @@ class FlashcardRepositoryImpl @Inject constructor(
 
             userProgressDao.upsert(progress)
         }
+    }
+
+    override suspend fun uploadImage(uriString: String, flashcardId: String): Result<String> {
+        return runCatching {
+            val uri = android.net.Uri.parse(uriString)
+            cloudinaryService.uploadFlashcardImage(uri, flashcardId)
+        }.onFailure { if (it is CancellationException) throw it }
     }
 }
