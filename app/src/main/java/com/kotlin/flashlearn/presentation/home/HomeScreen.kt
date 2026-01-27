@@ -91,14 +91,14 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    
+
     val showNotImplementedMessage: (Int) -> Unit = { resId ->
         val featureName = context.getString(resId)
         scope.launch {
             snackbarHostState.showSnackbar(context.getString(R.string.coming_soon, featureName))
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -131,7 +131,6 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             DailyWordSection(
-                onViewArchive = { showNotImplementedMessage(R.string.view_archive) },
                 onPronounce = { showNotImplementedMessage(R.string.pronunciation) }
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -143,7 +142,7 @@ fun HomeScreen(
 
             RecommendedSection(
                 topics = recommendedTopics.collectAsState(initial = emptyList()).value,
-                onTopicClick = { topicId -> 
+                onTopicClick = { topicId ->
                     onNavigateToTopicDetail(topicId)
                 }
             )
@@ -163,7 +162,11 @@ fun HeaderSection(
     ) {
         Column {
             Text(
-                text = stringResource(R.string.hello_greeting, user?.displayName?.split(" ")?.firstOrNull() ?: stringResource(R.string.hello_friend)),
+                text = stringResource(
+                    R.string.hello_greeting,
+                    user?.displayName?.split(" ")?.firstOrNull()
+                        ?: stringResource(R.string.hello_friend)
+                ),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -173,7 +176,7 @@ fun HeaderSection(
                 color = FlashGrey
             )
         }
-        
+
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
@@ -301,7 +304,6 @@ fun ExamDateCard() {
 
 @Composable
 fun DailyWordSection(
-    onViewArchive: () -> Unit = {},
     onPronounce: () -> Unit = {}
 ) {
     Column {
@@ -316,16 +318,9 @@ fun DailyWordSection(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text(
-                text = stringResource(R.string.view_archive),
-                color = FlashRed,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onViewArchive() }
-            )
         }
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -348,7 +343,7 @@ fun DailyWordSection(
                             .background(FlashRedLight.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
-                    
+
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -364,7 +359,7 @@ fun DailyWordSection(
                         )
                     }
                 }
-                
+
                 Text(
                     text = "Resilient",
                     style = MaterialTheme.typography.headlineLarge,
@@ -399,7 +394,7 @@ fun ContinueLearningSection(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -471,7 +466,7 @@ fun RecommendedSection(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(end = 16.dp)
@@ -561,9 +556,9 @@ fun RecommendedCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Level or General tag
                     Text(
@@ -575,9 +570,9 @@ fun RecommendedCard(
                             .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     // Upvotes
                     Icon(
                         imageVector = Icons.Default.LocalFireDepartment,
