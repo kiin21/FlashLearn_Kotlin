@@ -127,9 +127,9 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun deleteUser(userId: String) {
         runCatching {
-            val favoriteTopicsRef = usersCollection.document(userId).collection("favoriteTopics")
-            val favoriteTopics = favoriteTopicsRef.get().await()
-            for (doc in favoriteTopics.documents) {
+            val savedTopicsRef = usersCollection.document(userId).collection("savedCommunityTopics")
+            val savedTopics = savedTopicsRef.get().await()
+            for (doc in savedTopics.documents) {
                 runCatching { doc.reference.delete().await() }
             }
         }
@@ -154,5 +154,15 @@ class UserRepositoryImpl @Inject constructor(
         usersCollection.document(userId).update(
             "firebaseUids", com.google.firebase.firestore.FieldValue.arrayUnion(firebaseUid)
         ).await()
+    }
+    
+    override suspend fun toggleTopicLike(userId: String, topicId: String, isLiked: Boolean) {
+        val updateOp = if (isLiked) {
+            com.google.firebase.firestore.FieldValue.arrayUnion(topicId)
+        } else {
+            com.google.firebase.firestore.FieldValue.arrayRemove(topicId)
+        }
+        
+        usersCollection.document(userId).update("likedTopicIds", updateOp).await()
     }
 }

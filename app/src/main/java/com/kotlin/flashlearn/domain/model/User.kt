@@ -17,7 +17,8 @@ data class User(
     val firebaseUids: List<String> = emptyList(), // Anonymous Firebase Auth UIDs for security rules
     val streak: Int = 0,
     val examDate: Long? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val likedTopicIds: List<String> = emptyList() // IDs of favorite topics for quick access
 )
 
 data class LinkedAccount(

@@ -14,10 +14,11 @@ import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.TopicRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
-import com.kotlin.flashlearn.data.repository.FavoriteRepositoryImpl
+import com.kotlin.flashlearn.data.repository.CommunityInteractionRepositoryImpl
+import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
+
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
-import com.kotlin.flashlearn.domain.repository.FavoriteRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
@@ -113,9 +114,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFavoriteRepository(
+    fun provideCommunityInteractionRepository(
         firestore: FirebaseFirestore
-    ): FavoriteRepository = FavoriteRepositoryImpl(firestore)
+    ): CommunityInteractionRepository = CommunityInteractionRepositoryImpl(firestore)
     @Provides
     @Singleton
     fun provideLanguageManager(
