@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.domain.model.QuizResult
+import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
 
 @Composable
 fun QuizSummaryScreen(
@@ -106,7 +107,7 @@ fun QuizSummaryScreen(
                             Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = FlashSuccessMed
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(result.flashcard.word, fontWeight = FontWeight.Bold)

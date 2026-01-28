@@ -29,6 +29,9 @@ import com.kotlin.flashlearn.ui.theme.FlashErrorMed
 import com.kotlin.flashlearn.ui.theme.FlashSuccessDark
 import com.kotlin.flashlearn.ui.theme.FlashSuccessLight
 import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
+import com.kotlin.flashlearn.ui.theme.FlashInfoMed
+import com.kotlin.flashlearn.ui.theme.FlashInfoLight
+import com.kotlin.flashlearn.ui.theme.FlashInfoDark
 
 /**
  * Reusable multiple choice options component that manages selection state.
@@ -78,9 +81,10 @@ fun MultipleChoiceOptions(
                         .padding(vertical = 6.dp),
                     colors = CardDefaults.outlinedCardColors(
                         containerColor = when {
-                            showFeedback && isSelectedOption && isCorrectAnswer(option) -> FlashSuccessMed
+                            showFeedback && isSelectedOption && isCorrectAnswer(option) -> FlashSuccessLight
                             showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorLight
-                            showFeedback && isCorrectAnswer(option) -> FlashSuccessMed // Show correct answer when user chose wrong
+                            showFeedback && isCorrectAnswer(option) -> FlashSuccessLight
+                            !showFeedback && isSelectedOption -> FlashInfoLight
                             else -> MaterialTheme.colorScheme.surface
                         }
                     ),
@@ -88,7 +92,7 @@ fun MultipleChoiceOptions(
                         // In feedback mode: only highlight selected option and correct option
                         showFeedback && isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
                             2.dp,
-                            FlashSuccessDark
+                            FlashSuccessMed
                         )
 
                         showFeedback && isSelectedOption && !isCorrectAnswer(option) -> androidx.compose.foundation.BorderStroke(
@@ -96,10 +100,10 @@ fun MultipleChoiceOptions(
                             FlashErrorMed
                         )
 
-                        // In selection mode: highlight selected option
+                        // In selection mode: highlight selected option with info blue
                         !showFeedback && isSelectedOption -> androidx.compose.foundation.BorderStroke(
                             2.dp,
-                            FlashSuccessLight
+                            FlashInfoMed
                         )
 
                         else -> CardDefaults.outlinedCardBorder()
@@ -117,7 +121,7 @@ fun MultipleChoiceOptions(
                             fontWeight = FontWeight.SemiBold,
                             color = when {
                                 // In feedback mode: only color selected option and correct option
-                                showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                showFeedback && isCorrectAnswer(option) -> FlashSuccessMed
                                 showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                 else -> MaterialTheme.colorScheme.onSurface
                             },
@@ -128,7 +132,7 @@ fun MultipleChoiceOptions(
                             style = MaterialTheme.typography.bodyLarge,
                             color = when {
                                 // In feedback mode: only color selected option and correct option
-                                showFeedback && isCorrectAnswer(option) -> FlashSuccessDark
+                                showFeedback && isCorrectAnswer(option) -> FlashSuccessMed
                                 showFeedback && isSelectedOption && !isCorrectAnswer(option) -> FlashErrorMed
                                 else -> MaterialTheme.colorScheme.onSurface
                             },
