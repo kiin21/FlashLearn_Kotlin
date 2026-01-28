@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -71,7 +72,10 @@ import coil.compose.AsyncImage
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.QuizConfig
 import com.kotlin.flashlearn.domain.model.QuizMode
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
+import com.kotlin.flashlearn.domain.model.CommunityFilter
 import com.kotlin.flashlearn.presentation.components.SearchBar
+import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
@@ -79,6 +83,7 @@ import android.speech.tts.TextToSpeech
 import java.util.Locale
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.rememberModalBottomSheetState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -103,14 +108,20 @@ fun TopicDetailScreen(
 
     onSearchQueryChange: (String) -> Unit,
     onUpdateFlashcard: (Flashcard) -> Unit,
-    onDeleteFlashcard: (String) -> Unit
+    onDeleteFlashcard: (String) -> Unit,
+    onOpenFilter: () -> Unit,
+    onLevelToggle: (VSTEPLevel) -> Unit,
+    onApplyFilters: () -> Unit,
+    onClearFilters: () -> Unit,
+    onDismissFilter: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showQuizConfig by remember { mutableStateOf(false) }
     var editingFlashcard by remember { mutableStateOf<Flashcard?>(null) }
-    
+    val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
     val context = LocalContext.current
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
 
@@ -131,9 +142,9 @@ fun TopicDetailScreen(
             textToSpeech?.shutdown()
         }
     }
-    
+
     val snackbarHostState = remember { SnackbarHostState() }
-    
+
     // Show snackbar for success/error messages
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let {
@@ -141,7 +152,7 @@ fun TopicDetailScreen(
             onClearMessages()
         }
     }
-    
+
     LaunchedEffect(state.error) {
         state.error?.let {
             snackbarHostState.showSnackbar(it)
@@ -155,7 +166,7 @@ fun TopicDetailScreen(
             currentDescription = state.topicDescription,
             currentImageUrl = state.imageUrl,
             onDismiss = { showEditDialog = false },
-            onConfirm = { name, desc, imgUrl -> 
+            onConfirm = { name, desc, imgUrl ->
                 onUpdateTopic(name, desc, imgUrl)
                 showEditDialog = false
             },
@@ -178,33 +189,46 @@ fun TopicDetailScreen(
         topBar = {
             if (state.isSelectionMode) {
                 CenterAlignedTopAppBar(
-                    title = { 
+                    title = {
                         Text(
-                            stringResource(R.string.selected_count, state.selectedCardIds.size), 
+                            stringResource(R.string.selected_count, state.selectedCardIds.size),
                             style = MaterialTheme.typography.titleMedium,
-                        ) 
+                        )
                     },
                     navigationIcon = {
                         IconButton(onClick = onToggleSelectionMode) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_selection))
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.close_selection)
+                            )
                         }
                     },
                     actions = {
-                        IconButton(onClick = onSelectAll) { 
-                             Icon(
-                                 imageVector = Icons.Default.CheckCircle, 
-                                 contentDescription = stringResource(R.string.select_all), 
-                                 tint = FlashRed
-                             )
+                        IconButton(onClick = onSelectAll) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = stringResource(R.string.select_all),
+                                tint = FlashRed
+                            )
                         }
                         IconButton(onClick = onDeleteSelected) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_selected), tint = FlashRed)
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.delete_selected),
+                                tint = FlashRed
+                            )
                         }
                     }
                 )
             } else {
                 CenterAlignedTopAppBar(
-                    title = { Text(state.topicTitle, fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+                    title = {
+                        Text(
+                            state.topicTitle,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
@@ -218,7 +242,11 @@ fun TopicDetailScreen(
                         if (state.isOwner) {
                             Box {
                                 IconButton(onClick = { showMenu = true }) {
-                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.more),
+                                        tint = Color.Gray
+                                    )
                                 }
                                 DropdownMenu(
                                     expanded = showMenu,
@@ -235,10 +263,12 @@ fun TopicDetailScreen(
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { 
+                                        text = {
                                             Text(
-                                                if (state.isPublic) stringResource(R.string.make_private) else stringResource(R.string.make_public)
-                                            ) 
+                                                if (state.isPublic) stringResource(R.string.make_private) else stringResource(
+                                                    R.string.make_public
+                                                )
+                                            )
                                         },
                                         onClick = {
                                             showMenu = false
@@ -246,19 +276,28 @@ fun TopicDetailScreen(
                                         },
                                         leadingIcon = {
                                             Icon(
-                                                if (state.isPublic) Icons.Default.Lock else Icons.Default.Public, 
+                                                if (state.isPublic) Icons.Default.Lock else Icons.Default.Public,
                                                 contentDescription = null
                                             )
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.delete_topic), color = MaterialTheme.colorScheme.error) },
+                                        text = {
+                                            Text(
+                                                stringResource(R.string.delete_topic),
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
                                         onClick = {
                                             showMenu = false
                                             onDeleteTopic()
                                         },
                                         leadingIcon = {
-                                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
                                         }
                                     )
                                 }
@@ -268,7 +307,11 @@ fun TopicDetailScreen(
                             if (!state.isSystemTopic) {
                                 Box {
                                     IconButton(onClick = { showNonOwnerMenu = true }) {
-                                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.more), tint = Color.Gray)
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = stringResource(R.string.more),
+                                            tint = Color.Gray
+                                        )
                                     }
                                     DropdownMenu(
                                         expanded = showNonOwnerMenu,
@@ -281,7 +324,11 @@ fun TopicDetailScreen(
                                                 onSaveToMyTopics()
                                             },
                                             leadingIcon = {
-                                                Icon(Icons.Default.SaveAlt, contentDescription = null, tint = FlashRed)
+                                                Icon(
+                                                    Icons.Default.SaveAlt,
+                                                    contentDescription = null,
+                                                    tint = FlashRed
+                                                )
                                             }
                                         )
                                     }
@@ -325,19 +372,26 @@ fun TopicDetailScreen(
                 Box(
                     modifier = Modifier
                         .size(60.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)),
+                        .background(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            RoundedCornerShape(16.dp)
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                     Icon(
-                         painter = painterResource(id = android.R.drawable.ic_menu_agenda), // Placeholder if we don't have nice icon res
-                         contentDescription = null,
-                         tint = MaterialTheme.colorScheme.onPrimaryContainer
-                     )
+                    Icon(
+                        painter = painterResource(id = android.R.drawable.ic_menu_agenda), // Placeholder if we don't have nice icon res
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text(state.topicTitle, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                state.topicTitle,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
             Text(
                 state.topicDescription.ifBlank { stringResource(R.string.vocabulary_collection) },
                 style = MaterialTheme.typography.bodyMedium,
@@ -348,16 +402,28 @@ fun TopicDetailScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Buttons row
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 Button(
                     onClick = onStudyNow,
                     colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f).height(50.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.MenuBook,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.study_now), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        stringResource(R.string.study_now),
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
                 Spacer(Modifier.width(16.dp))
                 OutlinedButton(
@@ -365,28 +431,48 @@ fun TopicDetailScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = FlashRed),
                     border = BorderStroke(1.dp, FlashRed.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1f).height(50.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color(0xFF9E0000))
+                    Icon(
+                        Icons.AutoMirrored.Filled.Assignment,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = Color(0xFF9E0000)
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.take_quiz), style = MaterialTheme.typography.labelLarge, color = FlashRed)
+                    Text(
+                        stringResource(R.string.take_quiz),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = FlashRed
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // Header with count
-            Text(
-                text = stringResource(R.string.cards_in_topic, state.cards.size),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Start)
-            )
-            
+
+            // Header with count and filter button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.cards_in_topic, state.cards.size),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Filter button with badge
+                FilterButton(
+                    filterCount = state.selectedLevels.size,
+                    onClick = onOpenFilter
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Search Bar for flashcards
             if (state.cards.isNotEmpty()) {
                 SearchBar(
@@ -400,22 +486,29 @@ fun TopicDetailScreen(
             when {
                 state.isLoading -> {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = FlashRed)
                     }
                 }
+
                 state.error != null -> {
                     Text(state.error, color = Color.Red)
                 }
+
                 state.cards.isEmpty() -> {
                     Text(stringResource(R.string.no_cards_in_topic), color = Color.Gray)
                 }
+
                 state.displayedCards.isEmpty() && state.searchQuery.isNotBlank() -> {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth().padding(32.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.no_cards_found, state.searchQuery),
@@ -427,6 +520,7 @@ fun TopicDetailScreen(
                         }
                     }
                 }
+
                 else -> {
                     androidx.compose.foundation.lazy.LazyColumn {
                         items(state.displayedCards.size) { index ->
@@ -442,7 +536,7 @@ fun TopicDetailScreen(
                                 onPlayAudio = {
                                     tts?.speak(card.word, TextToSpeech.QUEUE_FLUSH, null, null)
                                 },
-                                onClick = { 
+                                onClick = {
                                     if (state.isSelectionMode) {
                                         onToggleCardSelection(card.id)
                                     } else {
@@ -473,6 +567,19 @@ fun TopicDetailScreen(
                 onTakeQuiz(config)
             },
             cards = state.cards
+        )
+    }
+
+    // Filter bottom sheet
+    if (state.isFilterSheetVisible) {
+        FilterBottomSheet(
+            sheetState = filterSheetState,
+            currentFilter = CommunityFilter(levels = state.selectedLevels),
+            selectedLevels = state.selectedLevels,
+            onLevelToggle = onLevelToggle,
+            onApply = onApplyFilters,
+            onClearAll = onClearFilters,
+            onDismiss = onDismissFilter
         )
     }
 }
@@ -517,7 +624,9 @@ fun CardItem(
         }
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Selection Checkbox
@@ -525,7 +634,9 @@ fun CardItem(
                 IconButton(onClick = onClick) {
                     Icon(
                         imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                        contentDescription = if (isSelected) stringResource(R.string.selected_txt) else stringResource(R.string.select_txt),
+                        contentDescription = if (isSelected) stringResource(R.string.selected_txt) else stringResource(
+                            R.string.select_txt
+                        ),
                         tint = if (isSelected) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
@@ -541,15 +652,17 @@ fun CardItem(
                 contentAlignment = Alignment.Center
             ) {
                 if (imageUrl.isNotBlank()) {
-                     AsyncImage(
+                    AsyncImage(
                         model = imageUrl,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Text(
-                        word.take(1).uppercase(), 
+                        word.take(1).uppercase(),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -559,15 +672,27 @@ fun CardItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(word, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(
+                        word,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     if (ipa.isNotBlank()) {
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(ipa, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            ipa,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-                Text(type, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    type,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            
+
             if (!isSelectionMode) {
                 // Audio
                 IconButton(onClick = onPlayAudio) {
@@ -578,10 +703,10 @@ fun CardItem(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                
+
                 // Owner actions (Edit/Delete)
                 if (isOwner) {
-                     Box {
+                    Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 Icons.Default.MoreVert,
@@ -611,7 +736,11 @@ fun CardItem(
                                     onDeleteClick()
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
                                 }
                             )
                         }
@@ -648,26 +777,26 @@ fun QuizConfigBottomSheet(
             QuizModeCard(
                 title = "🎯 Custom Quiz",
                 subtitle = "Choose specific cards to practice",
-                onClick = { 
+                onClick = {
                     showCustomSelection = !showCustomSelection
                     if (!showCustomSelection) {
                         selectedCardIds = emptySet()
                     }
                 }
             )
-            
+
             // Card selection section for Custom Quiz
             if (showCustomSelection) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
                     "Select Cards (${selectedCardIds.size}/${cards.size})",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Scrollable card list with fixed height
                 Box(
                     modifier = Modifier
@@ -698,7 +827,7 @@ fun QuizConfigBottomSheet(
                             items(cards.size) { index ->
                                 val card = cards[index]
                                 val isSelected = selectedCardIds.contains(card.id)
-                                
+
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -734,9 +863,9 @@ fun QuizConfigBottomSheet(
                                             tint = if (isSelected) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(24.dp)
                                         )
-                                        
+
                                         Spacer(modifier = Modifier.width(12.dp))
-                                        
+
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 card.word,
@@ -758,9 +887,9 @@ fun QuizConfigBottomSheet(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Start Quiz button
                 Button(
                     onClick = {
@@ -799,7 +928,7 @@ fun QuizConfigBottomSheet(
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -824,7 +953,61 @@ private fun QuizModeCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterButton(
+    filterCount: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .clickable { onClick() }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.FilterList,
+                contentDescription = "Filter",
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "Filter",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // Badge
+        if (filterCount > 0) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(18.dp)
+                    .clip(CircleShape)
+                    .background(FlashRed),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = filterCount.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

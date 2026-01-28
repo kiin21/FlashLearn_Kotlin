@@ -301,7 +301,12 @@ fun FlashlearnNavHost(
                 onClearMessages = viewModel::clearMessages,
                 onSearchQueryChange = viewModel::updateSearchQuery,
                 onUpdateFlashcard = viewModel::updateFlashcard,
-                onDeleteFlashcard = viewModel::deleteFlashcard
+                onDeleteFlashcard = viewModel::deleteFlashcard,
+                onOpenFilter = viewModel::openFilterSheet,
+                onLevelToggle = viewModel::toggleLevelFilter,
+                onApplyFilters = viewModel::applyFilters,
+                onClearFilters = viewModel::clearFilters,
+                onDismissFilter = viewModel::dismissFilterSheet
             )
         }
 
