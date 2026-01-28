@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
+import com.kotlin.flashlearn.data.sync.SyncRepository
+import com.kotlin.flashlearn.workers.SyncScheduler
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -28,7 +30,9 @@ import kotlinx.coroutines.tasks.await
 @HiltViewModel
 class SignInViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val syncRepository: SyncRepository,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SignInState())
@@ -87,6 +91,8 @@ class SignInViewModel @Inject constructor(
                                 linkedProviders = listOf("google.com")
                             )
                             userRepository.createUser(newUser)
+                            syncRepository.syncAll(userData.userId)
+                            syncScheduler.scheduleDailySync(userData.userId)
                             
                             _state.update { 
                                 it.copy(
@@ -97,6 +103,8 @@ class SignInViewModel @Inject constructor(
                             _uiEvent.send(SignInUiEvent.NavigateToOnboarding)
                         } else {
                             // Existing user
+                            syncRepository.syncAll(userData.userId)
+                            syncScheduler.scheduleDailySync(userData.userId)
                             _state.update { 
                                 it.copy(
                                     isLoading = false,
@@ -163,6 +171,9 @@ class SignInViewModel @Inject constructor(
 
             authRepository.signInWithUsername(username, password).fold(
                 onSuccess = { userData ->
+                    syncRepository.syncAll(userData.userId)
+                    syncScheduler.scheduleDailySync(userData.userId)
+
                     _state.update { 
                         it.copy(isLoading = false, isSignInSuccessful = true) 
                     }

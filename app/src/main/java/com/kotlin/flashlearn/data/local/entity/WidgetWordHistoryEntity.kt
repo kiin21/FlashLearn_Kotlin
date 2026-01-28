@@ -5,23 +5,15 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "widget_word_history",
+    tableName = "daily_word_history",
     indices = [
-        Index(value = ["userId"]),
-        Index(value = ["userId", "flashcardId"], unique = true),
-        Index(value = ["userId", "isCorrect"])
+        Index(value = ["userId", "dateKey"], unique = true),
+        Index(value = ["userId", "wordId"], unique = true)
     ]
 )
-data class WidgetWordHistoryEntity(
-    @PrimaryKey
-    val id: String,
+data class DailyWordHistoryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val userId: String,
-    val flashcardId: String,
-
-    val firstShownDate: String,
-    val lastShownDate: String,
-    val shownCount: Int = 1,
-
-    val isCorrect: Boolean = false,
-    val updatedAt: Long = System.currentTimeMillis()
+    val dateKey: String,
+    val wordId: String
 )
