@@ -264,21 +264,12 @@ fun TopicDetailScreen(
                         )
                     },
                     navigationIcon = {
-                        Row {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    imageVector = Icons.Default.ChevronLeft,
-                                    tint = FlashRed,
-                                    contentDescription = stringResource(R.string.back)
-                                )
-                            }
-                            IconButton(onClick = { showResetConfirmation = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    contentDescription = "Reset Progress"
-                                )
-                            }
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                tint = FlashRed,
+                                contentDescription = stringResource(R.string.back)
+                            )
                         }
                     },
                     actions = {
@@ -303,6 +294,20 @@ fun TopicDetailScreen(
                                         },
                                         leadingIcon = {
                                             Icon(Icons.Default.Edit, contentDescription = null)
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Reset Progress") },
+                                        onClick = {
+                                            showMenu = false
+                                            showResetConfirmation = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Refresh,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
                                         }
                                     )
                                     DropdownMenuItem(
@@ -347,19 +352,33 @@ fun TopicDetailScreen(
                             }
                         } else {
                             // Non-owner: 3-dot menu with Save option (not for system topics)
-                            if (!state.isSystemTopic) {
-                                Box {
-                                    IconButton(onClick = { showNonOwnerMenu = true }) {
-                                        Icon(
-                                            Icons.Default.MoreVert,
-                                            contentDescription = stringResource(R.string.more),
-                                            tint = Color.Gray
-                                        )
-                                    }
-                                    DropdownMenu(
-                                        expanded = showNonOwnerMenu,
-                                        onDismissRequest = { showNonOwnerMenu = false }
-                                    ) {
+                            Box {
+                                IconButton(onClick = { showNonOwnerMenu = true }) {
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.more),
+                                        tint = Color.Gray
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showNonOwnerMenu,
+                                    onDismissRequest = { showNonOwnerMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Reset Progress") },
+                                        onClick = {
+                                            showNonOwnerMenu = false
+                                            showResetConfirmation = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Refresh,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    )
+                                    if (!state.isSystemTopic) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(R.string.save_to_my_topics)) },
                                             onClick = {
