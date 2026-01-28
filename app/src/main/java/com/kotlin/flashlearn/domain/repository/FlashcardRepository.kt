@@ -87,4 +87,22 @@ interface FlashcardRepository {
      * @return The URL of the uploaded image.
      */
     suspend fun uploadImage(uriString: String, flashcardId: String): Result<String>
+
+    /**
+     * Gets flashcards that have NOT been mastered for a specific topic.
+     * Used for learning sessions to show only unmastered cards.
+     * @param topicId The ID of the topic.
+     * @param userId The ID of the current user.
+     * @return List of unmastered flashcards.
+     */
+    suspend fun getUnmasteredFlashcardsByTopicId(topicId: String, userId: String): Result<List<Flashcard>>
+
+    /**
+     * Gets the progress for a specific topic (mastered count / total count).
+     * @param topicId The ID of the topic.
+     * @param userId The ID of the current user.
+     * @return Pair of (masteredCount, totalCount).
+     */
+    suspend fun getTopicProgress(topicId: String, userId: String): Result<Pair<Int, Int>>
 }
+

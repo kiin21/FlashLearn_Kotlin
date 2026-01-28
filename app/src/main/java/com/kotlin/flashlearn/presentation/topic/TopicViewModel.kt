@@ -46,6 +46,10 @@ class TopicViewModel @Inject constructor(
     private val _topicWordCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val topicWordCounts: StateFlow<Map<String, Int>> = _topicWordCounts.asStateFlow()
     
+    // Progress for each topic: Map<topicId, Pair<masteredCount, totalCount>>
+    private val _topicProgress = MutableStateFlow<Map<String, Pair<Int, Int>>>(emptyMap())
+    val topicProgress: StateFlow<Map<String, Pair<Int, Int>>> = _topicProgress.asStateFlow()
+    
     val currentUserId: String?
         get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
     
@@ -85,6 +89,7 @@ class TopicViewModel @Inject constructor(
                     // Load word count for each topic from FlashcardRepository
                     topics.forEach { topic ->
                         loadWordCountForTopic(topic.id)
+                        loadProgressForTopic(topic.id)
                     }
                 }
                 .onFailure { e ->
@@ -92,6 +97,23 @@ class TopicViewModel @Inject constructor(
                         isLoading = false,
                         error = e.message ?: "Failed to load topics"
                     )
+                }
+        }
+    }
+    
+    /**
+     * Loads the progress (mastered/total) for a specific topic.
+     */
+    private fun loadProgressForTopic(topicId: String) {
+        val userId = currentUserId ?: return
+        
+        viewModelScope.launch {
+            flashcardRepository.getTopicProgress(topicId, userId)
+                .onSuccess { (masteredCount, totalCount) ->
+                    _topicProgress.value = _topicProgress.value + (topicId to Pair(masteredCount, totalCount))
+                }
+                .onFailure { error ->
+                    // Silently fail - progress is optional
                 }
         }
     }

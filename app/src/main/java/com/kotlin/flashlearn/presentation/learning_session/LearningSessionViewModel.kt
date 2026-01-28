@@ -48,12 +48,26 @@ class LearningSessionViewModel @Inject constructor(
 
     /**
      * Loads flashcards for the given topic.
+     * Only loads unmastered flashcards for the current user.
      */
     private fun loadFlashcards() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            flashcardRepository.getFlashcardsByTopicId(topicId).fold(
+            val userId = authRepository.getSignedInUser()?.userId
+            if (userId == null) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "User not authenticated"
+                    )
+                }
+                _uiEvent.send(LearningSessionUiEvent.ShowError("User not authenticated"))
+                return@launch
+            }
+
+            // Load only unmastered flashcards
+            flashcardRepository.getUnmasteredFlashcardsByTopicId(topicId, userId).fold(
                 onSuccess = { flashcards ->
                     val sessionCards = flashcards
                     _state.update {
@@ -112,7 +126,7 @@ class LearningSessionViewModel @Inject constructor(
 
     /**
      * Swipe Right - "Remembered"
-     * Card is removed from the session stack.
+     * Card is marked as mastered and removed from the session stack.
      */
     fun onSwipeRight() {
         val currentState = _state.value
@@ -132,6 +146,14 @@ class LearningSessionViewModel @Inject constructor(
             )
         }
 
+        // Mark flashcard as mastered in the database
+        viewModelScope.launch {
+            val userId = authRepository.getSignedInUser()?.userId
+            if (userId != null) {
+                flashcardRepository.markFlashcardAsMastered(currentCard.id, userId)
+            }
+        }
+
         checkSessionCompletion(newQueue)
         
         // Enrich next card
@@ -140,7 +162,8 @@ class LearningSessionViewModel @Inject constructor(
 
     /**
      * Swipe Left - "Not Remembered"
-     * Card is re-queued to the end of the stack.
+     * Card is removed from current session but NOT marked as mastered.
+     * It will appear again in the next learning session.
      */
     fun onSwipeLeft() {
         val currentState = _state.value
@@ -149,15 +172,19 @@ class LearningSessionViewModel @Inject constructor(
         // Save state for undo
         val stateToSave = currentState.copy(previousState = null)
 
-        val newQueue = currentState.sessionQueue.drop(1) + currentCard
+        // Simply remove the card from the queue (don't re-queue it)
+        val newQueue = currentState.sessionQueue.drop(1)
 
         _state.update {
             it.copy(
                 sessionQueue = newQueue,
+                completedCardCount = it.completedCardCount + 1,
                 isCardFlipped = false,
                 previousState = stateToSave
             )
         }
+
+        checkSessionCompletion(newQueue)
         
         // Enrich next card
         newQueue.firstOrNull()?.let { enrichCard(it) }

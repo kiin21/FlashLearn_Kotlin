@@ -378,4 +378,53 @@ class FlashcardRepositoryImpl @Inject constructor(
             cloudinaryService.uploadFlashcardImage(uri, flashcardId)
         }.onFailure { if (it is CancellationException) throw it }
     }
+
+    override suspend fun getUnmasteredFlashcardsByTopicId(
+        topicId: String,
+        userId: String
+    ): Result<List<Flashcard>> {
+        return runCatching {
+            // Get all flashcards for the topic
+            val allFlashcards = getFlashcardsByTopicId(topicId).getOrThrow()
+            
+            if (allFlashcards.isEmpty()) {
+                return@runCatching emptyList()
+            }
+            
+            // Get IDs of mastered flashcards
+            val allFlashcardIds = allFlashcards.map { it.id }
+            val masteredIds = userProgressDao.getMasteredFlashcardIdsFromList(userId, allFlashcardIds).toSet()
+            
+            // Filter out mastered flashcards
+            allFlashcards.filter { it.id !in masteredIds }
+        }.onFailure {
+            if (it is CancellationException) throw it
+            Log.e(TAG, "Error getting unmastered flashcards for topic $topicId", it)
+        }
+    }
+
+    override suspend fun getTopicProgress(
+        topicId: String,
+        userId: String
+    ): Result<Pair<Int, Int>> {
+        return runCatching {
+            // Get all flashcards for the topic
+            val allFlashcards = getFlashcardsByTopicId(topicId).getOrThrow()
+            val totalCount = allFlashcards.size
+            
+            if (totalCount == 0) {
+                return@runCatching Pair(0, 0)
+            }
+            
+            // Get count of mastered flashcards
+            val allFlashcardIds = allFlashcards.map { it.id }
+            val masteredCount = userProgressDao.getMasteredCountForTopic(userId, allFlashcardIds)
+            
+            Pair(masteredCount, totalCount)
+        }.onFailure {
+            if (it is CancellationException) throw it
+            Log.e(TAG, "Error getting topic progress for topic $topicId", it)
+        }
+    }
 }
+

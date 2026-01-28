@@ -38,6 +38,7 @@ fun TopicScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val topicWordCounts by viewModel.topicWordCounts.collectAsStateWithLifecycle()
+    val topicProgress by viewModel.topicProgress.collectAsStateWithLifecycle()
     
     LaunchedEffect(Unit) {
         viewModel.loadTopics()
@@ -153,6 +154,7 @@ fun TopicScreen(
                     TopicList(
                         topics = uiState.displayedTopics,
                         topicWordCounts = topicWordCounts,
+                        topicProgress = topicProgress,
                         likedTopicIds = uiState.likedTopicIds,
                         onTopicClick = onNavigateToTopicDetail,
                         viewModel = viewModel
@@ -230,6 +232,7 @@ private fun FilterChipItem(
 fun TopicList(
     topics: List<Topic>,
     topicWordCounts: Map<String, Int>,
+    topicProgress: Map<String, Pair<Int, Int>>,
     likedTopicIds: Set<String> = emptySet(),
     onTopicClick: (String) -> Unit,
     viewModel: TopicViewModel
@@ -243,12 +246,16 @@ fun TopicList(
             val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
             val isLiked = topic.id in likedTopicIds
             
+            // Calculate progress from mastered/total flashcards
+            val (masteredCount, totalCount) = topicProgress[topic.id] ?: Pair(0, wordCount)
+            val progress = if (totalCount > 0) masteredCount.toFloat() / totalCount.toFloat() else 0f
+            
             com.kotlin.flashlearn.presentation.components.TopicItem(
                 title = topic.name,
                 description = topic.description,
                 wordCount = wordCount,
                 imageUrl = topic.imageUrl ?: "",
-                progress = 0f, // TODO: Calculate from user progress
+                progress = progress,
                 isOwner = isOwner,
                 isLiked = isLiked,
                 onClick = { onTopicClick(topic.id) },
