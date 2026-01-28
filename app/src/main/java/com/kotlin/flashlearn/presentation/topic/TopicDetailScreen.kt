@@ -639,7 +639,7 @@ fun QuizConfigBottomSheet(
 
             QuizModeCard(
                 title = "⚡ Quick Sprint",
-                subtitle = "Practice your weakest mastered words (up to 15)",
+                subtitle = "Adaptive difficulty. Best for daily review.",
                 onClick = { onStartQuiz(QuizConfig(QuizMode.SPRINT, 15)) }
             )
 
