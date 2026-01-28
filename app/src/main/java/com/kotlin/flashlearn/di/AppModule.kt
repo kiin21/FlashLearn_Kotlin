@@ -8,6 +8,8 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
+import com.kotlin.flashlearn.data.local.dao.FlashcardDao
+import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.remote.DatamuseApi
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
@@ -90,7 +92,9 @@ object AppModule {
         freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi,
         pixabayApi: com.kotlin.flashlearn.data.remote.PixabayApi,
         userProgressDao: UserProgressDao,
-        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
+        cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService,
+        flashcardDao: FlashcardDao,
+        topicDao: TopicDao
     ): FlashcardRepository = FlashcardRepositoryImpl(
         firestore,
         datamuseApi,
@@ -98,7 +102,9 @@ object AppModule {
         freeDictionaryApi,
         pixabayApi,
         userProgressDao,
-        cloudinaryService
+        cloudinaryService,
+        flashcardDao,
+        topicDao,
     )
 
     @Provides

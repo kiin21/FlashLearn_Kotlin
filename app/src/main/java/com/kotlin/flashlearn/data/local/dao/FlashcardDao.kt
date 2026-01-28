@@ -52,22 +52,15 @@ interface FlashcardDao {
     suspend fun getFlashcardsNeedingEnrichment(topicId: String, limit: Int = 5): List<FlashcardEntity>
 
     @Query("""
-    SELECT * FROM flashcards
-    WHERE id IN (
-        SELECT flashcardId FROM user_progress
-        WHERE userId = :userId AND status = 'MASTERED'
-    )
-    AND id NOT IN (
-        SELECT flashcardId FROM widget_word_history
-        WHERE userId = :userId AND isCorrect = 1
-    )
-    AND (:excludeSize = 0 OR id NOT IN (:excludeIds))
-    ORDER BY RANDOM()
-    LIMIT 1
-""")
-    suspend fun pickWidgetWord(
-        userId: String,
-        excludeIds: List<String>,
-        excludeSize: Int
-    ): FlashcardEntity?
+        SELECT f.id AS id,
+               f.word AS word,
+               f.level AS level,
+               f.definition AS meaning,
+               f.ipa AS ipa
+        FROM flashcards f
+        INNER JOIN topics t ON t.id = f.topicId
+        WHERE t.isSystemTopic = 1
+           OR t.createdBy = :userId
+    """)
+    suspend fun getDailyWordCandidates(userId: String): List<DailyWordCandidate>
 }

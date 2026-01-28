@@ -71,6 +71,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.*
 import coil.compose.AsyncImage
+import com.kotlin.flashlearn.domain.model.DailyWord
 import com.kotlin.flashlearn.presentation.noti.ExamDatePrefs
 import com.kotlin.flashlearn.ui.theme.BrandRed
 import com.kotlin.flashlearn.ui.theme.BrandRedDark
@@ -83,10 +84,12 @@ fun HomeScreen(
     onNavigateToTopic: () -> Unit,
     onNavigateToCommunity: () -> Unit = {},
     onNavigateToLearningSession: (String) -> Unit = {},
-    onNavigateToTopicDetail: (String) -> Unit = {}
+    onNavigateToTopicDetail: (String) -> Unit = {},
+    onNavigateToDailyWordArchive: () -> Unit
 ) {
     val homeVm: HomeViewModel = hiltViewModel()
     val streakDays by homeVm.streakDays.collectAsState(initial = 0)
+    val dailyWord by homeVm.dailyWord.collectAsState(initial = null)
     val recommendedTopics = homeVm.recommendedTopics
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -131,7 +134,8 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             DailyWordSection(
-                onViewArchive = { showNotImplementedMessage(R.string.view_archive) },
+                dailyWord = dailyWord,
+                onViewArchive = onNavigateToDailyWordArchive,
                 onPronounce = { showNotImplementedMessage(R.string.pronunciation) }
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -301,9 +305,17 @@ fun ExamDateCard() {
 
 @Composable
 fun DailyWordSection(
+    dailyWord: DailyWord?,
     onViewArchive: () -> Unit = {},
     onPronounce: () -> Unit = {}
 ) {
+    val wordText = dailyWord?.word?.takeIf { it.isNotBlank() } ?: "No word yet"
+    val ipaText = dailyWord?.ipa?.takeIf { it.isNotBlank() } ?: ""
+    val meaningText = dailyWord?.meaning?.takeIf { it.isNotBlank() }
+        ?: "Open topics to generate Daily Word"
+
+    val levelText = dailyWord?.level?.takeIf { it.isNotBlank() } ?: stringResource(R.string.b2_level)
+
     Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -324,8 +336,9 @@ fun DailyWordSection(
                 modifier = Modifier.clickable { onViewArchive() }
             )
         }
+
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -335,50 +348,62 @@ fun DailyWordSection(
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = stringResource(R.string.b2_level),
+                        text = levelText,
                         color = FlashRed,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
-                            .background(FlashRedLight.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                            .background(
+                                FlashRedLight.copy(alpha = 0.3f),
+                                RoundedCornerShape(4.dp)
+                            )
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
-                    
+
+                    val enablePronounce = dailyWord?.word?.isNotBlank() == true
+
                     Box(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
                             .background(FlashRedLight.copy(alpha = 0.3f))
-                            .clickable { onPronounce() },
+                            .clickable(enabled = enablePronounce) { onPronounce() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = stringResource(R.string.pronounce),
-                            tint = FlashRed
+                            tint = if (enablePronounce) FlashRed else FlashGrey
                         )
                     }
                 }
-                
+
                 Text(
-                    text = "Resilient",
+                    text = wordText,
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
+                if (ipaText.isNotBlank()) {
+                    Text(
+                        text = ipaText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Text(
-                    text = "/rɪˈzɪl.jənt/",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                Text(
-                    text = "Able to withstand or recover quickly from difficult conditions.",
+                    text = meaningText,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
