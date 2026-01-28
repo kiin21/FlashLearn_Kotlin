@@ -10,7 +10,8 @@ data class LearningSessionState(
     val isLoading: Boolean = false,
     val sessionQueue: List<Flashcard> = emptyList(),
     val initialCardCount: Int = 0,
-    val completedCardCount: Int = 0,
+    val completedCardCount: Int = 0, // Total cards reviewed (swiped left or right)
+    val masteredCardCount: Int = 0, // Only cards swiped right (remembered)
     val isCardFlipped: Boolean = false,
     val error: String? = null,
     val previousState: LearningSessionState? = null // For Undo

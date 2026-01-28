@@ -51,3 +51,7 @@ val FlashSuccessLight = Color(0xFFE7F4E8)
 
 val FlashErrorMed = Color(0xFFE11D48)  // Using BrandRed for errors
 val FlashErrorLight = Color(0xFFFEE2E2)  // Light red background for error states
+
+val FlashInfoMed = Color(0xFF2563EB)   // Medium blue for info states (icons, borders, emphasis)
+val FlashInfoLight = Color(0xFFDBEAFE) // Light blue background for info messages
+val FlashInfoDark = Color(0xFF1E40AF)  // Dark blue for hover/active states

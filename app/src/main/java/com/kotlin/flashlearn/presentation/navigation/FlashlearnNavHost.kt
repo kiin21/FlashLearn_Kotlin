@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -274,11 +276,16 @@ fun FlashlearnNavHost(
                     )
                 },
                 onTakeQuiz = { config ->
+                    val encodedIds = URLEncoder.encode(
+                        config.selectedFlashcardIds.joinToString(","),
+                        StandardCharsets.UTF_8.toString()
+                    )
                     navController.navigate(
                         Route.QuizSession.createRoute(
                             topicId = topicId,
                             mode = config.mode,
-                            count = config.questionCount
+                            count = config.questionCount,
+                            selectedIds = encodedIds
                         )
                     )
                 },
@@ -298,7 +305,13 @@ fun FlashlearnNavHost(
                 onClearMessages = viewModel::clearMessages,
                 onSearchQueryChange = viewModel::updateSearchQuery,
                 onUpdateFlashcard = viewModel::updateFlashcard,
-                onDeleteFlashcard = viewModel::deleteFlashcard
+                onDeleteFlashcard = viewModel::deleteFlashcard,
+                onOpenFilter = viewModel::openFilterSheet,
+                onLevelToggle = viewModel::toggleLevelFilter,
+                onApplyFilters = viewModel::applyFilters,
+                onClearFilters = viewModel::clearFilters,
+                onDismissFilter = viewModel::dismissFilterSheet,
+                onResetProgress = viewModel::resetTopicProgress
             )
         }
 
@@ -414,7 +427,7 @@ fun FlashlearnNavHost(
                 ?: remember { mutableStateOf(null) })
 
             SessionCompleteScreen(
-                masteredCount = state?.completedCardCount ?: 0,
+                masteredCount = state?.masteredCardCount ?: 0,
                 totalCount = state?.initialCardCount ?: 0,
                 streakResult = streakResult,
                 onBackToHome = {

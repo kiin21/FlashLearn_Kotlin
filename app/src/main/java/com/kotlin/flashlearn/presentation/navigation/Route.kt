@@ -39,9 +39,13 @@ sealed class Route(val route: String) {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
 
-    data object QuizSession : Route("quiz_session/{topicId}?mode={mode}&count={count}") {
-        fun createRoute(topicId: String, mode: QuizMode = QuizMode.SPRINT, count: Int = 10) =
-            "quiz_session/$topicId?mode=${mode.name}&count=$count"
+    data object QuizSession : Route("quiz_session/{topicId}?mode={mode}&count={count}&selectedIds={selectedIds}") {
+        fun createRoute(
+            topicId: String, 
+            mode: QuizMode = QuizMode.SPRINT, 
+            count: Int = 10,
+            selectedIds: String = ""
+        ) = "quiz_session/$topicId?mode=${mode.name}&count=$count&selectedIds=$selectedIds"
     }
 
     data object QuizSummary : Route("quiz_summary/{topicId}") {

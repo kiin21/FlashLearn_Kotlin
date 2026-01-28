@@ -91,17 +91,18 @@ fun HomeScreen(
     val streakDays by homeVm.streakDays.collectAsState(initial = 0)
     val dailyWord by homeVm.dailyWord.collectAsState(initial = null)
     val recommendedTopics = homeVm.recommendedTopics
+    val continueLearningData by homeVm.continueLearningData.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    
+
     val showNotImplementedMessage: (Int) -> Unit = { resId ->
         val featureName = context.getString(resId)
         scope.launch {
             snackbarHostState.showSnackbar(context.getString(R.string.coming_soon, featureName))
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -141,13 +142,16 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             ContinueLearningSection(
-                onStartLearning = { onNavigateToLearningSession("env_science_101") }
+                continueLearningData = continueLearningData,
+                onStartLearning = { topicId ->
+                    onNavigateToLearningSession(topicId)
+                }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
             RecommendedSection(
                 topics = recommendedTopics.collectAsState(initial = emptyList()).value,
-                onTopicClick = { topicId -> 
+                onTopicClick = { topicId ->
                     onNavigateToTopicDetail(topicId)
                 }
             )
@@ -167,7 +171,11 @@ fun HeaderSection(
     ) {
         Column {
             Text(
-                text = stringResource(R.string.hello_greeting, user?.displayName?.split(" ")?.firstOrNull() ?: stringResource(R.string.hello_friend)),
+                text = stringResource(
+                    R.string.hello_greeting,
+                    user?.displayName?.split(" ")?.firstOrNull()
+                        ?: stringResource(R.string.hello_friend)
+                ),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -177,7 +185,7 @@ fun HeaderSection(
                 color = FlashGrey
             )
         }
-        
+
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
@@ -328,13 +336,6 @@ fun DailyWordSection(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text(
-                text = stringResource(R.string.view_archive),
-                color = FlashRed,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onViewArchive() }
-            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -414,8 +415,12 @@ fun DailyWordSection(
 
 @Composable
 fun ContinueLearningSection(
-    onStartLearning: () -> Unit = {}
+    continueLearningData: ContinueLearningData?,
+    onStartLearning: (String) -> Unit = {}
 ) {
+    // Don't show section if there's no data
+    if (continueLearningData == null) return
+
     Column {
         Text(
             text = stringResource(R.string.continue_learning),
@@ -424,9 +429,11 @@ fun ContinueLearningSection(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onStartLearning(continueLearningData.topicId) },
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ),
@@ -444,7 +451,7 @@ fun ContinueLearningSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "75%",
+                        text = "${(continueLearningData.progress * 100).toInt()}%",
                         color = FlashRed,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
@@ -453,14 +460,22 @@ fun ContinueLearningSection(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "B1 Environment",
+                        text = continueLearningData.topicName,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${continueLearningData.masteredCount} of ${continueLearningData.totalCount} mastered",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
-                        progress = { 0.75f },
+                        progress = { continueLearningData.progress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -469,7 +484,7 @@ fun ContinueLearningSection(
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
-                IconButton(onClick = onStartLearning) {
+                IconButton(onClick = { onStartLearning(continueLearningData.topicId) }) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = stringResource(R.string.continue_button),
@@ -496,7 +511,7 @@ fun RecommendedSection(
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(end = 16.dp)
@@ -586,9 +601,9 @@ fun RecommendedCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Level or General tag
                     Text(
@@ -600,9 +615,9 @@ fun RecommendedCard(
                             .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     // Upvotes
                     Icon(
                         imageVector = Icons.Default.LocalFireDepartment,

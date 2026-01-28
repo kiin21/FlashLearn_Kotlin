@@ -47,4 +47,22 @@ interface UserProgressDao {
 
     @Query("DELETE FROM user_progress WHERE userId = :userId")
     suspend fun deleteAllProgressForUser(userId: String)
+
+    /**
+     * Get count of mastered flashcards for a specific topic.
+     * @param userId User ID
+     * @param flashcardIds List of flashcard IDs belonging to the topic
+     * @return Count of mastered flashcards
+     */
+    @Query("SELECT COUNT(*) FROM user_progress WHERE userId = :userId AND flashcardId IN (:flashcardIds) AND status = 'MASTERED'")
+    suspend fun getMasteredCountForTopic(userId: String, flashcardIds: List<String>): Int
+
+    /**
+     * Get list of mastered flashcard IDs from a given list.
+     * @param userId User ID
+     * @param flashcardIds List of all flashcard IDs to check
+     * @return List of flashcard IDs that are mastered
+     */
+    @Query("SELECT flashcardId FROM user_progress WHERE userId = :userId AND flashcardId IN (:flashcardIds) AND status = 'MASTERED'")
+    suspend fun getMasteredFlashcardIdsFromList(userId: String, flashcardIds: List<String>): List<String>
 }

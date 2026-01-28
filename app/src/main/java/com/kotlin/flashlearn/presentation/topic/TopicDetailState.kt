@@ -1,6 +1,7 @@
 package com.kotlin.flashlearn.presentation.topic
 
 import com.kotlin.flashlearn.domain.model.Flashcard
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 
 data class TopicDetailState(
     val isLoading: Boolean = false,
@@ -16,5 +17,7 @@ data class TopicDetailState(
     val isOwner: Boolean = false,
     val imageUrl: String = "",
     val isPublic: Boolean = false,
-    val isSystemTopic: Boolean = false
+    val isSystemTopic: Boolean = false,
+    val selectedLevels: List<VSTEPLevel> = emptyList(),
+    val isFilterSheetVisible: Boolean = false
 )
