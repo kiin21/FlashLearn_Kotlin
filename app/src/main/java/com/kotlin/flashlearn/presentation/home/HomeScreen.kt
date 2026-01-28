@@ -88,6 +88,7 @@ fun HomeScreen(
     val homeVm: HomeViewModel = hiltViewModel()
     val streakDays by homeVm.streakDays.collectAsState(initial = 0)
     val recommendedTopics = homeVm.recommendedTopics
+    val continueLearningData by homeVm.continueLearningData.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -136,7 +137,10 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             ContinueLearningSection(
-                onStartLearning = { onNavigateToLearningSession("env_science_101") }
+                continueLearningData = continueLearningData,
+                onStartLearning = { topicId ->
+                    onNavigateToLearningSession(topicId)
+                }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -384,8 +388,12 @@ fun DailyWordSection(
 
 @Composable
 fun ContinueLearningSection(
-    onStartLearning: () -> Unit = {}
+    continueLearningData: ContinueLearningData?,
+    onStartLearning: (String) -> Unit = {}
 ) {
+    // Don't show section if there's no data
+    if (continueLearningData == null) return
+
     Column {
         Text(
             text = stringResource(R.string.continue_learning),
@@ -396,7 +404,9 @@ fun ContinueLearningSection(
         Spacer(modifier = Modifier.height(12.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onStartLearning(continueLearningData.topicId) },
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ),
@@ -414,7 +424,7 @@ fun ContinueLearningSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "75%",
+                        text = "${(continueLearningData.progress * 100).toInt()}%",
                         color = FlashRed,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
@@ -423,14 +433,22 @@ fun ContinueLearningSection(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "B1 Environment",
+                        text = continueLearningData.topicName,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${continueLearningData.masteredCount} of ${continueLearningData.totalCount} mastered",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(
-                        progress = { 0.75f },
+                        progress = { continueLearningData.progress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -439,7 +457,7 @@ fun ContinueLearningSection(
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
-                IconButton(onClick = onStartLearning) {
+                IconButton(onClick = { onStartLearning(continueLearningData.topicId) }) {
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = stringResource(R.string.continue_button),
