@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,6 +53,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -113,12 +115,14 @@ fun TopicDetailScreen(
     onLevelToggle: (VSTEPLevel) -> Unit,
     onApplyFilters: () -> Unit,
     onClearFilters: () -> Unit,
-    onDismissFilter: () -> Unit
+    onDismissFilter: () -> Unit,
+    onResetProgress: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showNonOwnerMenu by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showQuizConfig by remember { mutableStateOf(false) }
+    var showResetConfirmation by remember { mutableStateOf(false) }
     var editingFlashcard by remember { mutableStateOf<Flashcard?>(null) }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -185,6 +189,36 @@ fun TopicDetailScreen(
         )
     }
 
+    if (showResetConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmation = false },
+            title = {
+                Text("Reset Learning Progress?")
+            },
+            text = {
+                Text("This will clear all your progress for this topic. You'll be able to study all cards from the beginning. This action cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showResetConfirmation = false
+                        onResetProgress()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = FlashRed)
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showResetConfirmation = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             if (state.isSelectionMode) {
@@ -230,12 +264,21 @@ fun TopicDetailScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.Default.ChevronLeft,
-                                tint = FlashRed,
-                                contentDescription = stringResource(R.string.back)
-                            )
+                        Row {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    imageVector = Icons.Default.ChevronLeft,
+                                    tint = FlashRed,
+                                    contentDescription = stringResource(R.string.back)
+                                )
+                            }
+                            IconButton(onClick = { showResetConfirmation = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    contentDescription = "Reset Progress"
+                                )
+                            }
                         }
                     },
                     actions = {

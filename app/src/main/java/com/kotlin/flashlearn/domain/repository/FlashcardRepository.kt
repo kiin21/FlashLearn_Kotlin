@@ -113,4 +113,12 @@ interface FlashcardRepository {
      * @return List of flashcard IDs that are mastered.
      */
     suspend fun getMasteredFlashcardIdsFromList(userId: String, flashcardIds: List<String>): Result<List<String>>
+
+    /**
+     * Resets all learning progress for a specific topic.
+     * Deletes all progress records for flashcards in this topic.
+     * @param topicId The ID of the topic.
+     * @param userId The ID of the current user.
+     */
+    suspend fun resetTopicProgress(topicId: String, userId: String): Result<Unit>
 }

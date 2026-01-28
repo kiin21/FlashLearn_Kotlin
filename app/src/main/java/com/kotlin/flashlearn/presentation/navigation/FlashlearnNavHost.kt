@@ -306,7 +306,8 @@ fun FlashlearnNavHost(
                 onLevelToggle = viewModel::toggleLevelFilter,
                 onApplyFilters = viewModel::applyFilters,
                 onClearFilters = viewModel::clearFilters,
-                onDismissFilter = viewModel::dismissFilterSheet
+                onDismissFilter = viewModel::dismissFilterSheet,
+                onResetProgress = viewModel::resetTopicProgress
             )
         }
 

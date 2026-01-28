@@ -432,4 +432,34 @@ class TopicDetailViewModel @Inject constructor(
         applySearch()
         dismissFilterSheet()
     }
+
+    /**
+     * Resets all learning progress for this topic.
+     * Deletes all mastered/review status for all cards in the topic.
+     */
+    fun resetTopicProgress() {
+        viewModelScope.launch {
+            val userId = currentUserId
+            if (userId == null) {
+                _state.value = _state.value.copy(error = "User not authenticated")
+                return@launch
+            }
+
+            _state.value = _state.value.copy(isLoading = true)
+
+            flashcardRepository.resetTopicProgress(topicId, userId)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        successMessage = "Progress reset successfully! You can study this topic from the beginning."
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to reset progress"
+                    )
+                }
+        }
+    }
 }

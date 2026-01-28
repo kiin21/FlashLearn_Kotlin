@@ -441,5 +441,28 @@ class FlashcardRepositoryImpl @Inject constructor(
             Log.e(TAG, "Error getting mastered flashcard IDs", it)
         }
     }
+
+    override suspend fun resetTopicProgress(
+        topicId: String,
+        userId: String
+    ): Result<Unit> {
+        return runCatching {
+            // Get all flashcards for this topic
+            val flashcardsResult = getFlashcardsByTopicId(topicId)
+            val flashcards = flashcardsResult.getOrNull() ?: emptyList()
+            
+            // Delete progress for each flashcard
+            flashcards.forEach { flashcard ->
+                userProgressDao.deleteProgress(userId, flashcard.id)
+            }
+            
+            Log.d(TAG, "Reset progress for topic $topicId (${flashcards.size} cards)")
+            Unit
+        }.onFailure {
+            if (it is CancellationException) throw it
+            Log.e(TAG, "Error resetting topic progress for topic $topicId", it)
+        }
+    }
 }
+
 
