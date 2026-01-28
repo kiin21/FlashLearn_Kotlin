@@ -6,17 +6,15 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.kotlin.flashlearn.data.local.Converters
+import com.kotlin.flashlearn.data.local.dao.DailyWordDao
 import com.kotlin.flashlearn.data.local.dao.FlashcardDao
 import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.local.dao.UserProgressDao
-import com.kotlin.flashlearn.data.local.dao.DailyWidgetSessionDao
-import com.kotlin.flashlearn.data.local.dao.WidgetWordHistoryDao
 import com.kotlin.flashlearn.data.local.dao.UserStreakDao
 import com.kotlin.flashlearn.data.local.entity.FlashcardEntity
 import com.kotlin.flashlearn.data.local.entity.TopicEntity
 import com.kotlin.flashlearn.data.local.entity.UserProgressEntity
-import com.kotlin.flashlearn.data.local.entity.DailyWidgetSessionEntity
-import com.kotlin.flashlearn.data.local.entity.WidgetWordHistoryEntity
+import com.kotlin.flashlearn.data.local.entity.DailyWordHistoryEntity
 import com.kotlin.flashlearn.data.local.entity.UserStreakEntity
 
 @Database(
@@ -24,8 +22,7 @@ import com.kotlin.flashlearn.data.local.entity.UserStreakEntity
         FlashcardEntity::class,
         TopicEntity::class,
         UserProgressEntity::class,
-        DailyWidgetSessionEntity::class,
-        WidgetWordHistoryEntity::class,
+        DailyWordHistoryEntity::class,
         UserStreakEntity::class
     ],
     version = 2,
@@ -36,8 +33,7 @@ abstract class FlashLearnDatabase : RoomDatabase() {
     abstract fun flashcardDao(): FlashcardDao
     abstract fun topicDao(): TopicDao
     abstract fun userProgressDao(): UserProgressDao
-    abstract fun dailyWidgetSessionDao(): DailyWidgetSessionDao
-    abstract fun widgetWordHistoryDao(): WidgetWordHistoryDao
+    abstract fun dailyWordDao(): DailyWordDao
     abstract fun userStreakDao(): UserStreakDao
 
     companion object {

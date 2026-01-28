@@ -5,7 +5,10 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import com.kotlin.flashlearn.BuildConfig
+import com.kotlin.flashlearn.data.local.dao.FlashcardDao
+import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.local.dao.UserProgressDao
+import com.kotlin.flashlearn.data.local.entity.FlashcardEntity
 import com.kotlin.flashlearn.data.local.entity.ProgressStatus
 import com.kotlin.flashlearn.data.local.entity.UserProgressEntity
 import com.kotlin.flashlearn.data.remote.DatamuseApi
@@ -34,7 +37,9 @@ class FlashcardRepositoryImpl @Inject constructor(
     private val freeDictionaryApi: FreeDictionaryApi,
     private val pixabayApi: PixabayApi,
     private val userProgressDao: UserProgressDao,
-    private val cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService
+    private val cloudinaryService: com.kotlin.flashlearn.data.remote.CloudinaryService,
+    private val flashcardDao: FlashcardDao,
+    private val topicDao: TopicDao
 ) : FlashcardRepository {
 
     companion object {
@@ -49,6 +54,12 @@ class FlashcardRepositoryImpl @Inject constructor(
     override suspend fun updateFlashcard(topicId: String, flashcard: Flashcard): Result<Unit> {
         return runCatching {
             saveFlashcardToFirestore(flashcard, topicId)
+
+            runCatching {
+                flashcardDao.insertFlashcard(FlashcardEntity.fromDomain(flashcard))
+            }.onFailure {
+                Log.w(TAG, "Room cache update failed: ${it.message}")
+            }
             
             // Update cache safely
             val currentCache = flashcardCache[topicId]
@@ -82,6 +93,11 @@ class FlashcardRepositoryImpl @Inject constructor(
             val uniqueFlashcards = flashcards.distinctBy { it.word.lowercase() }
 
             if (uniqueFlashcards.isNotEmpty()) {
+                runCatching {
+                    flashcardDao.insertFlashcards(uniqueFlashcards.map(FlashcardEntity::fromDomain))
+                }.onFailure {
+                    Log.w(TAG, "Room cache insert flashcards failed: ${it.message}")
+                }
                 flashcardCache[topicId] = uniqueFlashcards
             }
 
@@ -194,6 +210,7 @@ class FlashcardRepositoryImpl @Inject constructor(
                     flashcardsRef.document(id).delete().await()
                 }
             }
+            flashcardDao.deleteFlashcards(flashcardIds)
 
             flashcardCache.clear()
             Unit

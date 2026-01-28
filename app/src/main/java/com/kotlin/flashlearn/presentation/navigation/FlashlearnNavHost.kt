@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.kotlin.flashlearn.presentation.dailyword_archive.DailyWordArchiveScreen
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
 import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
@@ -220,6 +221,9 @@ fun FlashlearnNavHost(
                 },
                 onNavigateToTopicDetail = { topicId ->
                     navController.navigate(Route.TopicDetail.createRoute(topicId))
+                },
+                onNavigateToDailyWordArchive = {
+                    navController.navigate(Route.DailyWordArchive.route)
                 }
             )
         }
@@ -721,6 +725,13 @@ fun FlashlearnNavHost(
                         popUpTo(Route.TopicDetail.createRoute(topicId)) { inclusive = true }
                         launchSingleTop = true
                     }
+                }
+            )
+        }
+        composable(Route.DailyWordArchive.route) {
+            DailyWordArchiveScreen(
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }

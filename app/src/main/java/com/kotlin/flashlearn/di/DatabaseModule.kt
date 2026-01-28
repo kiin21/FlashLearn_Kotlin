@@ -12,9 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import com.kotlin.flashlearn.data.local.dao.DailyWidgetSessionDao
 import com.kotlin.flashlearn.data.local.dao.UserStreakDao
-import com.kotlin.flashlearn.data.local.dao.WidgetWordHistoryDao
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -49,16 +47,9 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDailyWidgetSessionDao(database: FlashLearnDatabase): DailyWidgetSessionDao =
-        database.dailyWidgetSessionDao()
-
-    @Provides
-    @Singleton
-    fun provideWidgetWordHistoryDao(database: FlashLearnDatabase): WidgetWordHistoryDao =
-        database.widgetWordHistoryDao()
-
-    @Provides
-    @Singleton
     fun provideUserStreakDao(database: FlashLearnDatabase): UserStreakDao =
         database.userStreakDao()
+    @Provides
+    @Singleton
+    fun provideDailyWordDao(database: FlashLearnDatabase) = database.dailyWordDao()
 }
