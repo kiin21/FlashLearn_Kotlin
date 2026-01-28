@@ -1,5 +1,6 @@
 package com.kotlin.flashlearn.presentation.quiz
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,11 +31,27 @@ class QuizViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    companion object {
+        private const val TAG = "QuizViewModel"
+    }
+
     private val topicId: String = savedStateHandle.get<String>("topicId") ?: ""
     private val initialMode: QuizMode = savedStateHandle.get<String>("mode")?.let {
         runCatching { QuizMode.valueOf(it) }.getOrDefault(QuizMode.SPRINT)
     } ?: QuizMode.SPRINT
     private val initialCount: Int = savedStateHandle.get<Int>("count") ?: 10
+    private val initialSelectedIds: List<String> = savedStateHandle.get<String>("selectedIds")?.let { encoded ->
+        Log.d(TAG, "Raw selectedIds param: $encoded")
+        try {
+            val decoded = URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
+            Log.d(TAG, "Decoded selectedIds: $decoded")
+            if (decoded.isBlank()) emptyList() else decoded.split(",").filter { id -> id.isNotBlank() }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error decoding selectedIds", e)
+            emptyList()
+        }
+    } ?: emptyList()
+    
     private val _uiState = MutableStateFlow(QuizUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -44,12 +63,13 @@ class QuizViewModel @Inject constructor(
     private var totalQuestions = 0
     private var currentStreak = 0
     private val quizResults = mutableListOf<QuizResult>()
-    private var quizConfig: QuizConfig = QuizConfig(initialMode, initialCount)
+    private var quizConfig: QuizConfig = QuizConfig(initialMode, initialCount, initialSelectedIds)
 
     val currentMode: QuizMode
         get() = quizConfig.mode
 
     init {
+        Log.d(TAG, "QuizViewModel initialized - Mode: $initialMode, Count: $initialCount, SelectedIds: $initialSelectedIds")
         startQuiz(quizConfig)
     }
 
@@ -71,17 +91,77 @@ class QuizViewModel @Inject constructor(
                     currentStreak = 0
                 )
             }
+            
+            val userId = authRepository.getSignedInUser()?.userId
+            if (userId == null) {
+                _uiState.update { it.copy(isLoading = false, error = "User not authenticated") }
+                return@launch
+            }
+            
             flashcardRepository.getFlashcardsByTopicId(topicId).fold(
                 onSuccess = { cards ->
-                    flashcards = cards.shuffled()
+                    // Filter cards based on quiz mode
+                    flashcards = when (quizConfig.mode) {
+                        QuizMode.SPRINT -> {
+                            // Get mastered card IDs for this topic
+                            val allCardIds = cards.map { it.id }
+                            val masteredIds = flashcardRepository.getMasteredFlashcardIdsFromList(userId, allCardIds).getOrDefault(emptyList())
+                            
+                            // Filter to only mastered cards
+                            val masteredCards = cards.filter { it.id in masteredIds }
+                            
+                            Log.d(TAG, "SPRINT mode - Total mastered cards: ${masteredCards.size}")
+                            
+                            if (masteredCards.isEmpty()) {
+                                emptyList()
+                            } else if (masteredCards.size < 15) {
+                                // If less than 15 mastered cards, use all of them
+                                Log.d(TAG, "Using all ${masteredCards.size} mastered cards (less than 15)")
+                                masteredCards
+                            } else {
+                                // If 15 or more, get proficiency scores and sort by weakest first
+                                val cardsWithScores = masteredCards.map { card ->
+                                    val score = flashcardRepository.getProficiencyScore(card.id, userId).getOrDefault(0)
+                                    card to score
+                                }
+                                
+                                // Sort by proficiency score (ascending = weakest first)
+                                val sortedCards = cardsWithScores
+                                    .sortedBy { it.second }
+                                    .take(15)
+                                    .map { it.first }
+                                
+                                Log.d(TAG, "Selected 15 weakest cards from ${masteredCards.size} mastered cards")
+                                sortedCards
+                            }
+                        }
+                        QuizMode.CUSTOM -> {
+                            // Use selected flashcard IDs
+                            Log.d(TAG, "CUSTOM mode - Selected IDs: ${quizConfig.selectedFlashcardIds}")
+                            Log.d(TAG, "CUSTOM mode - Available cards: ${cards.size}")
+                            if (quizConfig.selectedFlashcardIds.isEmpty()) {
+                                Log.d(TAG, "No IDs selected, using all cards shuffled")
+                                cards.shuffled()
+                            } else {
+                                val filtered = cards.filter { it.id in quizConfig.selectedFlashcardIds }
+                                Log.d(TAG, "Filtered to ${filtered.size} cards")
+                                filtered
+                            }
+                        }
+                    }
+                    
                     if (flashcards.isNotEmpty()) {
-                        totalQuestions = minOf(quizConfig.questionCount, flashcards.size)
+                        totalQuestions = flashcards.size
                         loadNextQuestion()
                     } else {
+                        val errorMsg = when (quizConfig.mode) {
+                            QuizMode.SPRINT -> "No mastered flashcards found. Complete a learning session first!"
+                            QuizMode.CUSTOM -> "No flashcards selected"
+                        }
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                error = "No flashcards found"
+                                error = errorMsg
                             )
                         }
                     }
@@ -117,7 +197,7 @@ class QuizViewModel @Inject constructor(
 
         viewModelScope.launch {
             val score = flashcardRepository.getProficiencyScore(card.id, userId).getOrDefault(0)
-            val question = generateQuestionUseCase(card, score, flashcards, quizConfig.mode)
+            val question = generateQuestionUseCase(card, score, flashcards)
 
             _uiState.update {
                 it.copy(

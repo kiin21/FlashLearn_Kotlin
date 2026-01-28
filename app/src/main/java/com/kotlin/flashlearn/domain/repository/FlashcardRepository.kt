@@ -104,5 +104,13 @@ interface FlashcardRepository {
      * @return Pair of (masteredCount, totalCount).
      */
     suspend fun getTopicProgress(topicId: String, userId: String): Result<Pair<Int, Int>>
-}
 
+    /**
+     * Gets the list of mastered flashcard IDs from a given list of IDs.
+     * Used for quiz mode to filter only mastered cards.
+     * @param userId The ID of the current user.
+     * @param flashcardIds The list of flashcard IDs to check.
+     * @return List of flashcard IDs that are mastered.
+     */
+    suspend fun getMasteredFlashcardIdsFromList(userId: String, flashcardIds: List<String>): Result<List<String>>
+}

@@ -36,6 +36,7 @@ import com.kotlin.flashlearn.ui.theme.FlashRed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.tooling.preview.Preview
 
 /**
  * Session Complete screen composable.
@@ -118,7 +119,10 @@ fun SessionCompleteScreen(
                 .background(Color(0xFFF5F5F5))
                 .padding(24.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(
                     text = stringResource(R.string.cards_mastered),
                     fontSize = 14.sp,

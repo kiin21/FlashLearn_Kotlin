@@ -76,6 +76,7 @@ class LearningSessionViewModel @Inject constructor(
                             sessionQueue = sessionCards,
                             initialCardCount = sessionCards.size,
                             completedCardCount = 0,
+                            masteredCardCount = 0,
                             previousState = null
                         )
                     }
@@ -141,6 +142,7 @@ class LearningSessionViewModel @Inject constructor(
             it.copy(
                 sessionQueue = newQueue,
                 completedCardCount = it.completedCardCount + 1,
+                masteredCardCount = it.masteredCardCount + 1, // Increment mastered count
                 isCardFlipped = false,
                 previousState = stateToSave
             )
@@ -179,6 +181,7 @@ class LearningSessionViewModel @Inject constructor(
             it.copy(
                 sessionQueue = newQueue,
                 completedCardCount = it.completedCardCount + 1,
+                // DO NOT increment masteredCardCount - card was not mastered
                 isCardFlipped = false,
                 previousState = stateToSave
             )

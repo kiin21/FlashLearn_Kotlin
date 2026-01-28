@@ -426,5 +426,20 @@ class FlashcardRepositoryImpl @Inject constructor(
             Log.e(TAG, "Error getting topic progress for topic $topicId", it)
         }
     }
+
+    override suspend fun getMasteredFlashcardIdsFromList(
+        userId: String,
+        flashcardIds: List<String>
+    ): Result<List<String>> {
+        return runCatching {
+            if (flashcardIds.isEmpty()) {
+                return@runCatching emptyList()
+            }
+            userProgressDao.getMasteredFlashcardIdsFromList(userId, flashcardIds)
+        }.onFailure {
+            if (it is CancellationException) throw it
+            Log.e(TAG, "Error getting mastered flashcard IDs", it)
+        }
+    }
 }
 

@@ -471,7 +471,8 @@ fun TopicDetailScreen(
             onStartQuiz = { config ->
                 showQuizConfig = false
                 onTakeQuiz(config)
-            }
+            },
+            cards = state.cards
         )
     }
 }
@@ -625,8 +626,12 @@ fun CardItem(
 @Composable
 fun QuizConfigBottomSheet(
     onDismiss: () -> Unit,
-    onStartQuiz: (QuizConfig) -> Unit
+    onStartQuiz: (QuizConfig) -> Unit,
+    cards: List<Flashcard> = emptyList()
 ) {
+    var showCustomSelection by remember { mutableStateOf(false) }
+    var selectedCardIds by remember { mutableStateOf(setOf<String>()) }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Practice Session", style = MaterialTheme.typography.headlineMedium)
@@ -634,17 +639,169 @@ fun QuizConfigBottomSheet(
 
             QuizModeCard(
                 title = "⚡ Quick Sprint",
-                subtitle = "Adaptive difficulty. Best for daily review.",
-                onClick = { onStartQuiz(QuizConfig(QuizMode.SPRINT, 10)) }
+                subtitle = "Practice your weakest mastered words (up to 15)",
+                onClick = { onStartQuiz(QuizConfig(QuizMode.SPRINT, 15)) }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             QuizModeCard(
-                title = "🎯 VSTEP Drill",
-                subtitle = "Exam simulation (Reading, Listening, Writing).",
-                onClick = { onStartQuiz(QuizConfig(QuizMode.VSTEP_DRILL, 20)) }
+                title = "🎯 Custom Quiz",
+                subtitle = "Choose specific cards to practice",
+                onClick = { 
+                    showCustomSelection = !showCustomSelection
+                    if (!showCustomSelection) {
+                        selectedCardIds = emptySet()
+                    }
+                }
             )
+            
+            // Card selection section for Custom Quiz
+            if (showCustomSelection) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    "Select Cards (${selectedCardIds.size}/${cards.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Scrollable card list with fixed height
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            RoundedCornerShape(12.dp)
+                        )
+                ) {
+                    if (cards.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No cards available",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(8.dp)
+                        ) {
+                            items(cards.size) { index ->
+                                val card = cards[index]
+                                val isSelected = selectedCardIds.contains(card.id)
+                                
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            selectedCardIds = if (isSelected) {
+                                                selectedCardIds - card.id
+                                            } else {
+                                                selectedCardIds + card.id
+                                            }
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        }
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSelected) {
+                                                Icons.Default.CheckCircle
+                                            } else {
+                                                Icons.Default.RadioButtonUnchecked
+                                            },
+                                            contentDescription = if (isSelected) "Selected" else "Not selected",
+                                            tint = if (isSelected) FlashRed else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                card.word,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (card.partOfSpeech.isNotBlank()) {
+                                                Text(
+                                                    card.partOfSpeech,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Start Quiz button
+                Button(
+                    onClick = {
+                        if (selectedCardIds.isNotEmpty()) {
+                            onStartQuiz(
+                                QuizConfig(
+                                    mode = QuizMode.CUSTOM,
+                                    questionCount = selectedCardIds.size,
+                                    selectedFlashcardIds = selectedCardIds.toList()
+                                )
+                            )
+                        }
+                    },
+                    enabled = selectedCardIds.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = FlashRed,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Assignment,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (selectedCardIds.isEmpty()) {
+                            "Select cards to start"
+                        } else {
+                            "Start Quiz (${selectedCardIds.size} cards)"
+                        },
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

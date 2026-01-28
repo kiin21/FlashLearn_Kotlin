@@ -3,57 +3,110 @@ package com.kotlin.flashlearn.domain.usecase
 import com.kotlin.flashlearn.domain.logic.SmartDistractorGenerator
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.ProficiencyLevel
-import com.kotlin.flashlearn.domain.model.QuizMode
 import com.kotlin.flashlearn.domain.model.QuizQuestion
 import javax.inject.Inject
 
 /**
- * Use case to generate the appropriate quiz question based on the user's proficiency score.
+ * Use case to generate quiz questions with weighted random selection based on proficiency level.
+ * 
+ * Question Type Pools by Proficiency:
+ * - NEW (score 0-2): MultipleChoice, Scramble
+ * - FAMILIAR (score 3-5): ContextualGapFill
+ * - MASTERED (score 6+): ExactTyping, SentenceBuilder
+ * 
+ * Weighted Distribution:
+ * - NEW: 100% from NEW pool
+ * - FAMILIAR: 60% NEW pool, 40% FAMILIAR pool
+ * - MASTERED: 10% NEW pool, 40% FAMILIAR pool, 50% MASTERED pool
  */
 class GenerateQuestionUseCase @Inject constructor(
     private val distractorGenerator: SmartDistractorGenerator
 ) {
+    /**
+     * Generates a question based on the flashcard's proficiency score.
+     * Uses weighted random selection to ensure appropriate difficulty.
+     */
     suspend operator fun invoke(
         flashcard: Flashcard,
         score: Int,
-        cardPool: List<Flashcard>,
-        mode: QuizMode = QuizMode.SPRINT
+        cardPool: List<Flashcard>
     ): QuizQuestion {
-
-        if (mode == QuizMode.VSTEP_DRILL) {
-            return when ((1..3).random()) {
-                1 -> generateGapFill(flashcard, cardPool)
-                2 -> generateSentenceBuilder(flashcard)
-                else -> if (flashcard.pronunciation.isNotBlank()) {
-                    QuizQuestion.Dictation(
-                        flashcard = flashcard,
-                        audioUrl = flashcard.pronunciation
-                    )
-                } else {
-                    generateGapFill(flashcard, cardPool)
+        val proficiencyLevel = ProficiencyLevel.fromScore(score)
+        
+        return when (proficiencyLevel) {
+            ProficiencyLevel.NEW -> {
+                // 100% NEW types: MultipleChoice or Scramble
+                generateNewLevelQuestion(flashcard, cardPool)
+            }
+            
+            ProficiencyLevel.FAMILIAR -> {
+                // 60% NEW, 40% FAMILIAR
+                val random = (1..100).random()
+                when {
+                    random <= 60 -> generateNewLevelQuestion(flashcard, cardPool)
+                    else -> generateFamiliarLevelQuestion(flashcard, cardPool)
+                }
+            }
+            
+            ProficiencyLevel.MASTERED -> {
+                // 10% NEW, 40% FAMILIAR, 50% MASTERED
+                val random = (1..100).random()
+                when {
+                    random <= 10 -> generateNewLevelQuestion(flashcard, cardPool)
+                    random <= 50 -> generateFamiliarLevelQuestion(flashcard, cardPool)
+                    else -> generateMasteredLevelQuestion(flashcard, cardPool)
                 }
             }
         }
+    }
 
-        return when (ProficiencyLevel.fromScore(score)) {
-            ProficiencyLevel.NEW -> {
-                return when ((1..2).random()) {
-                    1 -> generateMultipleChoice(flashcard, cardPool)
-                    else -> {
-                        if (flashcard.word.length > 7) return generateMultipleChoice(
-                            flashcard,
-                            cardPool
-                        )
-                        return generateScramble(flashcard)
-                    }
-                }
-            }
+    /**
+     * Generates questions for NEW level: MultipleChoice or Scramble
+     */
+    private suspend fun generateNewLevelQuestion(
+        flashcard: Flashcard,
+        cardPool: List<Flashcard>
+    ): QuizQuestion {
+        // Check constraints: Scramble requires word length <= 7
+        val canUseScramble = flashcard.word.length <= 7
+        
+        return if (canUseScramble && (1..2).random() == 1) {
+            generateScramble(flashcard)
+        } else {
+            generateMultipleChoice(flashcard, cardPool)
+        }
+    }
 
-            ProficiencyLevel.FAMILIAR -> generateGapFill(flashcard, cardPool)
-            ProficiencyLevel.MASTERED -> QuizQuestion.ExactTyping(
-                flashcard = flashcard,
-                hint = flashcard.word.firstOrNull()?.toString()
-            )
+    /**
+     * Generates questions for FAMILIAR level: ContextualGapFill
+     */
+    private suspend fun generateFamiliarLevelQuestion(
+        flashcard: Flashcard,
+        cardPool: List<Flashcard>
+    ): QuizQuestion {
+        // Check constraints: GapFill requires exampleSentence
+        return if (flashcard.exampleSentence.isNotBlank()) {
+            generateGapFill(flashcard, cardPool)
+        } else {
+            // Fallback to NEW level question
+            generateNewLevelQuestion(flashcard, cardPool)
+        }
+    }
+
+    /**
+     * Generates questions for MASTERED level: ExactTyping or SentenceBuilder
+     */
+    private suspend fun generateMasteredLevelQuestion(
+        flashcard: Flashcard,
+        cardPool: List<Flashcard>
+    ): QuizQuestion {
+        // Check constraints: SentenceBuilder requires exampleSentence
+        val canUseSentenceBuilder = flashcard.exampleSentence.isNotBlank()
+        
+        return if (canUseSentenceBuilder && (1..2).random() == 1) {
+            generateSentenceBuilder(flashcard)
+        } else {
+            generateExactTyping(flashcard)
         }
     }
 
@@ -100,9 +153,8 @@ class GenerateQuestionUseCase @Inject constructor(
     }
 
     private fun generateSentenceBuilder(card: Flashcard): QuizQuestion.SentenceBuilder {
-//        val sentence =
-//            card.exampleSentence.takeIf { it.isNotBlank() } ?: "${'$'}{card.word} is the answer."
-        val sentence = "A random sentence that have the word ${card.word} inside it"
+        val sentence = card.exampleSentence.takeIf { it.isNotBlank() }
+            ?: "The word ${card.word} is used here."
         val segments = sentence.split(" ").shuffled()
 
         return QuizQuestion.SentenceBuilder(
@@ -115,7 +167,7 @@ class GenerateQuestionUseCase @Inject constructor(
     private fun generateExactTyping(card: Flashcard): QuizQuestion.ExactTyping {
         return QuizQuestion.ExactTyping(
             flashcard = card,
-            hint = card.word.slice(IntRange(0, 3))
+            hint = card.word.firstOrNull()?.toString() ?: ""
         )
     }
 }
