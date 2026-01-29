@@ -186,11 +186,20 @@ class FlashcardRepositoryImpl @Inject constructor(
         status: ProgressStatus
     ): Result<Unit> {
         return runCatching {
+            // Set proficiencyScore based on status to ensure consistency
+            // MASTERED requires score >= 6, REVIEW requires score >= 3
+            val proficiencyScore = when (status) {
+                ProgressStatus.MASTERED -> 6
+                ProgressStatus.REVIEW -> 3
+                ProgressStatus.LEARNING -> 0
+            }
+            
             val progress = UserProgressEntity(
                 id = "${userId}_${flashcardId}",
                 userId = userId,
                 flashcardId = flashcardId,
                 status = status,
+                proficiencyScore = proficiencyScore,
                 updatedAt = System.currentTimeMillis(),
                 syncedToRemote = false
             )

@@ -94,7 +94,7 @@ class GenerateQuestionUseCase @Inject constructor(
     }
 
     /**
-     * Generates questions for MASTERED level: ExactTyping or SentenceBuilder
+     * Generates questions for MASTERED level: ExactTyping, SentenceBuilder, or Dictation
      */
     private suspend fun generateMasteredLevelQuestion(
         flashcard: Flashcard,
@@ -103,10 +103,13 @@ class GenerateQuestionUseCase @Inject constructor(
         // Check constraints: SentenceBuilder requires exampleSentence
         val canUseSentenceBuilder = flashcard.exampleSentence.isNotBlank()
 
-        return if (canUseSentenceBuilder && (1..2).random() == 1) {
-            generateSentenceBuilder(flashcard)
-        } else {
-            generateExactTyping(flashcard)
+        // Weighted random: 40% ExactTyping, 30% SentenceBuilder (if available), 30% Dictation
+        val random = (1..100).random()
+        return when {
+            random <= 40 -> generateExactTyping(flashcard)
+            random <= 70 && canUseSentenceBuilder -> generateSentenceBuilder(flashcard)
+            random <= 70 -> generateDictation(flashcard) // Fallback if no exampleSentence
+            else -> generateDictation(flashcard)
         }
     }
 
@@ -168,6 +171,12 @@ class GenerateQuestionUseCase @Inject constructor(
         return QuizQuestion.ExactTyping(
             flashcard = card,
             hint = card.word.firstOrNull()?.toString() ?: ""
+        )
+    }
+
+    private fun generateDictation(card: Flashcard): QuizQuestion.Dictation {
+        return QuizQuestion.Dictation(
+            flashcard = card
         )
     }
 }

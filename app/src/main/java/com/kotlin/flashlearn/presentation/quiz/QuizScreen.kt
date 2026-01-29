@@ -66,6 +66,7 @@ fun QuizScreen(
             when (event) {
                 is QuizUiEvent.NavigateToSummary -> onNavigateToSummary(event.topicId)
                 is QuizUiEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                is QuizUiEvent.NavigateBack -> onNavigateBack()
             }
         }
     }

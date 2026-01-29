@@ -57,9 +57,9 @@ sealed class QuizQuestion {
 
     /**
      * Listening skill: listen and type the word.
+     * Uses Android TTS (Text-to-Speech) to pronounce the word.
      */
     data class Dictation(
-        override val flashcard: Flashcard,
-        val audioUrl: String
+        override val flashcard: Flashcard
     ) : QuizQuestion()
 }

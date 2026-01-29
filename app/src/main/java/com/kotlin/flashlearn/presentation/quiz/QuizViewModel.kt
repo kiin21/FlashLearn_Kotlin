@@ -185,6 +185,9 @@ class QuizViewModel @Inject constructor(
                                 error = errorMsg
                             )
                         }
+                        // Emit event to show toast and navigate back
+                        _uiEvent.emit(QuizUiEvent.ShowError(errorMsg))
+                        _uiEvent.emit(QuizUiEvent.NavigateBack)
                     }
                 },
                 onFailure = { error ->
@@ -248,7 +251,20 @@ class QuizViewModel @Inject constructor(
         quizResults.add(QuizResult(question.flashcard, isCorrect))
 
         viewModelScope.launch {
-            // Update UI immediately
+            // Update proficiency score FIRST and wait for it to complete
+            val currentScore =
+                flashcardRepository.getProficiencyScore(question.flashcard.id, userId)
+                    .getOrDefault(0)
+            // Correct: +1, Wrong: -2 (minimum 0) - gentler penalty to preserve MASTERED status
+            val newScore = if (isCorrect) {
+                currentScore + 1
+            } else {
+                maxOf(0, currentScore - 2)
+            }
+
+            flashcardRepository.updateProficiencyScore(question.flashcard.id, userId, newScore)
+
+            // Update UI AFTER score is persisted
             _uiState.update {
                 it.copy(
                     isAnswerCorrect = isCorrect,
@@ -257,14 +273,6 @@ class QuizViewModel @Inject constructor(
                     results = quizResults.toList()
                 )
             }
-
-            // Update Logic
-            val currentScore =
-                flashcardRepository.getProficiencyScore(question.flashcard.id, userId)
-                    .getOrDefault(0)
-            val newScore = if (isCorrect) currentScore + 1 else 0 // Reset on error as per PRD
-
-            flashcardRepository.updateProficiencyScore(question.flashcard.id, userId, newScore)
         }
     }
 
@@ -302,4 +310,5 @@ class QuizViewModel @Inject constructor(
 sealed class QuizUiEvent {
     data class NavigateToSummary(val topicId: String) : QuizUiEvent()
     data class ShowError(val message: String) : QuizUiEvent()
+    data object NavigateBack : QuizUiEvent()
 }
