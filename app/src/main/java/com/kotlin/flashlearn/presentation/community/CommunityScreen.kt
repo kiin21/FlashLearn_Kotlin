@@ -254,6 +254,9 @@ fun CommunityScreen(
                                             item.topic.createdBy?.let { userId ->
                                                 onNavigateToUserProfile(userId)
                                             }
+                                        },
+                                        onOriginalTopicClick = { originalTopicId ->
+                                            onNavigateToTopicDetail(originalTopicId)
                                         }
                                     )
                                 }
