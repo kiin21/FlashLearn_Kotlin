@@ -3,9 +3,11 @@ package com.kotlin.flashlearn.presentation.sign_in
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kotlin.flashlearn.data.sync.SyncRepository
 import com.kotlin.flashlearn.domain.model.User
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
+import com.kotlin.flashlearn.workers.SyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,11 +16,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import android.util.Log
-import com.google.firebase.messaging.FirebaseMessaging
-import com.kotlin.flashlearn.data.sync.SyncRepository
-import com.kotlin.flashlearn.workers.SyncScheduler
-import kotlinx.coroutines.tasks.await
 
 /**
  * ViewModel for Sign In screen.

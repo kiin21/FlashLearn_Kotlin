@@ -150,6 +150,8 @@
     <string name="select_txt">Select</string>
 
     <!-- Add Word Screen -->
+    <string name="add_words">Add Words</string>
+    <string name="add_new_card">Add new card</string>
     <string name="add_topic">Add Topic</string>
     <string name="topic_name">Topic Name *</string>
     <string name="description_optional">Description (Optional)</string>

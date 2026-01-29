@@ -323,6 +323,12 @@ fun FlashlearnNavHost(
                 onNavigateToCardDetail = { cardId ->
                     navController.navigate(Route.CardDetail.createRoute(cardId))
                 },
+                onAddCard = {
+                    navController.navigate(Route.AddWord.createRoute(topicId))
+                },
+                onAddTopic = {
+                    navController.navigate(Route.AddWord.createRoute(null))
+                },
                 onStudyNow = {
                     navController.navigate(
                         Route.LearningSession.createRoute(

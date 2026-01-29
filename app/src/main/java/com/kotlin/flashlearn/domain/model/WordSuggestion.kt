@@ -15,5 +15,9 @@ data class VocabularyWord(
     val word: String,
     val partOfSpeech: String = "",
     val definition: String = "",
-    val score: Int = 0
+    val score: Int = 0,
+    val tags: List<String> = emptyList(),
+    val ipa: String = "",
+    val example: String = "",
+    val imageUrl: String? = null
 )

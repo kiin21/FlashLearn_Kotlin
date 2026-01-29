@@ -40,7 +40,11 @@ class AddWordViewModel @Inject constructor(
     private val currentUserId: String?
         get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
 
-    private val _uiState = MutableStateFlow(AddWordUiState())
+    private val existingTopicId: String? = savedStateHandle.get<String>("topicId")?.takeIf { it != "new" }
+
+    private val _uiState = MutableStateFlow(AddWordUiState(
+        isEditMode = !existingTopicId.isNullOrBlank()
+    ))
     val uiState: StateFlow<AddWordUiState> = _uiState.asStateFlow()
 
     // New flow for search query input
@@ -239,8 +243,9 @@ class AddWordViewModel @Inject constructor(
         val topicName = _uiState.value.newTopicName.trim()
         val description = _uiState.value.newTopicDescription.trim()
         val selectedWords = _uiState.value.selectedWords
+        val isEditMode = _uiState.value.isEditMode
 
-        if (topicName.isBlank()) {
+        if (!isEditMode && topicName.isBlank()) {
             onError("Please enter a topic name")
             return
         }
@@ -259,24 +264,40 @@ class AddWordViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCreatingTopic = true)
 
-            val topicId = UUID.randomUUID().toString()
+            // Determine Topic ID
+            val topicId = if (isEditMode && !existingTopicId.isNullOrBlank()) {
+                existingTopicId
+            } else {
+                UUID.randomUUID().toString()
+            }
 
-            // Get creator name from AuthRepository (works for username/password users)
-            val signedInUser = authRepository.getSignedInUser()
-            val creatorName = signedInUser?.username
-                ?: firebaseAuth.currentUser?.displayName
-                ?: firebaseAuth.currentUser?.email?.substringBefore("@")
-                ?: "Anonymous"
+            // Create Topic Object only if NOT in edit mode
+            if (!isEditMode) {
+                // Get creator name from AuthRepository
+                val signedInUser = authRepository.getSignedInUser()
+                val creatorName = signedInUser?.username
+                    ?: firebaseAuth.currentUser?.displayName
+                    ?: firebaseAuth.currentUser?.email?.substringBefore("@")
+                    ?: "Anonymous"
 
-            val newTopic = Topic(
-                id = topicId,
-                name = topicName,
-                description = description.ifBlank { "Custom vocabulary collection" },
-                isSystemTopic = false,
-                isPublic = false,
-                createdBy = userId,
-                creatorName = creatorName
-            )
+                val newTopic = Topic(
+                    id = topicId,
+                    name = topicName,
+                    description = description.ifBlank { "Custom vocabulary collection" },
+                    isSystemTopic = false,
+                    isPublic = false,
+                    createdBy = userId,
+                    creatorName = creatorName
+                )
+
+                topicRepository.createTopic(newTopic)
+                    .onFailure { error ->
+                        _uiState.value = _uiState.value.copy(isCreatingTopic = false)
+                        onError(error.message ?: "Failed to create topic")
+                        return@launch
+                    }
+                    // If success, continue to save flashcards
+            }
 
             // Convert VocabularyWord to Flashcard
             val flashcards = selectedWords.map { word ->
@@ -284,29 +305,23 @@ class AddWordViewModel @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     topicId = topicId,
                     word = word.word.replaceFirstChar { it.uppercase() },
-                    pronunciation = "",
+                    pronunciation = word.ipa,
                     partOfSpeech = word.partOfSpeech.uppercase(),
                     definition = word.definition,
-                    exampleSentence = ""
+                    exampleSentence = word.example,
+                    imageUrl = word.imageUrl ?: ""
                 )
             }
 
-            topicRepository.createTopic(newTopic)
-                .onSuccess { _ ->
-                    // Save flashcards to repository
-                    flashcardRepository.saveFlashcardsForTopic(topicId, flashcards)
-                        .onSuccess {
-                            _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                            onSuccess()
-                        }
-                        .onFailure { error ->
-                            _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                            onError(error.message ?: "Failed to save flashcards")
-                        }
+            // Save flashcards to repository
+            flashcardRepository.saveFlashcardsForTopic(topicId, flashcards)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(isCreatingTopic = false)
+                    onSuccess()
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                    onError(error.message ?: "Failed to create topic")
+                    onError(error.message ?: "Failed to save flashcards")
                 }
         }
     }
@@ -328,6 +343,51 @@ class AddWordViewModel @Inject constructor(
         val withoutPrefix = topicName.replace(levelPrefixPattern, "")
         return withoutPrefix.ifBlank { topicName }
     }
+
+    // Manual Entry Functions
+    fun onManualWordChange(value: String) { _uiState.value = _uiState.value.copy(manualWord = value) }
+    fun onManualDefinitionChange(value: String) { _uiState.value = _uiState.value.copy(manualDefinition = value) }
+    fun onManualExampleChange(value: String) { _uiState.value = _uiState.value.copy(manualExample = value) }
+    fun onManualIpaChange(value: String) { _uiState.value = _uiState.value.copy(manualIpa = value) }
+    fun onManualPartOfSpeechChange(value: String) { _uiState.value = _uiState.value.copy(manualPartOfSpeech = value) }
+    fun onManualImageUriChange(value: String?) { _uiState.value = _uiState.value.copy(manualImageUri = value) }
+
+    fun addManualCard() {
+        val state = _uiState.value
+        if (state.manualWord.isBlank() || state.manualDefinition.isBlank()) return
+
+        val newWord = VocabularyWord(
+            word = state.manualWord.trim(),
+            definition = state.manualDefinition.trim(),
+            score = 0,
+            tags = listOf("manual"),
+            partOfSpeech = state.manualPartOfSpeech.trim(),
+            ipa = state.manualIpa.trim(),
+            example = state.manualExample.trim(),
+            imageUrl = state.manualImageUri
+        )
+
+        val currentSelected = state.selectedWords.toMutableSet()
+        currentSelected.add(newWord)
+
+        _uiState.value = _uiState.value.copy(
+            selectedWords = currentSelected,
+            manualWord = "",
+            manualDefinition = "",
+            manualExample = "",
+            manualIpa = "",
+            manualPartOfSpeech = "",
+            manualImageUri = null,
+            // Keep expanded to allow adding more
+            isManualEntryExpanded = true
+        )
+    }
+
+    fun toggleManualEntryExpanded() {
+        _uiState.value = _uiState.value.copy(
+            isManualEntryExpanded = !_uiState.value.isManualEntryExpanded
+        )
+    }
 }
 
 data class AddWordUiState(
@@ -335,6 +395,7 @@ data class AddWordUiState(
     val newTopicName: String = "",
     val newTopicDescription: String = "",
     val isCreatingTopic: Boolean = false,
+    val isEditMode: Boolean = false,
 
     // Topic selection for word suggestions
     val availableTopics: List<Topic> = emptyList(),
@@ -353,5 +414,14 @@ data class AddWordUiState(
     val topicSuggestions: List<VocabularyWord> = emptyList(),
 
     // Selected words for the new topic
-    val selectedWords: Set<VocabularyWord> = emptySet()
+    val selectedWords: Set<VocabularyWord> = emptySet(),
+
+    // Manual Entry State
+    val manualWord: String = "",
+    val manualDefinition: String = "",
+    val manualExample: String = "",
+    val manualIpa: String = "",
+    val manualPartOfSpeech: String = "",
+    val manualImageUri: String? = null,
+    val isManualEntryExpanded: Boolean = true // Default to expanded/visible
 )

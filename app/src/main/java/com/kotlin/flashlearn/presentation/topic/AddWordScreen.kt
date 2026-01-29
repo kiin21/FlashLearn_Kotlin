@@ -1,5 +1,8 @@
 package com.kotlin.flashlearn.presentation.topic
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,9 +25,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -70,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
@@ -97,10 +106,7 @@ fun AddWordScreen(
     }
     var showTopicTutorial by remember {
         mutableStateOf(
-            !prefs.getBoolean(
-                "topic_tutorial_shown",
-                false
-            )
+            !prefs.getBoolean("topic_tutorial_shown", false) && !uiState.isEditMode
         )
     }
     var topicTutorialStep by rememberSaveable { mutableStateOf(0) }
@@ -117,7 +123,7 @@ fun AddWordScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        stringResource(R.string.create_new_topic),
+                        if (uiState.isEditMode) stringResource(R.string.add_words) else stringResource(R.string.create_new_topic),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -162,7 +168,7 @@ fun AddWordScreen(
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
                     shape = RoundedCornerShape(12.dp),
-                    enabled = uiState.newTopicName.isNotBlank() &&
+                    enabled = (uiState.isEditMode || uiState.newTopicName.isNotBlank()) &&
                             uiState.selectedWords.isNotEmpty() &&
                             !uiState.isCreatingTopic
                 ) {
@@ -175,7 +181,7 @@ fun AddWordScreen(
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            stringResource(
+                            if (uiState.isEditMode) "Add ${uiState.selectedWords.size} words" else stringResource(
                                 R.string.create_topic_words,
                                 uiState.selectedWords.size
                             )
@@ -193,43 +199,45 @@ fun AddWordScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Topic Name Section
-            item {
-                Text(
-                    text = stringResource(R.string.topic_name),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+            if (!uiState.isEditMode) {
+                item {
+                    Text(
+                        text = stringResource(R.string.topic_name),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = uiState.newTopicName,
-                    onValueChange = { viewModel.onNewTopicNameChange(it) },
-                    placeholder = { Text(stringResource(R.string.enter_topic_name)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-            }
+                    OutlinedTextField(
+                        value = uiState.newTopicName,
+                        onValueChange = { viewModel.onNewTopicNameChange(it) },
+                        placeholder = { Text(stringResource(R.string.enter_topic_name)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+                }
 
-            // Topic Description (Optional)
-            item {
-                Text(
-                    text = stringResource(R.string.description_optional),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                // Topic Description (Optional)
+                item {
+                    Text(
+                        text = stringResource(R.string.description_optional),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = uiState.newTopicDescription,
-                    onValueChange = { viewModel.onNewTopicDescriptionChange(it) },
-                    placeholder = { Text(stringResource(R.string.add_description)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    minLines = 2,
-                    maxLines = 3
-                )
+                    OutlinedTextField(
+                        value = uiState.newTopicDescription,
+                        onValueChange = { viewModel.onNewTopicDescriptionChange(it) },
+                        placeholder = { Text(stringResource(R.string.add_description)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        minLines = 2,
+                        maxLines = 3
+                    )
+                }
             }
 
             // Selected Words Preview
@@ -255,9 +263,37 @@ fun AddWordScreen(
                 }
             }
 
+
+            // Manual Entry Section (New - Top Priority)
+            item {
+                ManualEntryForm(
+                    uiState = uiState,
+                    onWordChange = viewModel::onManualWordChange,
+                    onDefinitionChange = viewModel::onManualDefinitionChange,
+                    onExampleChange = viewModel::onManualExampleChange,
+                    onIpaChange = viewModel::onManualIpaChange,
+                    onPosChange = viewModel::onManualPartOfSpeechChange,
+                    onImageUriChange = viewModel::onManualImageUriChange,
+                    onAdd = viewModel::addManualCard,
+                    isExpanded = uiState.isManualEntryExpanded,
+                    onToggleExpand = viewModel::toggleManualEntryExpanded
+                )
+            }
+
             // Divider
             item {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "  ${stringResource(R.string.or)}  ",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f))
+                }
             }
 
             // Search Section
@@ -480,6 +516,192 @@ fun AddWordScreen(
                 else topicTutorialStep += 1
             }
         )
+    }
+}
+
+@Composable
+fun ManualEntryForm(
+    uiState: AddWordUiState,
+    onWordChange: (String) -> Unit,
+    onDefinitionChange: (String) -> Unit,
+    onExampleChange: (String) -> Unit,
+    onIpaChange: (String) -> Unit,
+    onPosChange: (String) -> Unit,
+    onImageUriChange: (String?) -> Unit,
+    onAdd: () -> Unit,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit
+) {
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            onImageUriChange(uri.toString())
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Add Manually",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null
+                )
+            }
+
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Image Picker
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (uiState.manualImageUri != null) {
+                        AsyncImage(
+                            model = uiState.manualImageUri,
+                            contentDescription = "Card Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Image",
+                                tint = Color.White
+                            )
+                        }
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.AddPhotoAlternate,
+                                contentDescription = "Add Image",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text("Add Image", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = uiState.manualWord,
+                    onValueChange = onWordChange,
+                    label = { Text("Word/Term") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = FlashRed,
+                        focusedLabelColor = FlashRed,
+                        cursorColor = FlashRed
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.manualIpa,
+                        onValueChange = onIpaChange,
+                        label = { Text("IPA") },
+                        modifier = Modifier.weight(1f).padding(end = 4.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = FlashRed,
+                            focusedLabelColor = FlashRed,
+                            cursorColor = FlashRed
+                        )
+                    )
+                    OutlinedTextField(
+                        value = uiState.manualPartOfSpeech,
+                        onValueChange = onPosChange,
+                        label = { Text("Type") },
+                        modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = FlashRed,
+                            focusedLabelColor = FlashRed,
+                            cursorColor = FlashRed
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.manualDefinition,
+                    onValueChange = onDefinitionChange,
+                    label = { Text("Definition") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = FlashRed,
+                        focusedLabelColor = FlashRed,
+                        cursorColor = FlashRed
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.manualExample,
+                    onValueChange = onExampleChange,
+                    label = { Text("Example Sentence") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = FlashRed,
+                        focusedLabelColor = FlashRed,
+                        cursorColor = FlashRed
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = onAdd,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = uiState.manualWord.isNotBlank() && uiState.manualDefinition.isNotBlank()
+                ) {
+                    Text("Add to List")
+                }
+            }
+        }
     }
 }
 
