@@ -24,6 +24,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -31,6 +36,8 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,35 +47,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.ui.theme.FlashRed
+import com.kotlin.flashlearn.ui.theme.FlashResultText
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditFlashcardDialog(
     flashcard: Flashcard,
     onDismiss: () -> Unit,
-    onConfirm: (Flashcard) -> Unit
+    onConfirm: (Flashcard) -> Unit,
+    viewModel: EditFlashcardViewModel = hiltViewModel()
 ) {
-    var word by remember { mutableStateOf(flashcard.word) }
-    var definition by remember { mutableStateOf(flashcard.definition) }
-    var example by remember { mutableStateOf(flashcard.exampleSentence) }
-    var ipa by remember { mutableStateOf(flashcard.ipa) }
-    var partOfSpeech by remember { mutableStateOf(flashcard.partOfSpeech) }
-    var imageUrl by remember { mutableStateOf(flashcard.imageUrl) }
+    val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(flashcard) {
+        viewModel.initialize(flashcard)
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            imageUrl = uri.toString()
+            viewModel.onImageUrlChange(uri.toString())
         }
     }
 
+    val posOptions = listOf("noun", "verb", "adjective", "adverb", "preposition", "conjunction", "idiom", "phrase")
+
     // Simple validation
-    val isValid = word.isNotBlank() && definition.isNotBlank()
+    val isValid = uiState.word.isNotBlank() && uiState.definition.isNotBlank()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -102,9 +116,9 @@ fun EditFlashcardDialog(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    if (imageUrl.isNotBlank()) {
+                    if (uiState.imageUrl.isNotBlank()) {
                         AsyncImage(
-                            model = imageUrl,
+                            model = uiState.imageUrl,
                             contentDescription = "Flashcard Image",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -140,28 +154,68 @@ fun EditFlashcardDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 // Fields
-                OutlinedTextField(
-                    value = word,
-                    onValueChange = { word = it },
-                    label = { Text("Word/Term") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = FlashRed,
-                        focusedLabelColor = FlashRed,
-                        cursorColor = FlashRed
+                var wordDropdownExpanded by remember { mutableStateOf(false) }
+                
+                ExposedDropdownMenuBox(
+                    expanded = wordDropdownExpanded && uiState.wordSuggestions.isNotEmpty(),
+                    onExpandedChange = { wordDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.word,
+                        onValueChange = { 
+                            viewModel.onWordChange(it)
+                            wordDropdownExpanded = true
+                        },
+                        label = { Text("Word/Term") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        singleLine = true,
+                        trailingIcon = {
+                            if (uiState.isFetchingDetails) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp), 
+                                    strokeWidth = 2.dp, 
+                                    color = FlashRed
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = FlashRed,
+                            focusedLabelColor = FlashRed,
+                            cursorColor = FlashRed
+                        )
                     )
-                )
+                    
+                    ExposedDropdownMenu(
+                        expanded = wordDropdownExpanded && uiState.wordSuggestions.isNotEmpty(),
+                        onDismissRequest = { wordDropdownExpanded = false }
+                    ) {
+                        uiState.wordSuggestions.take(8).forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = suggestion.word,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.onWordChange(suggestion.word)
+                                    wordDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = ipa,
-                        onValueChange = { ipa = it },
+                        value = uiState.ipa,
+                        onValueChange = viewModel::onIpaChange,
                         label = { Text("IPA") },
                         singleLine = true,
                         modifier = Modifier
@@ -174,27 +228,49 @@ fun EditFlashcardDialog(
                         )
                     )
 
-                    OutlinedTextField(
-                        value = partOfSpeech,
-                        onValueChange = { partOfSpeech = it },
-                        label = { Text("Type (e.g. noun)") },
-                        singleLine = true,
+                    var posExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = posExpanded,
+                        onExpandedChange = { posExpanded = it },
                         modifier = Modifier
                             .weight(1f)
-                            .padding(start = 4.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = FlashRed,
-                            focusedLabelColor = FlashRed,
-                            cursorColor = FlashRed
+                            .padding(start = 4.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.partOfSpeech,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Type") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = posExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = FlashRed,
+                                focusedLabelColor = FlashRed,
+                                cursorColor = FlashRed
+                            ),
+                            modifier = Modifier.menuAnchor()
                         )
-                    )
+                        ExposedDropdownMenu(
+                            expanded = posExpanded,
+                            onDismissRequest = { posExpanded = false }
+                        ) {
+                            posOptions.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        viewModel.onPosChange(selectionOption)
+                                        posExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = definition,
-                    onValueChange = { definition = it },
+                    value = uiState.definition,
+                    onValueChange = viewModel::onDefinitionChange,
                     label = { Text("Definition") },
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
@@ -208,8 +284,8 @@ fun EditFlashcardDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = example,
-                    onValueChange = { example = it },
+                    value = uiState.exampleSentence,
+                    onValueChange = viewModel::onExampleChange,
                     label = { Text("Example Sentence") },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth(),
@@ -233,16 +309,7 @@ fun EditFlashcardDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            onConfirm(
-                                flashcard.copy(
-                                    word = word.trim(),
-                                    definition = definition.trim(),
-                                    exampleSentence = example.trim(),
-                                    ipa = ipa.trim(),
-                                    partOfSpeech = partOfSpeech.trim(),
-                                    imageUrl = imageUrl.trim()
-                                )
-                            )
+                            viewModel.getUpdatedFlashcard()?.let { onConfirm(it) }
                         },
                         enabled = isValid,
                         colors = ButtonDefaults.buttonColors(
