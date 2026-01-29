@@ -16,11 +16,13 @@ class FlashlearnApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var dailyWordScheduler: com.kotlin.flashlearn.workers.DailyWordScheduler
 
     override fun onCreate() {
         super.onCreate()
         // Initialize Cloudinary
         com.kotlin.flashlearn.data.remote.CloudinaryService.initialize(this)
+        dailyWordScheduler.scheduleDaily()
     }
 
     override val workManagerConfiguration: Configuration
