@@ -59,7 +59,6 @@ import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
-import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import kotlinx.coroutines.launch

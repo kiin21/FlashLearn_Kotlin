@@ -29,10 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.kotlin.flashlearn.ui.theme.FlashErrorLight
 import com.kotlin.flashlearn.ui.theme.FlashErrorMed
 import com.kotlin.flashlearn.ui.theme.FlashSuccessDark
-import com.kotlin.flashlearn.ui.theme.FlashSuccessLight
 import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
 
 @OptIn(ExperimentalMaterial3Api::class)

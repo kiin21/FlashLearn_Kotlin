@@ -229,4 +229,20 @@
     <string name="general">Chung</string>
     <string name="danger_zone">Vùng nguy hiểm</string>
     <string name="feature_coming_soon">%1$s sắp ra mắt!</string>
+
+    <!-- Quiz Summary -->
+    <string name="excellent_work">Xuất sắc!</string>
+    <string name="good_effort">Khá tốt!</string>
+    <string name="keep_practicing">Cần cố gắng thêm!</string>
+    <string name="needs_review">Cần ôn tập</string>
+    <string name="mastered_label">Đã thuộc</string>
+    <string name="correct_count">Đúng</string>
+    <string name="incorrect_count">Sai</string>
+
+    <!-- Reset Password -->
+    <string name="verifying_link">Đang xác thực liên kết…</string>
+    <string name="invalid_link">Liên kết không hợp lệ</string>
+    <string name="create_new_password_title">Tạo mật khẩu mới</string>
+    <string name="new_password_instruction">Mật khẩu mới phải khác với mật khẩu đã sử dụng trước đó.</string>
+    <string name="reset_password_button">Đặt lại mật khẩu</string>
 </resources>

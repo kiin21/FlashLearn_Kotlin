@@ -231,4 +231,20 @@
     <string name="general">General</string>
     <string name="danger_zone">Danger Zone</string>
     <string name="feature_coming_soon">%1$s is coming soon!</string>
+
+    <!-- Quiz Summary -->
+    <string name="excellent_work">Excellent Work!</string>
+    <string name="good_effort">Good Effort!</string>
+    <string name="keep_practicing">Keep Practicing!</string>
+    <string name="needs_review">Needs Review</string>
+    <string name="mastered_label">Mastered</string>
+    <string name="correct_count">Correct</string>
+    <string name="incorrect_count">Incorrect</string>
+
+    <!-- Reset Password -->
+    <string name="verifying_link">Verifying link…</string>
+    <string name="invalid_link">Invalid link</string>
+    <string name="create_new_password_title">Create new password</string>
+    <string name="new_password_instruction">Your new password must be different from previous used passwords.</string>
+    <string name="reset_password_button">Reset Password</string>
 </resources>

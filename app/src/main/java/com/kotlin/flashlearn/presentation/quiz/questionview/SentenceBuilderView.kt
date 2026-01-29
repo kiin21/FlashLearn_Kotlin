@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.domain.model.QuizQuestion
 import com.kotlin.flashlearn.presentation.quiz.components.CheckAnswerButton
 import com.kotlin.flashlearn.presentation.quiz.components.LetterTile
-import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
