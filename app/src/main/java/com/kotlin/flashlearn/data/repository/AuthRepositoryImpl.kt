@@ -1,5 +1,7 @@
 package com.kotlin.flashlearn.data.repository
 
+import com.kotlin.flashlearn.data.remote.GmailEmailService
+
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -8,6 +10,7 @@ import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.util.PasswordUtils
 import com.kotlin.flashlearn.domain.model.User
@@ -25,7 +28,9 @@ class AuthRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val oneTapClient: SignInClient,
     private val auth: FirebaseAuth,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val gmailEmailService: GmailEmailService,
+    private val firestore: FirebaseFirestore
 ) : AuthRepository {
 
     // In-memory current user for username/password auth (Firebase Auth handles Google users)
@@ -382,23 +387,99 @@ class AuthRepositoryImpl @Inject constructor(
         val user = userRepository.getUserByEmail(email)
             ?: throw Exception("No account found with this email")
             
-        // If query succeeded, it means we found a user with this email (either in primary email field)
-        // Check if logic requires Google link explicitly? Plan said "if found -> Success".
-        // But the previous requirement was "linked to Google".
-        // If checking by email, finding the user implies we know the email.
-        // But do we need to verify if it's a "Google linked" account?
-        // Since we are simulating "Reset link sent", finding the user is enough.
-        // BUT, if the user registered with username/password and NO email (which is possible in current system),
-        // query by email will fail (User not found), which is correct.
-        // If query succeeds, user HAS an email.
-        // So we just return the email.
-        
         // Confirm the account is actually linked to Google (as per requirement)
-        if (user.linkedGoogleAccounts.isEmpty()) {
-            throw Exception("This account is not linked to a Google account. Please log in with your password or contact support.")
+        // Wait, NO. If it's a password account, we WANT to allowing resetting.
+        // If it's a Google-only account, we CANNOT reset password.
+        if (user.loginPasswordHash.isNullOrBlank()) {
+             throw Exception("This account uses Google Sign-In. Please sign in with Google.")
         }
         
         email
+    }
+
+    override suspend fun createPasswordResetToken(email: String): Result<String> = runCatching {
+        // 1. Generate secure token
+        val token = java.util.UUID.randomUUID().toString()
+        
+        // 2. Store token in Firestore with expiration (1 hour)
+        val expirationTime = System.currentTimeMillis() + 3600000 // 1 hour
+        
+        val resetData = mapOf(
+            "email" to email,
+            "token" to token,
+            "expiresAt" to expirationTime,
+            "used" to false,
+            "createdAt" to com.google.firebase.Timestamp.now()
+        )
+        
+        firestore.collection("password_resets")
+            .document(token)
+            .set(resetData)
+            .await()
+            
+        // 3. Send email with deep link in background (non-blocking)
+        // This makes the UI feel much faster.
+        val deepLink = "flashlearn://reset-password?token=$token"
+        
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                gmailEmailService.sendPasswordResetEmail(email, deepLink).getOrThrow()
+                android.util.Log.d("AuthRepository", "Password reset email sent successfully to $email")
+            } catch (e: Exception) {
+                android.util.Log.e("AuthRepository", "Background email sending failed: ${e.message}", e)
+            }
+        }
+        
+        "Password reset link generated for $email"
+    }
+
+    override suspend fun verifyPasswordResetToken(token: String): Result<String> = runCatching {
+        val doc = firestore.collection("password_resets")
+            .document(token)
+            .get()
+            .await()
+            
+        if (!doc.exists()) {
+            throw Exception("Invalid reset token")
+        }
+        
+        val used = doc.getBoolean("used") ?: false
+        if (used) {
+            throw Exception("This reset link has already been used")
+        }
+        
+        val expiresAt = doc.getLong("expiresAt") ?: 0L
+        if (System.currentTimeMillis() > expiresAt) {
+            throw Exception("Reset link has expired")
+        }
+        
+        doc.getString("email") ?: throw Exception("Invalid token data")
+    }
+
+    override suspend fun resetPasswordWithToken(token: String, newPassword: String): Result<String> = runCatching {
+        // 1. Verify token again
+        val email = verifyPasswordResetToken(token).getOrThrow()
+        
+        // 2. Validate new password
+        if (!com.kotlin.flashlearn.data.util.PasswordUtils.isValidPassword(newPassword)) {
+            throw Exception("Password must be 8+ characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character")
+        }
+        
+        // 3. Find user by email
+        val user = userRepository.getUserByEmail(email) 
+            ?: throw Exception("User not found")
+            
+        // 4. Update password hash
+        val newHash = com.kotlin.flashlearn.data.util.PasswordUtils.hashPassword(newPassword)
+        userRepository.updatePasswordHash(user.userId, newHash)
+        
+        // 5. Mark token as used
+        firestore.collection("password_resets")
+            .document(token)
+            .update("used", true)
+            .await()
+            
+        "Password successfully reset"
     }
 
     private fun buildSignInRequest(): BeginSignInRequest {

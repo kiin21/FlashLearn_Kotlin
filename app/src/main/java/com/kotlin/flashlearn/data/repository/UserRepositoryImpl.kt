@@ -18,6 +18,8 @@ class UserRepositoryImpl @Inject constructor(
         private const val COLLECTION_LINKED_EMAILS = "linked_emails"
     }
 
+    private val usersCollection = firestore.collection("users")
+
     override suspend fun isNewUser(userId: String): Boolean {
         val document = usersCollection.document(userId)
             .get(Source.SERVER)

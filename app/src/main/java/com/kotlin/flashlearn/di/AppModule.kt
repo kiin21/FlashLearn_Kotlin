@@ -11,6 +11,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.kotlin.flashlearn.data.local.dao.FlashcardDao
 import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.remote.DatamuseApi
+import com.kotlin.flashlearn.data.remote.GmailEmailService
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
@@ -52,8 +53,10 @@ object AppModule {
         @ApplicationContext context: Context,
         oneTapClient: SignInClient,
         auth: FirebaseAuth,
-        userRepository: UserRepository
-    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository)
+        userRepository: UserRepository,
+        gmailEmailService: GmailEmailService,
+        firestore: FirebaseFirestore
+    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository, gmailEmailService, firestore)
 
 
     @Provides
@@ -75,6 +78,10 @@ object AppModule {
     @Singleton
     fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService = 
         com.kotlin.flashlearn.data.remote.CloudinaryService()
+
+    @Provides
+    @Singleton
+    fun provideGmailEmailService(): GmailEmailService = GmailEmailService()
 
     @Provides
     @Singleton

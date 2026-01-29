@@ -70,5 +70,9 @@ interface AuthRepository {
      */
     suspend fun checkPasswordResetEligibility(email: String): Result<String>
 
+    suspend fun createPasswordResetToken(email: String): Result<String>
+    suspend fun verifyPasswordResetToken(token: String): Result<String>
+    suspend fun resetPasswordWithToken(token: String, newPassword: String): Result<String>
+
     suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit>
 }

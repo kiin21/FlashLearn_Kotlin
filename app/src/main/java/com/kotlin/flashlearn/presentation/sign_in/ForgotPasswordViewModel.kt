@@ -53,24 +53,33 @@ class ForgotPasswordViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null, successMessage = null) }
             
-            authRepository.checkPasswordResetEligibility(email).fold(
-                onSuccess = { returnedEmail ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false,
-                            successMessage = "Reset instructions have been sent to $returnedEmail. Please check your inbox (simulated)."
-                        ) 
+            authRepository.checkPasswordResetEligibility(email).onSuccess { eligibleEmail ->
+                authRepository.createPasswordResetToken(eligibleEmail).fold(
+                    onSuccess = { successMsg ->
+                        _state.update { 
+                            it.copy(
+                                isLoading = false,
+                                successMessage = "A reset link has been sent to $eligibleEmail. Please check your inbox and follow the instructions."
+                            ) 
+                        }
+                    },
+                    onFailure = { error ->
+                        _state.update { 
+                            it.copy(
+                                isLoading = false,
+                                error = error.message ?: "Failed to send reset email"
+                            ) 
+                        }
                     }
-                },
-                onFailure = { error ->
-                    _state.update { 
-                        it.copy(
-                            isLoading = false,
-                            error = error.message ?: "Failed to verify account"
-                        ) 
-                    }
+                )
+            }.onFailure { error ->
+                _state.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = error.message ?: "Account verification failed"
+                    ) 
                 }
-            )
+            }
         }
     }
     

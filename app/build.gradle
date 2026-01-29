@@ -92,6 +92,10 @@ android {
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${props.getProperty('CLOUDINARY_CLOUD_NAME', '')}\"")
         buildConfigField("String", "CLOUDINARY_API_KEY", "\"${props.getProperty('CLOUDINARY_API_KEY', '')}\"")
         buildConfigField("String", "CLOUDINARY_API_SECRET", "\"${props.getProperty('CLOUDINARY_API_SECRET', '')}\"")
+
+        // Gmail SMTP
+        buildConfigField("String", "GMAIL_EMAIL", "\"${props.getProperty('GMAIL_EMAIL', '')}\"")
+        buildConfigField("String", "GMAIL_APP_PASSWORD", "\"${props.getProperty('GMAIL_APP_PASSWORD', '')}\"")
     }
 }
 
@@ -156,6 +160,10 @@ dependencies {
     // Auth Utils
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("com.fasterxml.uuid:java-uuid-generator:5.0.0")
+    
+    // JavaMail for Gmail SMTP
+    implementation("com.sun.mail:android-mail:1.6.0")
+    implementation("com.sun.mail:android-activation:1.6.0")
 
     // Testing
     testImplementation libs.junit

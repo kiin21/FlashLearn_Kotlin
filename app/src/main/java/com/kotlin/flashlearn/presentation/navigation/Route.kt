@@ -10,6 +10,9 @@ sealed class Route(val route: String) {
     data object SignIn : Route("sign_in")
     data object Register : Route("register")
     data object ForgotPassword : Route("forgot_password")
+    data object ResetPassword : Route("reset_password?token={token}") {
+        fun createRoute(token: String) = "reset_password?token=$token"
+    }
     data object Onboarding : Route("onboarding")
     data object Home : Route("home")
     data object Topic : Route("topic")

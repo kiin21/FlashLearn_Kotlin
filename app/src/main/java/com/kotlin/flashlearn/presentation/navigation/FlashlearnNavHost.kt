@@ -157,6 +157,44 @@ fun FlashlearnNavHost(
             )
         }
 
+        composable(
+            route = Route.ResetPassword.route,
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink { 
+                    uriPattern = "flashlearn://reset-password?token={token}" 
+                }
+            ),
+            arguments = listOf(
+                navArgument("token") { type = NavType.StringType }
+            )
+        ) {
+            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.reset_password.ResetPasswordViewModel>()
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            
+            // Handle one-time events
+            LaunchedEffect(key1 = Unit) {
+                viewModel.uiEvent.collectLatest { event ->
+                    when (event) {
+                        is com.kotlin.flashlearn.presentation.reset_password.ResetPasswordUiEvent.NavigateToSignIn -> {
+                            navController.navigate(Route.SignIn.route) {
+                                popUpTo(Route.ResetPassword.route) { inclusive = true }
+                            }
+                        }
+                        is com.kotlin.flashlearn.presentation.reset_password.ResetPasswordUiEvent.ShowSuccess -> {
+                            Toast.makeText(context, "Password reset successfully", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+
+            com.kotlin.flashlearn.presentation.reset_password.ResetPasswordScreen(
+                state = state,
+                onPasswordChange = viewModel::onPasswordChange,
+                onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                onSubmit = viewModel::onSubmit
+            )
+        }
+
         // Register Screen
         composable(Route.Register.route) {
             val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.register.RegisterViewModel>()
