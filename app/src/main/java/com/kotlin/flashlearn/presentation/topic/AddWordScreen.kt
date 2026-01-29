@@ -3,6 +3,11 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,11 +36,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -121,6 +129,8 @@ fun AddWordScreen(
         if (markShown) prefs.edit().putBoolean("topic_tutorial_shown", true).apply()
     }
 
+    var wordListExpanded by rememberSaveable { mutableStateOf(true) }
+
     fun handleBack() {
         if (uiState.currentStep > 0) {
             viewModel.prevStep()
@@ -152,51 +162,63 @@ fun AddWordScreen(
             )
         },
         bottomBar = {
-            // Show "Create Topic" button only if words are selected, AND we are past the Info step (or in Edit Mode)
-            if (uiState.selectedWords.isNotEmpty() && (uiState.currentStep > 0 || uiState.isEditMode)) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Button(
-                        onClick = {
-                            viewModel.createTopic(
-                                onSuccess = {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(context.getString(R.string.topic_created_success))
-                                    }
-                                    onWordAdded()
-                                },
-                                onError = { error ->
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(error)
-                                    }
-                                }
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !uiState.isCreatingTopic
+            Column {
+                // Fixed bottom sheet for word list - always visible when words exist
+                if (uiState.selectedWords.isNotEmpty() && uiState.currentStep > 0) {
+                    PersistentWordListBottomSheet(
+                        selectedWords = uiState.selectedWords,
+                        isExpanded = wordListExpanded,
+                        onToggleExpand = { wordListExpanded = !wordListExpanded },
+                        onRemove = { word -> viewModel.removeSelectedWord(word) }
+                    )
+                }
+                
+                // Create Topic button
+                if (uiState.selectedWords.isNotEmpty() && (uiState.currentStep > 0 || uiState.isEditMode)) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surface
                     ) {
-                        if (uiState.isCreatingTopic) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = Color.White
-                            )
-                        } else {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (uiState.isEditMode) "Save Changes" else stringResource(
-                                    R.string.create_topic_words,
-                                    uiState.selectedWords.size
+                        Button(
+                            onClick = {
+                                viewModel.createTopic(
+                                    onSuccess = {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(context.getString(R.string.topic_created_success))
+                                        }
+                                        onWordAdded()
+                                    },
+                                    onError = { error ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(error)
+                                        }
+                                    }
                                 )
-                            )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = !uiState.isCreatingTopic
+                        ) {
+                            if (uiState.isCreatingTopic) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (uiState.isEditMode) "Save Changes" else stringResource(
+                                        R.string.create_topic_words,
+                                        uiState.selectedWords.size
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -218,84 +240,72 @@ fun AddWordScreen(
                 )
                 2 -> {
                     // Manual Entry Step
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        PersistentWordList(
-                            selectedWords = uiState.selectedWords,
-                            onRemove = { word -> viewModel.removeSelectedWord(word) }
-                        )
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            item {
-                                Text("Manual Entry", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            }
-                            item {
-                                ManualEntryForm(
-                                    uiState = uiState,
-                                    onWordChange = viewModel::onManualWordChange,
-                                    onDefinitionChange = viewModel::onManualDefinitionChange,
-                                    onExampleChange = viewModel::onManualExampleChange,
-                                    onIpaChange = viewModel::onManualIpaChange,
-                                    onPosChange = viewModel::onManualPartOfSpeechChange,
-                                    onImageUriChange = viewModel::onManualImageUriChange,
-                                    onAdd = viewModel::addManualCard,
-                                    isExpanded = true,
-                                    onToggleExpand = {}
-                                )
-                            }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Text("Manual Entry", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        }
+                        item {
+                            ManualEntryForm(
+                                uiState = uiState,
+                                onWordChange = viewModel::onManualWordChange,
+                                onDefinitionChange = viewModel::onManualDefinitionChange,
+                                onExampleChange = viewModel::onManualExampleChange,
+                                onIpaChange = viewModel::onManualIpaChange,
+                                onPosChange = viewModel::onManualPartOfSpeechChange,
+                                onImageUriChange = viewModel::onManualImageUriChange,
+                                onAdd = viewModel::addManualCard,
+                                isExpanded = true,
+                                onToggleExpand = {}
+                            )
                         }
                     }
                 }
                 3 -> {
                     // Search Step
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        PersistentWordList(
-                            selectedWords = uiState.selectedWords,
-                            onRemove = { word -> viewModel.removeSelectedWord(word) }
-                        )
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Text("Search Dictionary", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        }
+                        item {
+                            OutlinedTextField(
+                                value = uiState.searchQuery,
+                                onValueChange = { viewModel.onSearchQueryChange(it) },
+                                placeholder = { Text(stringResource(R.string.type_to_search)) },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                            )
+                        }
+                        if (uiState.isSearching) {
+                            item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                        } else if (uiState.searchSuggestions.isNotEmpty()) {
                             item {
-                                Text("Search Dictionary", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            }
-                            item {
-                                OutlinedTextField(
-                                    value = uiState.searchQuery,
-                                    onValueChange = { viewModel.onSearchQueryChange(it) },
-                                    placeholder = { Text(stringResource(R.string.type_to_search)) },
-                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                                    modifier = Modifier.fillMaxWidth(),
+                                Card(
                                     shape = RoundedCornerShape(12.dp),
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
-                                )
-                            }
-                            if (uiState.isSearching) {
-                                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                            } else if (uiState.searchSuggestions.isNotEmpty()) {
-                                item {
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.Black),
-                                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
-                                    ) {
-                                        uiState.searchSuggestions.forEach { suggestion ->
-                                            Text(
-                                                text = suggestion.word,
-                                                modifier = Modifier.fillMaxWidth().clickable { viewModel.onSuggestionSelected(suggestion.word) }.padding(16.dp),
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color.White
-                                            )
-                                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-                                        }
+                                    colors = CardDefaults.cardColors(containerColor = Color.Black),
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                                ) {
+                                    uiState.searchSuggestions.forEach { suggestion ->
+                                        Text(
+                                            text = suggestion.word,
+                                            modifier = Modifier.fillMaxWidth().clickable { viewModel.onSuggestionSelected(suggestion.word) }.padding(16.dp),
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.White
+                                        )
+                                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
                                     }
                                 }
                             }
@@ -505,25 +515,35 @@ fun ManualEntryForm(
 }
 
 @Composable
-fun PersistentWordList(
+fun PersistentWordListBottomSheet(
     selectedWords: Set<VocabularyWord>,
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
     onRemove: (VocabularyWord) -> Unit
 ) {
-    if (selectedWords.isNotEmpty()) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = FlashRed.copy(alpha = 0.08f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 8.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column {
+            // Collapse/Expand Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = FlashRed,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Selected Words (${selectedWords.size})",
                         fontWeight = FontWeight.Bold,
@@ -531,8 +551,21 @@ fun PersistentWordList(
                         color = FlashRed
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = FlashRed
+                )
+            }
+            
+            // Expandable word list
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
                 LazyRow(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(selectedWords.toList()) { word ->
@@ -540,6 +573,8 @@ fun PersistentWordList(
                     }
                 }
             }
+            
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
         }
     }
 }
