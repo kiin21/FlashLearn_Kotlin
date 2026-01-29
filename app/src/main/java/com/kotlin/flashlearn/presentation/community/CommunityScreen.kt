@@ -58,6 +58,7 @@ import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 
 /**
  * Community screen displaying shared public topics.
@@ -175,7 +176,7 @@ fun CommunityScreen(
 
             // Content based on tab
             when {
-                state.isLoading -> {
+                state.isLoading && state.topics.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -184,7 +185,7 @@ fun CommunityScreen(
                     }
                 }
 
-                state.error != null -> {
+                state.error != null && state.topics.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -214,44 +215,51 @@ fun CommunityScreen(
                         state.topics.filter { it.isBookmarked } // Favorites: only liked topics
                     }
 
-                    if (displayedTopics.isEmpty()) {
-                        EmptyState(
-                            isDiscoverTab = selectedTabIndex == 0,
-                            hasFilters = state.filterBadgeCount > 0 || state.searchQuery.isNotBlank()
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                    // Pull-to-Refresh wrapper
+                    PullToRefreshBox(
+                        isRefreshing = state.isLoading,
+                        onRefresh = { viewModel.onAction(CommunityAction.OnRefresh) },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        if (displayedTopics.isEmpty()) {
+                            EmptyState(
+                                isDiscoverTab = selectedTabIndex == 0,
+                                hasFilters = state.filterBadgeCount > 0 || state.searchQuery.isNotBlank()
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                            items(
-                                items = displayedTopics,
-                                key = { it.topic.id }
-                            ) { item ->
-                                CommunityTopicCard(
-                                    item = item,
-                                    onCardClick = {
-                                        viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id))
-                                    },
-                                    onFavoriteClick = {
-                                        viewModel.onAction(CommunityAction.OnToggleBookmark(item.topic.id))
-                                    },
-                                    onUpvoteClick = {
-                                        viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
-                                    },
-                                    onCreatorClick = {
-                                        item.topic.createdBy?.let { userId ->
-                                            onNavigateToUserProfile(userId)
+                                items(
+                                    items = displayedTopics,
+                                    key = { it.topic.id }
+                                ) { item ->
+                                    CommunityTopicCard(
+                                        item = item,
+                                        onCardClick = {
+                                            viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id))
+                                        },
+                                        onFavoriteClick = {
+                                            viewModel.onAction(CommunityAction.OnToggleBookmark(item.topic.id))
+                                        },
+                                        onUpvoteClick = {
+                                            viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
+                                        },
+                                        onCreatorClick = {
+                                            item.topic.createdBy?.let { userId ->
+                                                onNavigateToUserProfile(userId)
+                                            }
                                         }
-                                    }
-                                )
-                            }
+                                    )
+                                }
 
-                            item { Spacer(modifier = Modifier.height(16.dp)) }
+                                item { Spacer(modifier = Modifier.height(16.dp)) }
+                            }
                         }
                     }
                 }

@@ -340,8 +340,44 @@ private fun UserTopicCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                if (topic.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Level badges (show max 3)
+                    topic.wordLevels.take(3).forEach { level ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(FlashRedLight.copy(alpha = 0.3f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = level,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = FlashRed
+                            )
+                        }
+                    }
+                    
+                    // Description (if has levels, show truncated)
+                    if (topic.description.isNotBlank() && topic.wordLevels.isEmpty()) {
+                        Text(
+                            text = topic.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                
+                // Description on new line if has levels
+                if (topic.description.isNotBlank() && topic.wordLevels.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = topic.description,
                         style = MaterialTheme.typography.bodySmall,
