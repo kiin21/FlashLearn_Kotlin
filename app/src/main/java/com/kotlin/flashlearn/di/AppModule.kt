@@ -16,12 +16,14 @@ import com.kotlin.flashlearn.data.remote.GmailEmailService
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
 import com.kotlin.flashlearn.data.repository.CommunityInteractionRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
+import com.kotlin.flashlearn.data.repository.DictionaryRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.TopicRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
+import com.kotlin.flashlearn.domain.repository.DictionaryRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
@@ -138,6 +140,12 @@ object AppModule {
     fun provideCommunityInteractionRepository(
         firestore: FirebaseFirestore
     ): CommunityInteractionRepository = CommunityInteractionRepositoryImpl(firestore)
+
+    @Provides
+    @Singleton
+    fun provideDictionaryRepository(
+        freeDictionaryApi: com.kotlin.flashlearn.data.remote.FreeDictionaryApi
+    ): DictionaryRepository = DictionaryRepositoryImpl(freeDictionaryApi)
 
     @Provides
     @Singleton

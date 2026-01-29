@@ -20,6 +20,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.presentation.dailyword_archive.DailyWordArchiveScreen
@@ -315,6 +316,15 @@ fun FlashlearnNavHost(
             val viewModel = hiltViewModel<TopicDetailViewModel>(backStackEntry)
             val state by viewModel.state.collectAsStateWithLifecycle()
             val topicId = backStackEntry.arguments?.getString("topicId").orEmpty()
+
+            // Refresh cards when returning from AddWordScreen
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(currentBackStackEntry) {
+                // Only refresh if we're on this screen (not navigating away)
+                if (currentBackStackEntry?.destination?.route == Route.TopicDetail.route) {
+                    viewModel.refreshCards()
+                }
+            }
 
             TopicDetailScreen(
                 topicId = topicId,

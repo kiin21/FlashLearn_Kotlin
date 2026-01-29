@@ -27,8 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -77,7 +75,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -85,9 +82,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -234,12 +231,8 @@ fun AddWordScreen(
                     onDescriptionChange = viewModel::onNewTopicDescriptionChange,
                     onNext = { viewModel.nextStep() }
                 )
-                1 -> MethodSelectionStep(
-                    onManualSelect = { viewModel.setStep(2) },
-                    onSearchSelect = { viewModel.setStep(3) }
-                )
-                2 -> {
-                    // Manual Entry Step
+                1 -> {
+                    // Unified Manual Entry Step (with auto-fill)
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -247,7 +240,7 @@ fun AddWordScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         item {
-                            Text("Manual Entry", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Add Words", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         item {
                             ManualEntryForm(
@@ -258,57 +251,8 @@ fun AddWordScreen(
                                 onIpaChange = viewModel::onManualIpaChange,
                                 onPosChange = viewModel::onManualPartOfSpeechChange,
                                 onImageUriChange = viewModel::onManualImageUriChange,
-                                onAdd = viewModel::addManualCard,
-                                isExpanded = true,
-                                onToggleExpand = {}
+                                onAdd = viewModel::addManualCard
                             )
-                        }
-                    }
-                }
-                3 -> {
-                    // Search Step
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        item {
-                            Text("Search Dictionary", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        }
-                        item {
-                            OutlinedTextField(
-                                value = uiState.searchQuery,
-                                onValueChange = { viewModel.onSearchQueryChange(it) },
-                                placeholder = { Text(stringResource(R.string.type_to_search)) },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
-                            )
-                        }
-                        if (uiState.isSearching) {
-                            item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
-                        } else if (uiState.searchSuggestions.isNotEmpty()) {
-                            item {
-                                Card(
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.Black),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
-                                ) {
-                                    uiState.searchSuggestions.forEach { suggestion ->
-                                        Text(
-                                            text = suggestion.word,
-                                            modifier = Modifier.fillMaxWidth().clickable { viewModel.onSuggestionSelected(suggestion.word) }.padding(16.dp),
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.White
-                                        )
-                                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -328,6 +272,7 @@ fun AddWordScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManualEntryForm(
     uiState: AddWordUiState,
@@ -337,9 +282,7 @@ fun ManualEntryForm(
     onIpaChange: (String) -> Unit,
     onPosChange: (String) -> Unit,
     onImageUriChange: (String?) -> Unit,
-    onAdd: () -> Unit,
-    isExpanded: Boolean,
-    onToggleExpand: () -> Unit
+    onAdd: () -> Unit
 ) {
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -358,28 +301,7 @@ fun ManualEntryForm(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onToggleExpand() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Add Manually",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null
-                )
-            }
-
-            if (isExpanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Image Picker
+            // Image Picker
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -426,18 +348,61 @@ fun ManualEntryForm(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = uiState.manualWord,
-                    onValueChange = onWordChange,
-                    label = { Text("Word/Term") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = FlashRed,
-                        focusedLabelColor = FlashRed,
-                        cursorColor = FlashRed
+                // Word input with autocomplete suggestions
+                var wordDropdownExpanded by remember { mutableStateOf(false) }
+                
+                ExposedDropdownMenuBox(
+                    expanded = wordDropdownExpanded && uiState.wordSuggestions.isNotEmpty(),
+                    onExpandedChange = { wordDropdownExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.manualWord,
+                        onValueChange = { 
+                            onWordChange(it)
+                            wordDropdownExpanded = true
+                        },
+                        label = { Text("Word/Term") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        singleLine = true,
+                        trailingIcon = {
+                            if (uiState.isFetchingDetails) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp), 
+                                    strokeWidth = 2.dp, 
+                                    color = FlashRed
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = FlashRed,
+                            focusedLabelColor = FlashRed,
+                            cursorColor = FlashRed
+                        )
                     )
-                )
+                    
+                    ExposedDropdownMenu(
+                        expanded = wordDropdownExpanded && uiState.wordSuggestions.isNotEmpty(),
+                        onDismissRequest = { wordDropdownExpanded = false }
+                    ) {
+                        uiState.wordSuggestions.take(8).forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = suggestion.word,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                },
+                                onClick = {
+                                    onWordChange(suggestion.word)
+                                    wordDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -448,24 +413,50 @@ fun ManualEntryForm(
                         label = { Text("IPA") },
                         modifier = Modifier.weight(1f).padding(end = 4.dp),
                         singleLine = true,
+                        // readOnly = true, // Temporarily keep editable just in case user wants to override
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = FlashRed,
                             focusedLabelColor = FlashRed,
                             cursorColor = FlashRed
                         )
                     )
-                    OutlinedTextField(
-                        value = uiState.manualPartOfSpeech,
-                        onValueChange = onPosChange,
-                        label = { Text("Type") },
-                        modifier = Modifier.weight(1f).padding(start = 4.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = FlashRed,
-                            focusedLabelColor = FlashRed,
-                            cursorColor = FlashRed
+                    
+                    var posExpanded by remember { mutableStateOf(false) }
+                    val posOptions = listOf("noun", "verb", "adjective", "adverb", "pronoun", "preposition", "conjunction", "interjection")
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = posExpanded,
+                        onExpandedChange = { posExpanded = !posExpanded },
+                        modifier = Modifier.weight(1f).padding(start = 4.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.manualPartOfSpeech,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Type") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = posExpanded) },
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                                focusedBorderColor = FlashRed,
+                                focusedLabelColor = FlashRed,
+                                cursorColor = FlashRed
+                            ),
+                            modifier = Modifier.menuAnchor()
                         )
-                    )
+                        ExposedDropdownMenu(
+                            expanded = posExpanded,
+                            onDismissRequest = { posExpanded = false }
+                        ) {
+                            posOptions.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        onPosChange(selectionOption)
+                                        posExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -509,7 +500,6 @@ fun ManualEntryForm(
                 ) {
                     Text("Add to List")
                 }
-            }
         }
     }
 }
@@ -1053,143 +1043,3 @@ fun TopicInfoStep(
         }
     }
 }
-
-@Composable
-fun MethodSelectionStep(
-    onManualSelect: () -> Unit,
-    onSearchSelect: () -> Unit
-) {
-    val pagerState = rememberPagerState(pageCount = { 2 })
-    
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = "Choose method",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        HorizontalPager(
-            state = pagerState,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 32.dp),
-            pageSpacing = 16.dp,
-            modifier = Modifier.weight(1f)
-        ) { page ->
-            val (title, icon, color, desc) = when (page) {
-                0 -> Quad(
-                    "Manual Entry",
-                    Icons.Default.Edit,
-                    Color(0xFFE53935), // Red
-                    "Create your own cards with custom definitions and images."
-                )
-                else -> Quad(
-                    "Search Dictionary",
-                    Icons.Default.Search,
-                    Color(0xFF1E88E5), // Blue
-                    "Search our database for words and definitions."
-                )
-            }
-
-            MethodSlide(
-                title = title,
-                icon = icon,
-                color = color,
-                description = desc,
-                onClick = {
-                    when (page) {
-                        0 -> onManualSelect()
-                        1 -> onSearchSelect()
-                    }
-                },
-                pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-            )
-        }
-        Spacer(modifier = Modifier.height(32.dp))
-    }
-}
-
-@Composable
-fun MethodSlide(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    color: Color,
-    description: String,
-    onClick: () -> Unit,
-    pageOffset: Float
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                val pageOffsetAbs = Math.abs(pageOffset)
-                // Scale down slightly when not focused
-                val scale = androidx.compose.ui.util.lerp(1f, 0.85f, pageOffsetAbs)
-                scaleX = scale
-                scaleY = scale
-                alpha = androidx.compose.ui.util.lerp(1f, 0.5f, pageOffsetAbs)
-                
-                // Rotate based on position
-                rotationZ = pageOffset * -10f
-            }
-            .clickable { onClick() },
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = color),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-            }
-            
-            Box(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clip(RoundedCornerShape(50))
-                    .background(Color.White)
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
-            ) {
-                Text(
-                    text = "Select",
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
-
-// Helper data class with unique name
-data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
