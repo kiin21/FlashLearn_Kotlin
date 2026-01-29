@@ -93,14 +93,14 @@ fun FilterBottomSheet(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 Text(
                     text = "Filter",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 TextButton(onClick = onClearAll) {
                     Text(
                         text = "Clear All",
@@ -109,9 +109,9 @@ fun FilterBottomSheet(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // By Level section
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -123,7 +123,7 @@ fun FilterBottomSheet(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 if (selectedLevels.isNotEmpty()) {
                     Box(
                         modifier = Modifier
@@ -141,9 +141,9 @@ fun FilterBottomSheet(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Level chips
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -157,9 +157,9 @@ fun FilterBottomSheet(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             // Apply button
             Button(
                 onClick = onApply,
@@ -196,13 +196,13 @@ private fun LevelFilterChip(
     } else {
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
-    
+
     val textColor = if (isSelected) {
         Color.White
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
-    
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))

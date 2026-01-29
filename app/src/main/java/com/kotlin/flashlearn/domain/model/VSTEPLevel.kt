@@ -14,7 +14,7 @@ enum class VSTEPLevel(val displayName: String) {
         fun fromString(value: String?): VSTEPLevel? {
             return entries.find { it.name.equals(value, ignoreCase = true) }
         }
-        
+
         fun fromStringOrDefault(value: String?, default: VSTEPLevel = B1): VSTEPLevel {
             return fromString(value) ?: default
         }

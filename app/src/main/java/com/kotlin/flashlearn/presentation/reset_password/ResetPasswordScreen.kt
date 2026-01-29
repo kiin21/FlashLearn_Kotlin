@@ -88,7 +88,7 @@ fun ResetPasswordScreen(
                         isError = state.passwordError != null,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(

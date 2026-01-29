@@ -28,13 +28,15 @@ interface UserStreakDao {
         )
     )
 
-    @Query("""
+    @Query(
+        """
         UPDATE user_streak 
         SET currentStreak = :currentStreak,
             lastActiveDate = :lastActiveDate,
             updatedAt = :updatedAt
         WHERE userId = :userId
-    """)
+    """
+    )
     suspend fun update(
         userId: String,
         currentStreak: Int,

@@ -7,23 +7,22 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.presentation.dailyword_archive.DailyWordArchiveScreen
 import com.kotlin.flashlearn.presentation.home.HomeScreen
 import com.kotlin.flashlearn.presentation.learning_session.LearningSessionScreen
 import com.kotlin.flashlearn.presentation.learning_session.LearningSessionUiEvent
@@ -34,17 +33,16 @@ import com.kotlin.flashlearn.presentation.profile.ProfileScreen
 import com.kotlin.flashlearn.presentation.sign_in.SignInScreen
 import com.kotlin.flashlearn.presentation.sign_in.SignInUiEvent
 import com.kotlin.flashlearn.presentation.sign_in.SignInViewModel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
-import com.kotlin.flashlearn.presentation.dailyword_archive.DailyWordArchiveScreen
+import com.kotlin.flashlearn.presentation.topic.AddWordScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
+import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicDetailScreen
 import com.kotlin.flashlearn.presentation.topic.TopicDetailViewModel
 import com.kotlin.flashlearn.presentation.topic.TopicScreen
-import com.kotlin.flashlearn.presentation.topic.CardDetailScreen
-import com.kotlin.flashlearn.presentation.topic.CardDetailViewModel
-import com.kotlin.flashlearn.presentation.topic.AddWordScreen
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /**
  * Navigation host for the app.
@@ -105,9 +103,11 @@ fun FlashlearnNavHost(
                             }
                             viewModel.resetState()
                         }
+
                         is SignInUiEvent.NavigateToRegister -> {
                             navController.navigate(Route.Register.route)
                         }
+
                         is SignInUiEvent.ShowError -> {
                             Toast.makeText(
                                 context,
@@ -160,17 +160,18 @@ fun FlashlearnNavHost(
         composable(
             route = Route.ResetPassword.route,
             deepLinks = listOf(
-                androidx.navigation.navDeepLink { 
-                    uriPattern = "flashlearn://reset-password?token={token}" 
+                androidx.navigation.navDeepLink {
+                    uriPattern = "flashlearn://reset-password?token={token}"
                 }
             ),
             arguments = listOf(
                 navArgument("token") { type = NavType.StringType }
             )
         ) {
-            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.reset_password.ResetPasswordViewModel>()
+            val viewModel =
+                hiltViewModel<com.kotlin.flashlearn.presentation.reset_password.ResetPasswordViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
-            
+
             // Handle one-time events
             LaunchedEffect(key1 = Unit) {
                 viewModel.uiEvent.collectLatest { event ->
@@ -180,8 +181,13 @@ fun FlashlearnNavHost(
                                 popUpTo(Route.ResetPassword.route) { inclusive = true }
                             }
                         }
+
                         is com.kotlin.flashlearn.presentation.reset_password.ResetPasswordUiEvent.ShowSuccess -> {
-                            Toast.makeText(context, "Password reset successfully", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Password reset successfully",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 }
@@ -197,7 +203,8 @@ fun FlashlearnNavHost(
 
         // Register Screen
         composable(Route.Register.route) {
-            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.register.RegisterViewModel>()
+            val viewModel =
+                hiltViewModel<com.kotlin.flashlearn.presentation.register.RegisterViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
 
             LaunchedEffect(key1 = Unit) {
@@ -208,9 +215,11 @@ fun FlashlearnNavHost(
                                 popUpTo(Route.Register.route) { inclusive = true }
                             }
                         }
+
                         is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.NavigateToSignIn -> {
                             navController.popBackStack()
                         }
+
                         is com.kotlin.flashlearn.presentation.register.RegisterUiEvent.ShowError -> {
                             Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                         }
@@ -467,7 +476,8 @@ fun FlashlearnNavHost(
             val returnTo = backStackEntry.arguments?.getString("returnTo") ?: "home"
 
             val previousBackStackEntry = navController.previousBackStackEntry
-            val learningVm = previousBackStackEntry?.let { hiltViewModel<LearningSessionViewModel>(it) }
+            val learningVm =
+                previousBackStackEntry?.let { hiltViewModel<LearningSessionViewModel>(it) }
 
             val state = learningVm?.state?.collectAsStateWithLifecycle()?.value
             val streakResult by (learningVm?.streakResult?.collectAsStateWithLifecycle()
@@ -513,7 +523,7 @@ fun FlashlearnNavHost(
                 }
             )
         }
-        
+
         // User Public Profile Screen
         composable(
             route = Route.UserProfile.route,
@@ -521,9 +531,10 @@ fun FlashlearnNavHost(
                 navArgument("userId") { type = NavType.StringType }
             )
         ) {
-            val viewModel = hiltViewModel<com.kotlin.flashlearn.presentation.community.UserPublicProfileViewModel>()
+            val viewModel =
+                hiltViewModel<com.kotlin.flashlearn.presentation.community.UserPublicProfileViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
-            
+
             com.kotlin.flashlearn.presentation.community.UserPublicProfileScreen(
                 state = state,
                 onBack = { navController.popBackStack() },
@@ -539,7 +550,11 @@ fun FlashlearnNavHost(
             val scope = rememberCoroutineScope()
             var isLinkingInProgress by remember { mutableStateOf(false) }
             // Using LinkedAccount objects now
-            var linkedAccounts by remember { mutableStateOf<List<com.kotlin.flashlearn.domain.model.LinkedAccount>>(emptyList()) }
+            var linkedAccounts by remember {
+                mutableStateOf<List<com.kotlin.flashlearn.domain.model.LinkedAccount>>(
+                    emptyList()
+                )
+            }
             var currentUserData by remember { mutableStateOf(authRepository.getSignedInUser()) }
             val currentUserId = currentUserData?.userId
 
@@ -549,7 +564,7 @@ fun FlashlearnNavHost(
                     scope.launch {
                         val user = userRepository.getUser(userId)
                         // Use the new list, or helper to convert if needed (for migration could check both? For now clean slate)
-                        linkedAccounts = user?.linkedGoogleAccounts ?: emptyList() 
+                        linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
                     }
                 }
             }
@@ -571,7 +586,8 @@ fun FlashlearnNavHost(
                                         // Refresh state
                                         currentUserId?.let { userId ->
                                             val user = userRepository.getUser(userId)
-                                            linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
+                                            linkedAccounts =
+                                                user?.linkedGoogleAccounts ?: emptyList()
                                         }
                                         currentUserData = authRepository.getSignedInUser()
                                         isLinkingInProgress = false
@@ -607,7 +623,8 @@ fun FlashlearnNavHost(
                                         IntentSenderRequest.Builder(it).build()
                                     )
                                 } ?: run {
-                                    Toast.makeText(context, "Linking failed", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Linking failed", Toast.LENGTH_SHORT)
+                                        .show()
                                     isLinkingInProgress = false
                                 }
                             },
@@ -655,9 +672,14 @@ fun FlashlearnNavHost(
                                 userRepository.updateEmail(userId, newEmail)
                                 // Refresh user data locally
                                 currentUserData = currentUserData?.copy(email = newEmail)
-                                Toast.makeText(context, "Primary email updated", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Primary email updated", Toast.LENGTH_SHORT)
+                                    .show()
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Failed to update email: ${e.message}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Failed to update email: ${e.message}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     }
@@ -666,14 +688,25 @@ fun FlashlearnNavHost(
                     scope.launch {
                         currentUserId?.let { userId ->
                             try {
-                                Toast.makeText(context, "Uploading image...", Toast.LENGTH_SHORT).show()
-                                val downloadUrl = userRepository.uploadProfilePicture(userId, uri.toString())
-                                
+                                Toast.makeText(context, "Uploading image...", Toast.LENGTH_SHORT)
+                                    .show()
+                                val downloadUrl =
+                                    userRepository.uploadProfilePicture(userId, uri.toString())
+
                                 // Refresh user data locally
-                                currentUserData = currentUserData?.copy(profilePictureUrl = downloadUrl)
-                                Toast.makeText(context, "Profile picture updated", Toast.LENGTH_SHORT).show()
+                                currentUserData =
+                                    currentUserData?.copy(profilePictureUrl = downloadUrl)
+                                Toast.makeText(
+                                    context,
+                                    "Profile picture updated",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } catch (e: Exception) {
-                                Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(
+                                    context,
+                                    "Upload failed: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
                         }
                     }
@@ -682,13 +715,21 @@ fun FlashlearnNavHost(
                     scope.launch {
                         authRepository.deleteAccount().fold(
                             onSuccess = {
-                                Toast.makeText(context, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Account deleted successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 navController.navigate(Route.SignIn.route) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
                             onFailure = { error ->
-                                Toast.makeText(context, "Delete failed: ${error.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(
+                                    context,
+                                    "Delete failed: ${error.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             }
                         )
                     }
@@ -697,7 +738,11 @@ fun FlashlearnNavHost(
                     scope.launch {
                         authRepository.changePassword(oldPassword, newPassword).fold(
                             onSuccess = {
-                                Toast.makeText(context, "Password changed successfully", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Password changed successfully",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 onResult(true, null)
                             },
                             onFailure = { error ->

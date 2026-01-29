@@ -41,7 +41,7 @@ data class WordWithDefinitionDto(
             } else null
         } ?: emptyList()
     }
-    
+
     private fun parsePartOfSpeech(code: String): String {
         return when (code.lowercase()) {
             "n" -> "NOUN"

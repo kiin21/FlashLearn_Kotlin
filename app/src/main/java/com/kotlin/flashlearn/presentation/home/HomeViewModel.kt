@@ -6,10 +6,9 @@ import com.kotlin.flashlearn.data.local.dao.UserStreakDao
 import com.kotlin.flashlearn.data.local.prefs.LastUserPrefs
 import com.kotlin.flashlearn.domain.model.DailyWord
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.usecase.GetTodayDailyWordUseCase
 import com.kotlin.flashlearn.utils.DateKey
-import com.kotlin.flashlearn.workers.SyncScheduler
-import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +39,8 @@ class HomeViewModel @Inject constructor(
     private val _dailyWord = MutableStateFlow<DailyWord?>(null)
     val dailyWord = _dailyWord.asStateFlow()
 
-    private val _recommendedTopics = MutableStateFlow<List<com.kotlin.flashlearn.domain.model.Topic>>(emptyList())
+    private val _recommendedTopics =
+        MutableStateFlow<List<com.kotlin.flashlearn.domain.model.Topic>>(emptyList())
     val recommendedTopics = _recommendedTopics.asStateFlow()
 
     private val _continueLearningData = MutableStateFlow<ContinueLearningData?>(null)
@@ -103,7 +103,8 @@ class HomeViewModel @Inject constructor(
 
                         // Calculate progress for each topic and find the one with highest incomplete progress
                         val topicsWithProgress = topics.mapNotNull { topic ->
-                            val progressResult = flashcardRepository.getTopicProgress(topic.id, userId)
+                            val progressResult =
+                                flashcardRepository.getTopicProgress(topic.id, userId)
                             progressResult.getOrNull()?.let { (masteredCount, totalCount) ->
                                 if (totalCount > 0) {
                                     val progress = masteredCount.toFloat() / totalCount.toFloat()

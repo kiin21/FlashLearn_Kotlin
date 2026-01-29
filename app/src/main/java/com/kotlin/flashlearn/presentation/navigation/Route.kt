@@ -13,6 +13,7 @@ sealed class Route(val route: String) {
     data object ResetPassword : Route("reset_password?token={token}") {
         fun createRoute(token: String) = "reset_password?token=$token"
     }
+
     data object Onboarding : Route("onboarding")
     data object Home : Route("home")
     data object Topic : Route("topic")
@@ -27,26 +28,30 @@ sealed class Route(val route: String) {
     }
 
     data object LearningSession : Route("learning_session/{topicId}?returnTo={returnTo}") {
-        fun createRoute(topicId: String, returnTo: String) = "learning_session/$topicId?returnTo=$returnTo"
+        fun createRoute(topicId: String, returnTo: String) =
+            "learning_session/$topicId?returnTo=$returnTo"
     }
-    
-    data object SessionComplete : Route("session_complete/{topicId}?returnTo={returnTo}"){
-        fun createRoute(topicId: String, returnTo: String) = "session_complete/$topicId?returnTo=$returnTo"
+
+    data object SessionComplete : Route("session_complete/{topicId}?returnTo={returnTo}") {
+        fun createRoute(topicId: String, returnTo: String) =
+            "session_complete/$topicId?returnTo=$returnTo"
     }
+
     data object Community : Route("community")
-    
+
     data object UserProfile : Route("user_profile/{userId}") {
         fun createRoute(userId: String) = "user_profile/$userId"
     }
-    
+
     data object AddWord : Route("add_word/{topicId}") {
         fun createRoute(topicId: String?) = "add_word/${topicId ?: "new"}"
     }
 
-    data object QuizSession : Route("quiz_session/{topicId}?mode={mode}&count={count}&selectedIds={selectedIds}") {
+    data object QuizSession :
+        Route("quiz_session/{topicId}?mode={mode}&count={count}&selectedIds={selectedIds}") {
         fun createRoute(
-            topicId: String, 
-            mode: QuizMode = QuizMode.SPRINT, 
+            topicId: String,
+            mode: QuizMode = QuizMode.SPRINT,
             count: Int = 10,
             selectedIds: String = ""
         ) = "quiz_session/$topicId?mode=${mode.name}&count=$count&selectedIds=$selectedIds"
@@ -55,5 +60,6 @@ sealed class Route(val route: String) {
     data object QuizSummary : Route("quiz_summary/{topicId}") {
         fun createRoute(topicId: String) = "quiz_summary/$topicId"
     }
+
     data object DailyWordArchive : Route("daily_word_archive")
 }

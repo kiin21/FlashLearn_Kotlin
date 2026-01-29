@@ -46,22 +46,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.CommunitySortOption
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.presentation.components.CommunityTopicCard
 import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import androidx.compose.ui.res.stringResource
-import com.kotlin.flashlearn.R
 import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Community screen displaying shared public topics.
- * 
+ *
  * Design:
  * - Two tabs: Discover (browse all) / Saved (user's bookmarked topics)
  * - Sort dropdown for ordering topics
@@ -81,10 +81,10 @@ fun CommunityScreen(
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val filterSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
+
     // Tab state: 0 = Discover, 1 = Saved
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    
+
     // Handle UI events
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collectLatest { event ->
@@ -92,16 +92,18 @@ fun CommunityScreen(
                 is CommunityUiEvent.ShowError -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
                 is CommunityUiEvent.ShowSuccess -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+
                 is CommunityUiEvent.NavigateToTopicDetail -> {
                     onNavigateToTopicDetail(event.topicId)
                 }
             }
         }
     }
-    
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -130,7 +132,7 @@ fun CommunityScreen(
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
             )
-            
+
             // Search Bar
             SearchBar(
                 query = state.searchQuery,
@@ -138,9 +140,9 @@ fun CommunityScreen(
                 placeholder = stringResource(R.string.search_community),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Sort and Filter Row (Sort left, Filter right)
             Row(
                 modifier = Modifier
@@ -154,23 +156,23 @@ fun CommunityScreen(
                     selectedSort = state.activeSort,
                     onSortChange = { viewModel.onAction(CommunityAction.OnSortChange(it)) }
                 )
-                
+
                 // Filter button with badge on right
                 FilterButton(
                     filterCount = state.filterBadgeCount,
                     onClick = { viewModel.onAction(CommunityAction.OnFilterSheetOpen) }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Tabs: Discover / Saved
             MainTabs(
                 selectedTabIndex = selectedTabIndex,
                 onTabChange = { selectedTabIndex = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             // Content based on tab
             when {
                 state.isLoading -> {
@@ -181,6 +183,7 @@ fun CommunityScreen(
                         CircularProgressIndicator(color = FlashRed)
                     }
                 }
+
                 state.error != null -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -195,13 +198,14 @@ fun CommunityScreen(
                             Text(
                                 text = stringResource(R.string.tap_to_retry),
                                 color = FlashRed,
-                                modifier = Modifier.clickable { 
-                                    viewModel.onAction(CommunityAction.OnRefresh) 
+                                modifier = Modifier.clickable {
+                                    viewModel.onAction(CommunityAction.OnRefresh)
                                 }
                             )
                         }
                     }
                 }
+
                 else -> {
                     // Filter topics based on selected tab
                     val displayedTopics = if (selectedTabIndex == 0) {
@@ -209,7 +213,7 @@ fun CommunityScreen(
                     } else {
                         state.topics.filter { it.isBookmarked } // Favorites: only liked topics
                     }
-                    
+
                     if (displayedTopics.isEmpty()) {
                         EmptyState(
                             isDiscoverTab = selectedTabIndex == 0,
@@ -223,18 +227,18 @@ fun CommunityScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             item { Spacer(modifier = Modifier.height(8.dp)) }
-                            
+
                             items(
                                 items = displayedTopics,
                                 key = { it.topic.id }
                             ) { item ->
                                 CommunityTopicCard(
                                     item = item,
-                                    onCardClick = { 
-                                        viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id)) 
+                                    onCardClick = {
+                                        viewModel.onAction(CommunityAction.OnTopicClick(item.topic.id))
                                     },
-                                    onFavoriteClick = { 
-                                        viewModel.onAction(CommunityAction.OnToggleBookmark(item.topic.id)) 
+                                    onFavoriteClick = {
+                                        viewModel.onAction(CommunityAction.OnToggleBookmark(item.topic.id))
                                     },
                                     onUpvoteClick = {
                                         viewModel.onAction(CommunityAction.OnToggleUpvote(item.topic.id))
@@ -246,14 +250,14 @@ fun CommunityScreen(
                                     }
                                 )
                             }
-                            
+
                             item { Spacer(modifier = Modifier.height(16.dp)) }
                         }
                     }
                 }
             }
         }
-        
+
         // Filter bottom sheet
         if (state.isFilterSheetVisible) {
             FilterBottomSheet(
@@ -361,7 +365,7 @@ private fun FilterButton(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        
+
         // Badge
         if (filterCount > 0) {
             Box(
@@ -393,7 +397,7 @@ private fun SortDropdownButton(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Box(modifier = modifier) {
         Row(
             modifier = Modifier
@@ -416,7 +420,7 @@ private fun SortDropdownButton(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        
+
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
@@ -469,7 +473,9 @@ private fun EmptyState(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = if (isDiscoverTab) {
-                    if (hasFilters) stringResource(R.string.adjust_filters_hint) else stringResource(R.string.be_first_share_hint)
+                    if (hasFilters) stringResource(R.string.adjust_filters_hint) else stringResource(
+                        R.string.be_first_share_hint
+                    )
                 } else {
                     stringResource(R.string.bookmark_topics_hint)
                 },

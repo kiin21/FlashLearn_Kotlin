@@ -8,12 +8,12 @@ import javax.inject.Inject
 
 /**
  * Use case to generate quiz questions with weighted random selection based on proficiency level.
- * 
+ *
  * Question Type Pools by Proficiency:
  * - NEW (score 0-2): MultipleChoice, Scramble
  * - FAMILIAR (score 3-5): ContextualGapFill
  * - MASTERED (score 6+): ExactTyping, SentenceBuilder
- * 
+ *
  * Weighted Distribution:
  * - NEW: 100% from NEW pool
  * - FAMILIAR: 60% NEW pool, 40% FAMILIAR pool
@@ -32,13 +32,13 @@ class GenerateQuestionUseCase @Inject constructor(
         cardPool: List<Flashcard>
     ): QuizQuestion {
         val proficiencyLevel = ProficiencyLevel.fromScore(score)
-        
+
         return when (proficiencyLevel) {
             ProficiencyLevel.NEW -> {
                 // 100% NEW types: MultipleChoice or Scramble
                 generateNewLevelQuestion(flashcard, cardPool)
             }
-            
+
             ProficiencyLevel.FAMILIAR -> {
                 // 60% NEW, 40% FAMILIAR
                 val random = (1..100).random()
@@ -47,7 +47,7 @@ class GenerateQuestionUseCase @Inject constructor(
                     else -> generateFamiliarLevelQuestion(flashcard, cardPool)
                 }
             }
-            
+
             ProficiencyLevel.MASTERED -> {
                 // 10% NEW, 40% FAMILIAR, 50% MASTERED
                 val random = (1..100).random()
@@ -69,7 +69,7 @@ class GenerateQuestionUseCase @Inject constructor(
     ): QuizQuestion {
         // Check constraints: Scramble requires word length <= 7
         val canUseScramble = flashcard.word.length <= 7
-        
+
         return if (canUseScramble && (1..2).random() == 1) {
             generateScramble(flashcard)
         } else {
@@ -102,7 +102,7 @@ class GenerateQuestionUseCase @Inject constructor(
     ): QuizQuestion {
         // Check constraints: SentenceBuilder requires exampleSentence
         val canUseSentenceBuilder = flashcard.exampleSentence.isNotBlank()
-        
+
         return if (canUseSentenceBuilder && (1..2).random() == 1) {
             generateSentenceBuilder(flashcard)
         } else {

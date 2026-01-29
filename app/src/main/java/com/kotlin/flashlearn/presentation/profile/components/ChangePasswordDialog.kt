@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,7 +60,7 @@ fun ChangePasswordDialog(
     var oldPasswordVisible by remember { mutableStateOf(false) }
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
-    
+
     // Get localized error messages
     val errorEnterCurrentPassword = stringResource(R.string.enter_current_password)
     val errorEnterNewPassword = stringResource(R.string.enter_new_password)
@@ -102,7 +102,7 @@ fun ChangePasswordDialog(
                         fontSize = 20.sp
                     )
                 }
-                
+
                 // Error message with better styling
                 if (errorMessage != null) {
                     Row(
@@ -131,30 +131,30 @@ fun ChangePasswordDialog(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                
+
                 // Current Password Field
                 OutlinedTextField(
                     value = oldPassword,
                     onValueChange = { oldPassword = it; errorMessage = null },
-                    label = { 
+                    label = {
                         Text(
                             stringResource(R.string.current_password),
                             fontSize = 14.sp
-                        ) 
+                        )
                     },
                     singleLine = true,
                     enabled = !isLoading,
-                    visualTransformation = if (oldPasswordVisible) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (oldPasswordVisible)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
                             Icon(
                                 imageVector = if (oldPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (oldPasswordVisible) 
-                                    stringResource(R.string.hide_password) 
-                                else 
+                                contentDescription = if (oldPasswordVisible)
+                                    stringResource(R.string.hide_password)
+                                else
                                     stringResource(R.string.show_password),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -168,32 +168,32 @@ fun ChangePasswordDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(14.dp))
-                
+
                 // New Password Field
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it; errorMessage = null },
-                    label = { 
+                    label = {
                         Text(
                             stringResource(R.string.new_password),
                             fontSize = 14.sp
-                        ) 
+                        )
                     },
                     singleLine = true,
                     enabled = !isLoading,
-                    visualTransformation = if (newPasswordVisible) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (newPasswordVisible)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
                             Icon(
                                 imageVector = if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (newPasswordVisible) 
-                                    stringResource(R.string.hide_password) 
-                                else 
+                                contentDescription = if (newPasswordVisible)
+                                    stringResource(R.string.hide_password)
+                                else
                                     stringResource(R.string.show_password),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -207,32 +207,32 @@ fun ChangePasswordDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(14.dp))
-                
+
                 // Confirm Password Field
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it; errorMessage = null },
-                    label = { 
+                    label = {
                         Text(
                             stringResource(R.string.confirm_new_password),
                             fontSize = 14.sp
-                        ) 
+                        )
                     },
                     singleLine = true,
                     enabled = !isLoading,
-                    visualTransformation = if (confirmPasswordVisible) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (confirmPasswordVisible)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
                                 imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (confirmPasswordVisible) 
-                                    stringResource(R.string.hide_password) 
-                                else 
+                                contentDescription = if (confirmPasswordVisible)
+                                    stringResource(R.string.hide_password)
+                                else
                                     stringResource(R.string.show_password),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -246,9 +246,9 @@ fun ChangePasswordDialog(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth()
@@ -268,16 +268,18 @@ fun ChangePasswordDialog(
                             fontSize = 15.sp
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     // Confirm Button
                     Button(
                         onClick = {
                             when {
                                 oldPassword.isBlank() -> errorMessage = errorEnterCurrentPassword
                                 newPassword.isBlank() -> errorMessage = errorEnterNewPassword
-                                newPassword != confirmPassword -> errorMessage = errorPasswordsNotMatch
+                                newPassword != confirmPassword -> errorMessage =
+                                    errorPasswordsNotMatch
+
                                 newPassword.length < 8 -> errorMessage = errorPasswordMinLength
                                 else -> {
                                     isLoading = true

@@ -23,7 +23,7 @@ class SyncProgressWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val userId = inputData.getString(KEY_USER_ID) ?: return Result.failure()
         val cardId = inputData.getString(KEY_CARD_ID) ?: return Result.failure()
-        
+
         return try {
             val progressId = "${userId}_${cardId}"
             userProgressDao.markAsSynced(progressId)

@@ -8,7 +8,6 @@ import com.google.firebase.firestore.Source
 import com.kotlin.flashlearn.BuildConfig
 import com.kotlin.flashlearn.data.remote.PixabayApi
 import com.kotlin.flashlearn.domain.model.Topic
-import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
@@ -40,8 +39,8 @@ class TopicRepositoryImpl @Inject constructor(
                 .documents.mapNotNull { it.toTopic() }
 
             combineAndSort(systemTopics + publicTopics)
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -52,8 +51,8 @@ class TopicRepositoryImpl @Inject constructor(
                 .orderBy("name", Query.Direction.ASCENDING)
                 .getWithCacheFirst()
                 .documents.mapNotNull { it.toTopic() }
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -77,16 +76,16 @@ class TopicRepositoryImpl @Inject constructor(
 
             // Note: Public topics from OTHER users are shown in Community, not here
             combineAndSort(systemTopics + userTopics)
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
     override suspend fun getTopicById(topicId: String): Result<Topic?> {
         return runCatching {
             getDocWithCacheFirst(topicId).toTopic()
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -101,8 +100,8 @@ class TopicRepositoryImpl @Inject constructor(
                 .await()
 
             newTopic
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -112,8 +111,8 @@ class TopicRepositoryImpl @Inject constructor(
                 .set(topic.toMap())
                 .await()
             topic
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -121,8 +120,8 @@ class TopicRepositoryImpl @Inject constructor(
         return runCatching {
             val allTopics = getVisibleTopics(userId).getOrThrow()
             allTopics.filter { it.name.contains(query, ignoreCase = true) }
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -130,26 +129,26 @@ class TopicRepositoryImpl @Inject constructor(
         return runCatching {
             val flashcardsRef = topicsCollection.document(topicId).collection("flashcards")
             val flashcards = flashcardsRef.get().await()
-            
+
             flashcards.documents.forEach { doc ->
                 doc.reference.delete().await()
             }
-            
+
             topicsCollection.document(topicId).delete().await()
             Unit
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
     override suspend fun regenerateTopicImage(topicId: String): Result<String> {
         return runCatching {
-            val topic = getTopicById(topicId).getOrThrow() 
+            val topic = getTopicById(topicId).getOrThrow()
                 ?: throw Exception("Topic not found")
 
             val response = pixabayApi.searchImages(BuildConfig.PIXABAY_API_KEY, topic.name)
             val hits = response.hits.take(10)
-            
+
             if (hits.isEmpty()) {
                 return Result.success("")
             }
@@ -159,8 +158,8 @@ class TopicRepositoryImpl @Inject constructor(
             updateTopic(updatedTopic)
 
             newImageUrl
-        }.onFailure { 
-            if (it is CancellationException) throw it 
+        }.onFailure {
+            if (it is CancellationException) throw it
         }
     }
 
@@ -173,14 +172,14 @@ class TopicRepositoryImpl @Inject constructor(
             // 1. Fetch original topic
             val originalTopic = getTopicById(originalTopicId).getOrNull()
                 ?: throw Exception("Topic not found")
-            
+
             // 2. Fetch original flashcards
             val flashcardsSnapshot = topicsCollection
                 .document(originalTopicId)
                 .collection("flashcards")
                 .get(Source.DEFAULT)
                 .await()
-            
+
             // 3. Create new topic with new ID
             val newTopicId = UUID.randomUUID().toString()
             val clonedTopic = originalTopic.copy(
@@ -195,10 +194,10 @@ class TopicRepositoryImpl @Inject constructor(
                 clonedFrom = originalTopicId,
                 originalCreator = originalTopic.creatorName.ifEmpty { "Unknown" }
             )
-            
+
             // 4. Save cloned topic
             topicsCollection.document(newTopicId).set(clonedTopic.toMap()).await()
-            
+
             // 5. Clone flashcards
             val newFlashcardsRef = topicsCollection.document(newTopicId).collection("flashcards")
             flashcardsSnapshot.documents.forEach { doc ->
@@ -207,12 +206,12 @@ class TopicRepositoryImpl @Inject constructor(
                 flashcardData["id"] = newFlashcardId
                 newFlashcardsRef.document(newFlashcardId).set(flashcardData).await()
             }
-            
+
             // 6. Increment downloadCount on original topic
             topicsCollection.document(originalTopicId).update(
                 "downloadCount", com.google.firebase.firestore.FieldValue.increment(1)
             ).await()
-            
+
             clonedTopic
         }.onFailure {
             if (it is CancellationException) throw it
@@ -233,8 +232,8 @@ class TopicRepositoryImpl @Inject constructor(
     }
 
     private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
-        val cached = runCatching { 
-            get(Source.CACHE).await() 
+        val cached = runCatching {
+            get(Source.CACHE).await()
         }.getOrNull()
 
         return if (cached?.documents?.isNotEmpty() == true) {
@@ -296,7 +295,8 @@ class TopicRepositoryImpl @Inject constructor(
                 clonedFrom = getString("clonedFrom"),
                 originalCreator = getString("originalCreator"),
                 // Word-level data
-                wordLevels = (get("wordLevels") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+                wordLevels = (get("wordLevels") as? List<*>)?.mapNotNull { it as? String }
+                    ?: emptyList()
             )
         }.getOrNull()
     }

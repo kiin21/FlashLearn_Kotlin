@@ -33,7 +33,7 @@ fun SearchBar(
     onSearch: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
-    
+
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,

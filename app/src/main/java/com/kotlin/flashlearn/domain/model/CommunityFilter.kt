@@ -15,13 +15,13 @@ data class CommunityFilter(
      */
     val activeFilterCount: Int
         get() = levels.size
-    
+
     /**
      * Returns true if any filter is active.
      */
     val hasActiveFilters: Boolean
         get() = levels.isNotEmpty()
-    
+
     /**
      * Clears all filters.
      */

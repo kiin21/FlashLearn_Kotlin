@@ -19,20 +19,20 @@ class ThemeManager @Inject constructor(
     companion object {
         private const val PREFS_NAME = "theme_prefs"
         private const val KEY_THEME_MODE = "theme_mode"
-        
+
         // Theme mode constants
         const val MODE_SYSTEM = 0  // Follow system setting
         const val MODE_LIGHT = 1   // Always light
         const val MODE_DARK = 2    // Always dark
     }
-    
+
     private val prefs by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
-    
+
     private val _themeMode = MutableStateFlow(getSavedThemeMode())
     val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
-    
+
     /**
      * Get the saved theme mode from SharedPreferences.
      * Returns MODE_SYSTEM as default.
@@ -40,17 +40,17 @@ class ThemeManager @Inject constructor(
     private fun getSavedThemeMode(): Int {
         return prefs.getInt(KEY_THEME_MODE, MODE_SYSTEM)
     }
-    
+
     /**
      * Set the theme mode and persist to SharedPreferences.
-     * 
+     *
      * @param mode One of MODE_SYSTEM, MODE_LIGHT, or MODE_DARK
      */
     fun setThemeMode(mode: Int) {
         prefs.edit().putInt(KEY_THEME_MODE, mode).apply()
         _themeMode.value = mode
     }
-    
+
     /**
      * Toggle between dark and light mode.
      * If currently following system, will switch to the opposite of current appearance.
@@ -59,10 +59,10 @@ class ThemeManager @Inject constructor(
         val newMode = if (isCurrentlyDark) MODE_LIGHT else MODE_DARK
         setThemeMode(newMode)
     }
-    
+
     /**
      * Check if dark mode is enabled based on current theme mode and system setting.
-     * 
+     *
      * @param isSystemDark Whether the system is currently in dark mode
      * @return true if app should use dark theme
      */
@@ -73,7 +73,7 @@ class ThemeManager @Inject constructor(
             else -> isSystemDark // MODE_SYSTEM
         }
     }
-    
+
     /**
      * Check if currently following system theme
      */

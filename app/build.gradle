@@ -7,7 +7,6 @@ plugins {
 }
 
 
-
 android {
     namespace = "com.kotlin.flashlearn"
     compileSdk = 34
@@ -50,7 +49,7 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
-    
+
     // Auto-extract web_client_id from google-services.json
     defaultConfig {
         def googleServicesFile = file("google-services.json")
@@ -66,28 +65,28 @@ android {
             }
             buildConfigField("String", "WEB_CLIENT_ID", "\"${webClientId}\"")
         }
-        
+
         // API Configuration
         def props = new Properties()
         rootProject.file('local.properties').with { if (it.exists()) props.load(it.newInputStream()) }
-        
+
         def neonConnectionString = props.getProperty('NEON_CONNECTION_STRING')
         def neonSqlBaseUrl = props.getProperty('NEON_SQL_BASE_URL')
-        
+
         // Auto-extract hostname from connection string if available
         if (neonConnectionString) {
-             // Extract hostname between '@' and next '/' or ':'
-             def matcher = (neonConnectionString =~ /@([^:\/]+)/)
-             if (matcher.find()) {
-                 neonSqlBaseUrl = "https://${matcher.group(1)}/"
-             }
+            // Extract hostname between '@' and next '/' or ':'
+            def matcher = (neonConnectionString =~ /@([^:\/]+)/)
+            if (matcher.find()) {
+                neonSqlBaseUrl = "https://${matcher.group(1)}/"
+            }
         }
 
         buildConfigField("String", "DATAMUSE_BASE_URL", "\"${props.getProperty('DATAMUSE_BASE_URL')}\"")
         buildConfigField("String", "NEON_SQL_BASE_URL", "\"${neonSqlBaseUrl}\"")
         buildConfigField("String", "NEON_CONNECTION_STRING", "\"${neonConnectionString}\"")
         buildConfigField("String", "PIXABAY_API_KEY", "\"${props.getProperty('PIXABAY_API_KEY')}\"")
-        
+
         // Cloudinary
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${props.getProperty('CLOUDINARY_CLOUD_NAME', '')}\"")
         buildConfigField("String", "CLOUDINARY_API_KEY", "\"${props.getProperty('CLOUDINARY_API_KEY', '')}\"")
@@ -130,7 +129,7 @@ dependencies {
     implementation libs.firebase.auth.ktx
     implementation libs.play.services.auth
     implementation(libs.firebase.messaging)
-    
+
     // Cloudinary for image uploads
     implementation("com.cloudinary:cloudinary-android:2.5.0")
 
@@ -160,7 +159,7 @@ dependencies {
     // Auth Utils
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("com.fasterxml.uuid:java-uuid-generator:5.0.0")
-    
+
     // JavaMail for Gmail SMTP
     implementation("com.sun.mail:android-mail:1.6.0")
     implementation("com.sun.mail:android-activation:1.6.0")

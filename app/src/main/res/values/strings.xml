@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">FlashLearn</string>
     <string name="play_audio">Play audio</string>
-    
+
     <!-- Common -->
     <string name="cancel">Cancel</string>
     <string name="confirm">Confirm</string>
@@ -40,7 +40,7 @@
     <string name="please_enter_topic_name">Please enter a topic name</string>
     <string name="please_select_word">Please select at least one word</string>
     <string name="failed_save_flashcards">Failed to save flashcards</string>
-    
+
     <!-- Sign In Screen -->
     <string name="welcome">Welcome!</string>
     <string name="username">Username</string>
@@ -55,7 +55,7 @@
     <string name="show_password">Show password</string>
     <string name="app_logo">App Logo</string>
     <string name="google_logo">Google Logo</string>
-    
+
     <!-- Register Screen -->
     <string name="create_account">Create Account</string>
     <string name="register">Register</string>
@@ -63,7 +63,7 @@
     <string name="already_have_account">Already have an account? </string>
     <string name="sign_in">Sign in</string>
     <string name="password_requirements">Min 8 chars, uppercase, number, special char</string>
-    
+
     <!-- Home Screen -->
     <string name="hello_greeting">Hello, %1$s!</string>
     <string name="hello_friend">Hello, Friend!</string>
@@ -79,7 +79,7 @@
     <string name="pronounce">Pronounce</string>
     <string name="pronunciation">Pronunciation</string>
     <string name="recommended_collection">Recommended collection</string>
-    
+
     <!-- Profile Screen -->
     <string name="profile">Profile</string>
     <string name="preferences">PREFERENCES</string>
@@ -94,7 +94,7 @@
     <string name="log_out">Log Out</string>
     <string name="delete_account">Delete Account</string>
     <string name="google">Google</string>
-    
+
     <!-- Profile Dialogs -->
     <string name="unlink_account">Unlink Account</string>
     <string name="unlink_account_confirm">Are you sure you want to unlink this Google account?</string>
@@ -113,7 +113,7 @@
     <string name="password_change_failed">Failed to change password</string>
     <string name="edit_profile_picture">Edit Profile Picture</string>
     <string name="change_email">Change email</string>
-    
+
     <!-- Topic Screen -->
     <string name="my_collections">My Collections</string>
     <string name="all">All</string>
@@ -148,7 +148,7 @@
     <string name="clear_search">Clear search</string>
     <string name="selected_txt">Selected</string>
     <string name="select_txt">Select</string>
-    
+
     <!-- Add Word Screen -->
     <string name="add_topic">Add Topic</string>
     <string name="topic_name">Topic Name *</string>
@@ -168,7 +168,7 @@
     <string name="topic_query_placeholder">e.g. environment, technology…</string>
     <string name="get_button">Get</string>
     <string name="remove">Remove</string>
-    
+
     <!-- Learning Session -->
     <string name="learning_session">Learning Session</string>
     <string name="session_complete">Session Complete!</string>
@@ -183,7 +183,7 @@
     <string name="no_flashcards_available">No flashcards available for this topic</string>
     <string name="study_again">Study Again</string>
     <string name="got_it">Got It</string>
-    
+
     <!-- Community Screen -->
     <string name="community">Community</string>
     <string name="explore">Explore</string>
@@ -203,7 +203,7 @@
     <string name="bookmark_topics_hint">Bookmark topics to save them here</string>
     <string name="sort_most_liked">Most Liked</string>
     <string name="sort_newest">Newest</string>
-    
+
     <!-- Onboarding -->
     <string name="get_started">Get Started</string>
     <string name="next">Next</string>
@@ -214,17 +214,17 @@
     <string name="onboarding_desc_2">Swipe Right if you know it, Left if you don\'t. Simple and effective.</string>
     <string name="onboarding_title_3">Create Your Collections</string>
     <string name="onboarding_desc_3">Build your own flashcard decks and share with the community.</string>
-    
+
     <!-- Bottom Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_topic">Topic</string>
     <string name="nav_community">Community</string>
     <string name="nav_profile">Profile</string>
-    
+
     <!-- Languages -->
     <string name="english">English</string>
     <string name="vietnamese">Tiếng Việt</string>
-    
+
     <!-- Snackbar Messages -->
     <string name="general">General</string>
     <string name="danger_zone">Danger Zone</string>

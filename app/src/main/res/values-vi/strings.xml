@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">FlashLearn</string>
     <string name="play_audio">Phát âm thanh</string>
-    
+
     <!-- Common -->
     <string name="cancel">Hủy</string>
     <string name="confirm">Xác nhận</string>
@@ -40,7 +40,7 @@
     <string name="please_enter_topic_name">Vui lòng nhập tên chủ đề</string>
     <string name="please_select_word">Vui lòng chọn ít nhất một từ</string>
     <string name="failed_save_flashcards">Lưu thẻ ghi nhớ thất bại</string>
-    
+
     <!-- Sign In Screen -->
     <string name="welcome">Chào mừng!</string>
     <string name="username">Tên đăng nhập</string>
@@ -55,7 +55,7 @@
     <string name="show_password">Hiện mật khẩu</string>
     <string name="app_logo">Logo ứng dụng</string>
     <string name="google_logo">Logo Google</string>
-    
+
     <!-- Register Screen -->
     <string name="create_account">Tạo tài khoản</string>
     <string name="register">Đăng ký</string>
@@ -63,7 +63,7 @@
     <string name="already_have_account">Đã có tài khoản? </string>
     <string name="sign_in">Đăng nhập</string>
     <string name="password_requirements">Tối thiểu 8 ký tự, chữ hoa, số, ký tự đặc biệt</string>
-    
+
     <!-- Home Screen -->
     <string name="hello_greeting">Xin chào, %1$s!</string>
     <string name="hello_friend">Xin chào, Bạn!</string>
@@ -79,7 +79,7 @@
     <string name="pronounce">Phát âm</string>
     <string name="pronunciation">Phát âm</string>
     <string name="recommended_collection">Bộ sưu tập đề xuất</string>
-    
+
     <!-- Profile Screen -->
     <string name="profile">Hồ sơ</string>
     <string name="preferences">TÙY CHỌN</string>
@@ -94,7 +94,7 @@
     <string name="log_out">Đăng xuất</string>
     <string name="delete_account">Xóa tài khoản</string>
     <string name="google">Google</string>
-    
+
     <!-- Profile Dialogs -->
     <string name="unlink_account">Hủy liên kết</string>
     <string name="unlink_account_confirm">Bạn có chắc muốn hủy liên kết tài khoản Google này?</string>
@@ -113,7 +113,7 @@
     <string name="password_change_failed">Đổi mật khẩu thất bại</string>
     <string name="edit_profile_picture">Sửa ảnh đại diện</string>
     <string name="change_email">Đổi email</string>
-    
+
     <!-- Topic Screen -->
     <string name="my_collections">Bộ sưu tập</string>
     <string name="all">Tất cả</string>
@@ -148,7 +148,7 @@
     <string name="clear_search">Xóa tìm kiếm</string>
     <string name="selected_txt">Đã chọn</string>
     <string name="select_txt">Chọn</string>
-    
+
     <!-- Add Word Screen -->
     <string name="add_topic">Thêm chủ đề</string>
     <string name="topic_name">Tên chủ đề *</string>
@@ -168,7 +168,7 @@
     <string name="topic_query_placeholder">v.d. môi trường, công nghệ…</string>
     <string name="get_button">Lấy</string>
     <string name="remove">Xóa</string>
-    
+
     <!-- Learning Session -->
     <string name="learning_session">Phiên học</string>
     <string name="session_complete">Hoàn thành!</string>
@@ -183,7 +183,7 @@
     <string name="no_flashcards_available">Không có thẻ ghi nhớ nào cho chủ đề này</string>
     <string name="study_again">Học lại</string>
     <string name="got_it">Đã hiểu</string>
-    
+
     <!-- Community Screen -->
     <string name="community">Cộng đồng</string>
     <string name="explore">Khám phá</string>
@@ -203,7 +203,7 @@
     <string name="bookmark_topics_hint">Đánh dấu các chủ đề để lưu chúng tại đây</string>
     <string name="sort_most_liked">Yêu thích nhất</string>
     <string name="sort_newest">Mới nhất</string>
-    
+
     <!-- Onboarding -->
     <string name="get_started">Bắt đầu</string>
     <string name="next">Tiếp</string>
@@ -214,17 +214,17 @@
     <string name="onboarding_desc_2">Vuốt Sang Phải nếu bạn biết, Sang Trái nếu không. Đơn giản và hiệu quả.</string>
     <string name="onboarding_title_3">Tạo bộ sưu tập của riêng bạn</string>
     <string name="onboarding_desc_3">Xây dựng bộ thẻ ghi nhớ của riêng bạn và chia sẻ với cộng đồng.</string>
-    
+
     <!-- Bottom Navigation -->
     <string name="nav_home">Trang chủ</string>
     <string name="nav_topic">Chủ đề</string>
     <string name="nav_community">Cộng đồng</string>
     <string name="nav_profile">Hồ sơ</string>
-    
+
     <!-- Languages -->
     <string name="english">English</string>
     <string name="vietnamese">Tiếng Việt</string>
-    
+
     <!-- Snackbar Messages -->
     <string name="general">Chung</string>
     <string name="danger_zone">Vùng nguy hiểm</string>

@@ -109,8 +109,9 @@ class SyncRepositoryImpl @Inject constructor(
                         val createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
 
                         @Suppress("UNCHECKED_CAST")
-                        val synonyms = (doc.get("synonyms") as? List<*>)?.mapNotNull { it as? String }
-                            ?: emptyList()
+                        val synonyms =
+                            (doc.get("synonyms") as? List<*>)?.mapNotNull { it as? String }
+                                ?: emptyList()
 
                         FlashcardEntity(
                             id = id,

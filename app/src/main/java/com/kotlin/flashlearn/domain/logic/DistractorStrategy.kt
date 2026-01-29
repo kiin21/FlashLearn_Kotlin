@@ -16,7 +16,11 @@ interface DistractorStrategy {
  * Finds words with Levenshtein Distance < 3.
  */
 class LevenshteinDistractorStrategy @Inject constructor() : DistractorStrategy {
-    override suspend fun generate(target: Flashcard, allCards: List<Flashcard>, count: Int): List<String> {
+    override suspend fun generate(
+        target: Flashcard,
+        allCards: List<Flashcard>,
+        count: Int
+    ): List<String> {
         return allCards
             .filter { it.id != target.id }
             .filter { calculateLevenshteinDistance(target.word, it.word) < 3 }
@@ -51,7 +55,11 @@ class LevenshteinDistractorStrategy @Inject constructor() : DistractorStrategy {
  * Finds words sharing the same part of speech (or tags if available).
  */
 class SemanticDistractorStrategy @Inject constructor() : DistractorStrategy {
-    override suspend fun generate(target: Flashcard, allCards: List<Flashcard>, count: Int): List<String> {
+    override suspend fun generate(
+        target: Flashcard,
+        allCards: List<Flashcard>,
+        count: Int
+    ): List<String> {
         return allCards
             .filter { it.id != target.id }
             .filter { it.partOfSpeech == target.partOfSpeech } // Simple semantic check
@@ -65,7 +73,11 @@ class SemanticDistractorStrategy @Inject constructor() : DistractorStrategy {
  * Fallback: Random words from the deck.
  */
 class RandomDistractorStrategy @Inject constructor() : DistractorStrategy {
-    override suspend fun generate(target: Flashcard, allCards: List<Flashcard>, count: Int): List<String> {
+    override suspend fun generate(
+        target: Flashcard,
+        allCards: List<Flashcard>,
+        count: Int
+    ): List<String> {
         return allCards
             .filter { it.id != target.id }
             .map { it.word }
@@ -82,7 +94,11 @@ class SmartDistractorGenerator @Inject constructor(
     private val semanticStrategy: SemanticDistractorStrategy,
     private val randomStrategy: RandomDistractorStrategy
 ) {
-    suspend fun getDistractors(target: Flashcard, pool: List<Flashcard>, count: Int = 3): List<String> {
+    suspend fun getDistractors(
+        target: Flashcard,
+        pool: List<Flashcard>,
+        count: Int = 3
+    ): List<String> {
         val distractors = mutableSetOf<String>()
 
         // 1. Try Levenshtein

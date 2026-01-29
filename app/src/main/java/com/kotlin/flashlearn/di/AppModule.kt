@@ -5,27 +5,26 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.kotlin.flashlearn.data.local.dao.FlashcardDao
 import com.kotlin.flashlearn.data.local.dao.TopicDao
+import com.kotlin.flashlearn.data.local.dao.UserProgressDao
 import com.kotlin.flashlearn.data.remote.DatamuseApi
 import com.kotlin.flashlearn.data.remote.GmailEmailService
 import com.kotlin.flashlearn.data.repository.AuthRepositoryImpl
+import com.kotlin.flashlearn.data.repository.CommunityInteractionRepositoryImpl
 import com.kotlin.flashlearn.data.repository.DatamuseRepositoryImpl
 import com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl
 import com.kotlin.flashlearn.data.repository.TopicRepositoryImpl
 import com.kotlin.flashlearn.data.repository.UserRepositoryImpl
-import com.kotlin.flashlearn.data.repository.CommunityInteractionRepositoryImpl
-import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
-
 import com.kotlin.flashlearn.domain.repository.AuthRepository
+import com.kotlin.flashlearn.domain.repository.CommunityInteractionRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import com.kotlin.flashlearn.domain.repository.UserRepository
-import com.kotlin.flashlearn.data.local.dao.UserProgressDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -56,7 +55,14 @@ object AppModule {
         userRepository: UserRepository,
         gmailEmailService: GmailEmailService,
         firestore: FirebaseFirestore
-    ): AuthRepository = AuthRepositoryImpl(context, oneTapClient, auth, userRepository, gmailEmailService, firestore)
+    ): AuthRepository = AuthRepositoryImpl(
+        context,
+        oneTapClient,
+        auth,
+        userRepository,
+        gmailEmailService,
+        firestore
+    )
 
 
     @Provides
@@ -76,7 +82,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService = 
+    fun provideCloudinaryService(): com.kotlin.flashlearn.data.remote.CloudinaryService =
         com.kotlin.flashlearn.data.remote.CloudinaryService()
 
     @Provides
@@ -132,9 +138,11 @@ object AppModule {
     fun provideCommunityInteractionRepository(
         firestore: FirebaseFirestore
     ): CommunityInteractionRepository = CommunityInteractionRepositoryImpl(firestore)
+
     @Provides
     @Singleton
     fun provideLanguageManager(
         @ApplicationContext context: Context
-    ): com.kotlin.flashlearn.util.LanguageManager = com.kotlin.flashlearn.util.LanguageManager(context)
+    ): com.kotlin.flashlearn.util.LanguageManager =
+        com.kotlin.flashlearn.util.LanguageManager(context)
 }

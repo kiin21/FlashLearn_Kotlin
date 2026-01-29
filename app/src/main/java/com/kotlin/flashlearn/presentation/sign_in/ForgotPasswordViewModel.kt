@@ -44,55 +44,55 @@ class ForgotPasswordViewModel @Inject constructor(
             _state.update { it.copy(error = "Please enter your email") }
             return
         }
-        
+
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-             _state.update { it.copy(error = "Please enter a valid email address") }
+            _state.update { it.copy(error = "Please enter a valid email address") }
             return
         }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null, successMessage = null) }
-            
+
             authRepository.checkPasswordResetEligibility(email).onSuccess { eligibleEmail ->
                 authRepository.createPasswordResetToken(eligibleEmail).fold(
                     onSuccess = { successMsg ->
-                        _state.update { 
+                        _state.update {
                             it.copy(
                                 isLoading = false,
                                 successMessage = "A reset link has been sent to $eligibleEmail. Please check your inbox and follow the instructions."
-                            ) 
+                            )
                         }
                     },
                     onFailure = { error ->
-                        _state.update { 
+                        _state.update {
                             it.copy(
                                 isLoading = false,
                                 error = error.message ?: "Failed to send reset email"
-                            ) 
+                            )
                         }
                     }
                 )
             }.onFailure { error ->
-                _state.update { 
+                _state.update {
                     it.copy(
                         isLoading = false,
                         error = error.message ?: "Account verification failed"
-                    ) 
+                    )
                 }
             }
         }
     }
-    
+
     private fun maskEmail(email: String): String {
         val atIndex = email.indexOf('@')
         if (atIndex <= 1) return email
-        
+
         val name = email.substring(0, atIndex)
         val domain = email.substring(atIndex)
-        
+
         val visibleChars = if (name.length > 2) 2 else 0
         val maskedName = name.take(visibleChars) + "***" + name.takeLast(1)
-        
+
         return maskedName + domain
     }
 

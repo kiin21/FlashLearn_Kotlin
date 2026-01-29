@@ -18,13 +18,13 @@ data class LearningSessionState(
 ) {
     val currentCard: Flashcard?
         get() = sessionQueue.firstOrNull()
-    
+
     val progress: Float
         get() = if (initialCardCount == 0) 0f else completedCardCount.toFloat() / initialCardCount.toFloat()
-    
+
     val isSessionComplete: Boolean
         get() = sessionQueue.isEmpty() && initialCardCount > 0
-    
+
     val progressText: String
         get() = "$completedCardCount OF $initialCardCount"
 }

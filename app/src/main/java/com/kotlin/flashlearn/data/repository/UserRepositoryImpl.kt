@@ -32,10 +32,10 @@ class UserRepositoryImpl @Inject constructor(
         usersCollection.document(user.userId)
             .set(user)
             .await()
-            
+
         // Initial email to subcollection if exists
         user.email?.let { email ->
-             addEmailToSubcollection(user.userId, email)
+            addEmailToSubcollection(user.userId, email)
         }
     }
 
@@ -53,7 +53,7 @@ class UserRepositoryImpl @Inject constructor(
         val serverDoc = usersCollection.document(userId)
             .get(Source.DEFAULT)
             .await()
-            
+
         return serverDoc.toObject(User::class.java)
     }
 
@@ -79,7 +79,7 @@ class UserRepositoryImpl @Inject constructor(
             .await()
             .documents.firstOrNull()
             ?.toObject(User::class.java)
-            
+
         if (rootMatch != null) return rootMatch
 
         // 2. Collection Group Query on linked_emails subcollection
@@ -88,9 +88,9 @@ class UserRepositoryImpl @Inject constructor(
             .get()
             .await()
             .documents.firstOrNull()
-            
+
         return subCollectionMatch?.reference?.parent?.parent?.let { userRef ->
-             userRef.get().await().toObject(User::class.java)
+            userRef.get().await().toObject(User::class.java)
         }
     }
 
@@ -108,15 +108,17 @@ class UserRepositoryImpl @Inject constructor(
             accountId = googleId,
             email = email
         )
-        
+
         usersCollection.document(userId).update(
             mapOf(
                 "googleIds" to com.google.firebase.firestore.FieldValue.arrayUnion(googleId),
-                "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayUnion(linkedAccount),
+                "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayUnion(
+                    linkedAccount
+                ),
                 "email" to email // Update main email if needed
             )
         ).await()
-        
+
         // Add to subcollection
         addEmailToSubcollection(userId, email)
     }
@@ -126,18 +128,20 @@ class UserRepositoryImpl @Inject constructor(
         val user = getUser(userId) ?: return
         val accountToRemove = user.linkedGoogleAccounts.find { it.accountId == googleId }
         val emailToRemove = accountToRemove?.email
-        
+
         if (accountToRemove != null) {
             usersCollection.document(userId).update(
                 mapOf(
                     "googleIds" to com.google.firebase.firestore.FieldValue.arrayRemove(googleId),
-                    "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayRemove(accountToRemove)
+                    "linkedGoogleAccounts" to com.google.firebase.firestore.FieldValue.arrayRemove(
+                        accountToRemove
+                    )
                 )
             ).await()
-            
+
             // cleanup from subcollection
             if (emailToRemove != null) {
-                 removeEmailFromSubcollection(userId, emailToRemove)
+                removeEmailFromSubcollection(userId, emailToRemove)
             }
         }
     }
@@ -153,7 +157,7 @@ class UserRepositoryImpl @Inject constructor(
         // For simplicity: Add new email.
         addEmailToSubcollection(userId, email)
     }
-    
+
     // Helpers
     private suspend fun addEmailToSubcollection(userId: String, email: String) {
         val data = mapOf("email" to email, "uid" to userId)
@@ -168,23 +172,23 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     private suspend fun removeEmailFromSubcollection(userId: String, email: String) {
-         val query = usersCollection.document(userId)
+        val query = usersCollection.document(userId)
             .collection(COLLECTION_LINKED_EMAILS)
             .whereEqualTo("email", email)
             .get()
             .await()
-            
-         for (doc in query.documents) {
-             doc.reference.delete().await()
-         }
+
+        for (doc in query.documents) {
+            doc.reference.delete().await()
+        }
     }
 
     override suspend fun uploadProfilePicture(userId: String, uriString: String): String {
         val uri = android.net.Uri.parse(uriString)
         val downloadUrl = cloudinaryService.uploadProfileImage(uri, userId)
-        
+
         usersCollection.document(userId).update("photoUrl", downloadUrl).await()
-        
+
         return downloadUrl
     }
 
@@ -196,7 +200,7 @@ class UserRepositoryImpl @Inject constructor(
                 runCatching { doc.reference.delete().await() }
             }
         }
-        
+
         runCatching {
             val upvotedTopicsRef = usersCollection.document(userId).collection("upvotedTopics")
             val upvotedTopics = upvotedTopicsRef.get().await()
@@ -204,7 +208,7 @@ class UserRepositoryImpl @Inject constructor(
                 runCatching { doc.reference.delete().await() }
             }
         }
-        
+
         // Delete user document
         usersCollection.document(userId).delete().await()
     }
@@ -212,20 +216,20 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun updatePasswordHash(userId: String, newPasswordHash: String) {
         usersCollection.document(userId).update("loginPasswordHash", newPasswordHash).await()
     }
-    
+
     override suspend fun addFirebaseUid(userId: String, firebaseUid: String) {
         usersCollection.document(userId).update(
             "firebaseUids", com.google.firebase.firestore.FieldValue.arrayUnion(firebaseUid)
         ).await()
     }
-    
+
     override suspend fun toggleTopicLike(userId: String, topicId: String, isLiked: Boolean) {
         val updateOp = if (isLiked) {
             com.google.firebase.firestore.FieldValue.arrayUnion(topicId)
         } else {
             com.google.firebase.firestore.FieldValue.arrayRemove(topicId)
         }
-        
+
         usersCollection.document(userId).update("likedTopicIds", updateOp).await()
     }
 }

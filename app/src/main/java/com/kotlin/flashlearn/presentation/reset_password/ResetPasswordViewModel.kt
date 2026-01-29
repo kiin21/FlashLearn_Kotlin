@@ -54,12 +54,12 @@ class ResetPasswordViewModel @Inject constructor(
                     _state.update { it.copy(isTokenVerifying = false, isTokenValid = true) }
                 },
                 onFailure = { error ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
-                            isTokenVerifying = false, 
+                            isTokenVerifying = false,
                             isTokenValid = false,
                             error = error.message ?: "Invalid or expired token"
-                        ) 
+                        )
                     }
                 }
             )
@@ -82,7 +82,7 @@ class ResetPasswordViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            
+
             authRepository.resetPasswordWithToken(token, state.value.password).fold(
                 onSuccess = {
                     _state.update { it.copy(isLoading = false) }
@@ -92,11 +92,11 @@ class ResetPasswordViewModel @Inject constructor(
                     _uiEvent.send(ResetPasswordUiEvent.NavigateToSignIn)
                 },
                 onFailure = { error ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isLoading = false,
                             error = error.message ?: "Failed to reset password"
-                        ) 
+                        )
                     }
                 }
             )
