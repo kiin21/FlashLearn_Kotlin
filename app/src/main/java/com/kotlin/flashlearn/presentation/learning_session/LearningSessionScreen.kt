@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,6 +42,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +89,19 @@ fun LearningSessionScreen(
 ) {
     val context = LocalContext.current
 
+    val prefs = remember {
+        context.getSharedPreferences("flashlearn_onboarding", android.content.Context.MODE_PRIVATE)
+    }
+    var showTutorial by remember { mutableStateOf(!prefs.getBoolean("learning_tutorial_shown", false)) }
+    var tutorialStep by rememberSaveable { mutableStateOf(0) }
+
+    fun dismissTutorial(markShown: Boolean = true) {
+        showTutorial = false
+        if (markShown) {
+            prefs.edit().putBoolean("learning_tutorial_shown", true).apply()
+        }
+    }
+
     LaunchedEffect(key1 = state.error) {
         state.error?.let { error ->
             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
@@ -98,6 +113,20 @@ fun LearningSessionScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
+        if (showTutorial) {
+            LearningSessionTutorialDialog(
+                step = tutorialStep,
+                onCancel = { dismissTutorial(markShown = true) },
+                onNext = {
+                    if (tutorialStep >= 2) {
+                        dismissTutorial(markShown = true)
+                    } else {
+                        tutorialStep += 1
+                    }
+                }
+            )
+        }
+
         if (state.isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
@@ -425,3 +454,198 @@ private fun FlashcardItem(
         }
     }
 }
+
+@Composable
+private fun LearningSessionTutorialDialog(
+    step: Int,
+    onCancel: () -> Unit,
+    onNext: () -> Unit
+) {
+    val (title, hint, accent, badgeText) = when (step.coerceIn(0, 2)) {
+        0 -> Quad(
+            "Swipe left if you don’t remember",
+            "This word will come back later in the session.",
+            Color(0xFFE53935),
+            "LEFT"
+        )
+        1 -> Quad(
+            "Swipe right if you mastered the word",
+            "We’ll count it as completed and move on.",
+            Color(0xFF43A047),
+            "RIGHT"
+        )
+        else -> Quad(
+            "Click card to show definition",
+            "Tap to flip between word and meaning.",
+            Color(0xFF616161),
+            "TAP"
+        )
+    }
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onCancel) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.White)
+                .padding(18.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFF3F4F6)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 170.dp, height = 190.dp)
+                            .graphicsLayer {
+                                rotationZ = when (step.coerceIn(0, 2)) {
+                                    0 -> -12f
+                                    1 -> 12f
+                                    else -> 0f
+                                }
+                            }
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White)
+                            .padding(14.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFE5E7EB))
+                            )
+                            Text(
+                                text = "Business\norganization",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(12.dp)
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(Color(0xFFE5E7EB))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .height(12.dp)
+                                        .width(28.dp)
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .background(Color(0xFFE5E7EB))
+                                )
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(accent.copy(alpha = 0.10f))
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(accent.copy(alpha = 0.20f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = accent
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = hint,
+                    fontSize = 12.sp,
+                    color = Color(0xFF6B7280)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    repeat(3) { i ->
+                        val isActive = i == step.coerceIn(0, 2)
+                        Box(
+                            modifier = Modifier
+                                .height(6.dp)
+                                .width(if (isActive) 26.dp else 10.dp)
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(
+                                    if (isActive) Color(0xFF9B1C1C) else Color(0xFFE5E7EB)
+                                )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Cancel",
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onCancel() }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        color = Color(0xFF9B1C1C),
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    val isLast = step.coerceIn(0, 2) == 2
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(Color(0xFF9B1C1C))
+                            .clickable { onNext() }
+                            .padding(horizontal = 22.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = if (isLast) "Done" else "Next",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class Quad(
+    val a: String,
+    val b: String,
+    val c: Color,
+    val d: String
+)
