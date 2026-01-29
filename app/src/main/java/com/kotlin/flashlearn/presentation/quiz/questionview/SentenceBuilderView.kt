@@ -130,7 +130,7 @@ fun SentenceBuilderView(
                                     }
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp),
-                                border = BorderStroke(2.dp, FlashRedDarkest),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                                 colors = CardDefaults.outlinedCardColors(
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ),
@@ -140,7 +140,7 @@ fun SentenceBuilderView(
                                     text = word,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
-                                    color = FlashRedDarkest,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(
                                         horizontal = 16.dp,
                                         vertical = 12.dp

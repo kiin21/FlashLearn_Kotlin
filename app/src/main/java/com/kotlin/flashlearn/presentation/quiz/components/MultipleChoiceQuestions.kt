@@ -150,7 +150,7 @@ fun MultipleChoiceOptions(
                                 .offset(x = 6.dp, y = (-6).dp)
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -169,7 +169,7 @@ fun MultipleChoiceOptions(
                                 .offset(x = 6.dp, y = (-6).dp)
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(

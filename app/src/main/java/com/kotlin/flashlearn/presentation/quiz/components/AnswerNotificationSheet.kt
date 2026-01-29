@@ -50,7 +50,7 @@ fun AnswerNotificationSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = { /* Prevent dismissal by swipe/tap outside - force user to click Continue */ },
-        containerColor = if (isCorrect) FlashSuccessLight else FlashErrorLight,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null
     ) {
         Column(

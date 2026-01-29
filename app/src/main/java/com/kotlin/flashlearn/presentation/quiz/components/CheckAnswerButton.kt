@@ -21,8 +21,8 @@ fun CheckAnswerButton(
         enabled = enabled,
         modifier = modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
-            containerColor = FlashRedDarkest,
-            contentColor = androidx.compose.ui.graphics.Color.White
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
         Text(
