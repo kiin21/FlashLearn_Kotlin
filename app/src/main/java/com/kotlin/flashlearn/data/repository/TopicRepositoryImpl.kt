@@ -48,9 +48,10 @@ class TopicRepositoryImpl @Inject constructor(
         return runCatching {
             topicsCollection
                 .whereEqualTo("createdBy", userId)
-                .orderBy("name", Query.Direction.ASCENDING)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
+                .sortedBy { it.name }
         }.onFailure {
             if (it is CancellationException) throw it
         }
@@ -61,14 +62,16 @@ class TopicRepositoryImpl @Inject constructor(
             // System topics - built-in learning content
             val systemTopics = topicsCollection
                 .whereEqualTo("isSystemTopic", true)
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
 
             // User's own topics (both public and private)
             val userTopics = if (!userId.isNullOrBlank()) {
                 topicsCollection
                     .whereEqualTo("createdBy", userId)
-                    .getWithCacheFirst()
+                    .get(Source.DEFAULT)
+                    .await()
                     .documents.mapNotNull { it.toTopic() }
             } else {
                 emptyList()
@@ -83,7 +86,7 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getTopicById(topicId: String): Result<Topic?> {
         return runCatching {
-            getDocWithCacheFirst(topicId).toTopic()
+            topicsCollection.document(topicId).get(Source.DEFAULT).await().toTopic()
         }.onFailure {
             if (it is CancellationException) throw it
         }
@@ -220,40 +223,20 @@ class TopicRepositoryImpl @Inject constructor(
 
     override suspend fun getTopRecommendedTopics(limit: Int): Result<List<Topic>> {
         return runCatching {
-            topicsCollection
+            // Use in-memory sort to avoid index requirements for order-by
+            val topics = topicsCollection
                 .whereEqualTo("isPublic", true)
-                .orderBy("upvoteCount", Query.Direction.DESCENDING)
-                .limit(limit.toLong())
-                .getWithCacheFirst()
+                .get(Source.DEFAULT)
+                .await()
                 .documents.mapNotNull { it.toTopic() }
+            
+            topics.sortedByDescending { it.upvoteCount }.take(limit)
         }.onFailure {
             if (it is CancellationException) throw it
         }
     }
 
-    private suspend fun Query.getWithCacheFirst(): QuerySnapshot {
-        val cached = runCatching {
-            get(Source.CACHE).await()
-        }.getOrNull()
 
-        return if (cached?.documents?.isNotEmpty() == true) {
-            cached
-        } else {
-            get(Source.DEFAULT).await()
-        }
-    }
-
-    private suspend fun getDocWithCacheFirst(topicId: String): DocumentSnapshot {
-        val cached = runCatching {
-            topicsCollection.document(topicId).get(Source.CACHE).await()
-        }.getOrNull()
-
-        return if (cached?.exists() == true) {
-            cached
-        } else {
-            topicsCollection.document(topicId).get(Source.DEFAULT).await()
-        }
-    }
 
     private suspend fun fetchImageIfNeeded(topic: Topic): String? {
         if (!topic.imageUrl.isNullOrBlank()) {

@@ -110,15 +110,7 @@ class FlashcardRepositoryImpl @Inject constructor(
     private suspend fun getFlashcardsFromFirestore(topicId: String): List<Flashcard> {
         val flashcardsRef = topicsCollection.document(topicId).collection("flashcards")
 
-        val cached = runCatching {
-            flashcardsRef.orderBy("word").get(Source.CACHE).await()
-        }.getOrNull()
-
-        val snapshot = if (cached?.documents?.isNotEmpty() == true) {
-            cached
-        } else {
-            flashcardsRef.orderBy("word").get(Source.DEFAULT).await()
-        }
+        val snapshot = flashcardsRef.orderBy("word").get(Source.DEFAULT).await()
 
         return snapshot.documents.mapNotNull { it.toFlashcard() }
     }

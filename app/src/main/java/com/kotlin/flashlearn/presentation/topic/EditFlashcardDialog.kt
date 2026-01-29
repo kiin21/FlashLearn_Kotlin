@@ -55,7 +55,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.ui.theme.FlashResultText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

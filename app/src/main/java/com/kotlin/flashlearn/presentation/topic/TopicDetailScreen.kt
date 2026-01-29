@@ -599,6 +599,7 @@ fun TopicDetailScreen(
                                 word = card.word,
                                 type = card.partOfSpeech,
                                 ipa = card.ipa,
+                                level = card.level,
                                 imageUrl = card.imageUrl,
                                 isSelectionMode = state.isSelectionMode,
                                 isSelected = state.selectedCardIds.contains(card.id),
@@ -673,6 +674,7 @@ fun CardItem(
     word: String,
     type: String,
     ipa: String,
+    level: String = "",
     imageUrl: String,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
@@ -769,11 +771,28 @@ fun CardItem(
                         )
                     }
                 }
-                Text(
-                    type,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        type,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (level.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = level,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = FlashRed,
+                            modifier = Modifier
+                                .background(
+                                    FlashRed.copy(alpha = 0.1f),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
 
             if (!isSelectionMode) {

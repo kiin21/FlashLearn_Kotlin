@@ -1,7 +1,6 @@
 package com.kotlin.flashlearn.presentation.profile.components
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,12 +8,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LockReset
 import androidx.compose.material.icons.filled.NightsStay
@@ -39,8 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.LinkedAccount
-import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import com.kotlin.flashlearn.util.LanguageManager
 
 private data class Language(
@@ -58,7 +52,6 @@ fun PreferencesSection(
     onLinkGoogleAccount: () -> Unit,
     onUnlinkAccount: (String) -> Unit,
     onSignOut: () -> Unit,
-    onDeleteAccount: () -> Unit,
     isDarkMode: Boolean = false,
     onToggleDarkMode: (Boolean) -> Unit = {}
 ) {
@@ -210,33 +203,6 @@ fun PreferencesSection(
         ) {
             Text(
                 text = stringResource(R.string.log_out),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        // --- Danger Zone ---
-        ProfileSectionHeader(stringResource(R.string.danger_zone), FlashRed)
-
-        androidx.compose.material3.OutlinedButton(
-            onClick = onDeleteAccount,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = FlashRedLight.copy(alpha = 0.05f),
-                contentColor = FlashRed
-            ),
-            border = BorderStroke(1.dp, FlashRed.copy(alpha = 0.5f)),
-            shape = RoundedCornerShape(12.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.DeleteOutline,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.delete_account),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold
             )

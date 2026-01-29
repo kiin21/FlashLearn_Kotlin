@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.domain.model.WordSuggestion
 import com.kotlin.flashlearn.domain.repository.AuthRepository
@@ -362,7 +363,8 @@ class AddWordViewModel @Inject constructor(
                     partOfSpeech = word.partOfSpeech.uppercase(),
                     definition = word.definition,
                     exampleSentence = word.example,
-                    imageUrl = word.imageUrl ?: ""
+                    imageUrl = word.imageUrl ?: "",
+                    level = _uiState.value.selectedLevel.name
                 )
             }
 
@@ -442,6 +444,10 @@ class AddWordViewModel @Inject constructor(
             isManualEntryExpanded = !_uiState.value.isManualEntryExpanded
         )
     }
+
+    fun updateManualLevel(level: VSTEPLevel) {
+        _uiState.value = _uiState.value.copy(selectedLevel = level)
+    }
 }
 
 data class AddWordUiState(
@@ -478,6 +484,7 @@ data class AddWordUiState(
     val manualImageUri: String? = null,
     val isManualEntryExpanded: Boolean = true, // Default to expanded/visible
     val wordSuggestions: List<WordSuggestion> = emptyList(), // Autocomplete suggestions
+    val selectedLevel: VSTEPLevel = VSTEPLevel.B1, // Default VSTEP level
 
     // Wizard Step State
     val currentStep: Int = 0 // 0: Info, 1: Manual Entry
