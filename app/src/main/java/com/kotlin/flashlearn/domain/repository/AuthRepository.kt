@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.domain.repository
 import android.content.Intent
 import android.content.IntentSender
 import com.kotlin.flashlearn.domain.model.UserData
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Repository interface for authentication operations.
@@ -10,6 +11,11 @@ import com.kotlin.flashlearn.domain.model.UserData
  * data layer provides the implementation.
  */
 interface AuthRepository {
+    /**
+     * Observable state of the authenticated user.
+     */
+    val sessionState: StateFlow<UserData?>
+
     /**
      * Initiates the Google Sign-In flow.
      * @return IntentSender to launch the sign-in UI, or null if failed.

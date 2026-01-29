@@ -249,12 +249,10 @@ fun FlashlearnNavHost(
         }
 
         composable(Route.Home.route) {
-            val userData = authRepository.getSignedInUser()
-            // In a real app, we might want to fetch full user details from Firestore here
-            // using a HomeViewModel, but passing basic auth data works for now.
-
+            val userSession by authRepository.sessionState.collectAsStateWithLifecycle()
+            
             // Map UserData to User domain model partially for UI
-            val user = userData?.let {
+            val user = userSession?.let {
                 com.kotlin.flashlearn.domain.model.User(
                     userId = it.userId,
                     displayName = it.username,
@@ -571,16 +569,25 @@ fun FlashlearnNavHost(
                     emptyList()
                 )
             }
-            var currentUserData by remember { mutableStateOf(authRepository.getSignedInUser()) }
+            val currentUserData by authRepository.sessionState.collectAsStateWithLifecycle()
             val currentUserId = currentUserData?.userId
 
-            // Fetch linked providers
+            // Fetch linked providers AND sync full user data from Firestore
             LaunchedEffect(key1 = currentUserId) {
                 currentUserId?.let { userId ->
                     scope.launch {
                         val user = userRepository.getUser(userId)
-                        // Use the new list, or helper to convert if needed (for migration could check both? For now clean slate)
-                        linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
+                        if (user != null) {
+                            // Sync session state from Firestore
+                            val updatedUserData = com.kotlin.flashlearn.domain.model.UserData(
+                                userId = user.userId,
+                                username = user.displayName ?: user.loginUsername,
+                                profilePictureUrl = user.photoUrl,
+                                email = user.email
+                            )
+                            authRepository.setCurrentUser(updatedUserData)
+                            linkedAccounts = user.linkedGoogleAccounts
+                        }
                     }
                 }
             }
@@ -599,13 +606,12 @@ fun FlashlearnNavHost(
                                             "Google account linked successfully!",
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        // Refresh state
+                                        // Refresh state happens automatically via Flow update in repository
                                         currentUserId?.let { userId ->
                                             val user = userRepository.getUser(userId)
                                             linkedAccounts =
                                                 user?.linkedGoogleAccounts ?: emptyList()
                                         }
-                                        currentUserData = authRepository.getSignedInUser()
                                         isLinkingInProgress = false
                                     },
                                     onFailure = { error ->
@@ -664,12 +670,11 @@ fun FlashlearnNavHost(
                                     "Account unlinked successfully",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                // Refresh state
+                                // Refresh state happens automatically via Flow update in repository
                                 currentUserId?.let { userId ->
                                     val user = userRepository.getUser(userId)
                                     linkedAccounts = user?.linkedGoogleAccounts ?: emptyList()
                                 }
-                                currentUserData = authRepository.getSignedInUser()
                             },
                             onFailure = { error ->
                                 Toast.makeText(
@@ -686,8 +691,9 @@ fun FlashlearnNavHost(
                         currentUserId?.let { userId ->
                             try {
                                 userRepository.updateEmail(userId, newEmail)
-                                // Refresh user data locally
-                                currentUserData = currentUserData?.copy(email = newEmail)
+                                // Refresh user data globally
+                                val updatedUser = currentUserData?.copy(email = newEmail)
+                                authRepository.setCurrentUser(updatedUser)
                                 Toast.makeText(context, "Primary email updated", Toast.LENGTH_SHORT)
                                     .show()
                             } catch (e: Exception) {
@@ -709,9 +715,10 @@ fun FlashlearnNavHost(
                                 val downloadUrl =
                                     userRepository.uploadProfilePicture(userId, uri.toString())
 
-                                // Refresh user data locally
-                                currentUserData =
-                                    currentUserData?.copy(profilePictureUrl = downloadUrl)
+                                // Refresh user data locally and globally
+                                val updatedUser = currentUserData?.copy(profilePictureUrl = downloadUrl)
+                                authRepository.setCurrentUser(updatedUser)
+                                
                                 Toast.makeText(
                                     context,
                                     "Profile picture updated",
