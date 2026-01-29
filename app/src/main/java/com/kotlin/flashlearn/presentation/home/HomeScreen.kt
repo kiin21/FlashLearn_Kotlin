@@ -1,5 +1,6 @@
 package com.kotlin.flashlearn.presentation.home
 
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -75,6 +77,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.runtime.*
+import java.util.Calendar
 
 @Composable
 fun HomeScreen(
@@ -99,6 +103,26 @@ fun HomeScreen(
         val featureName = context.getString(resId)
         scope.launch {
             snackbarHostState.showSnackbar(context.getString(R.string.coming_soon, featureName))
+        }
+    }
+
+    var tts by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    DisposableEffect(context) {
+        var textToSpeech: TextToSpeech? = null
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                textToSpeech?.let { ttsInstance ->
+                    val result = ttsInstance.setLanguage(Locale.US)
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        // Handle error if needed
+                    }
+                }
+            }
+        }
+        tts = textToSpeech
+        onDispose {
+            textToSpeech?.shutdown()
         }
     }
 
@@ -136,7 +160,19 @@ fun HomeScreen(
             DailyWordSection(
                 dailyWord = dailyWord,
                 onViewArchive = onNavigateToDailyWordArchive,
-                onPronounce = { showNotImplementedMessage(R.string.pronunciation) }
+                onPronounce = {
+                    val word = dailyWord?.word.orEmpty()
+
+                    if (word.isNotBlank() && tts != null) {
+                        tts?.stop()
+                        tts?.speak(
+                            word,
+                            TextToSpeech.QUEUE_FLUSH,
+                            null,
+                            "daily_word"
+                        )
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -209,6 +245,23 @@ fun HeaderSection(
     }
 }
 
+object FlashDateUtils {
+    fun todayStartMillis(): Long {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return cal.timeInMillis
+    }
+
+    fun daysBetweenTodayAnd(targetMillis: Long): Int {
+        val today = todayStartMillis()
+        return ((targetMillis - today) / (1000 * 60 * 60 * 24)).toInt()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExamDateCard() {
@@ -225,8 +278,18 @@ fun ExamDateCard() {
     val dateText = examMillis?.let { dateFormat.format(Date(it)) } ?: "Tap to set"
 
     val daysLeft = remember(examMillis) {
-        examMillis?.let { DateUtils.daysBetweenTodayAnd(it) }
+        examMillis?.let { FlashDateUtils.daysBetweenTodayAnd(it) }
     }
+
+    val pickerState = rememberDatePickerState(
+        initialSelectedDateMillis = examMillis,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val todayStart = FlashDateUtils.todayStartMillis()
+                return utcTimeMillis >= todayStart
+            }
+        }
+    )
 
     Card(
         modifier = Modifier
@@ -277,32 +340,23 @@ fun ExamDateCard() {
     }
 
     if (showPicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = examMillis
-        )
-
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     val picked = pickerState.selectedDateMillis ?: return@TextButton
 
-                    if (picked < System.currentTimeMillis()) {
-                        Toast.makeText(
-                            context,
-                            "The exam date is invalid. Please choose a date in the future!",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        return@TextButton
-                    }
-
                     ExamDatePrefs.set(context, picked)
                     examMillis = picked
                     showPicker = false
-                }) { Text("Save") }
+                }) {
+                    Text("Save")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showPicker = false }) {
+                    Text("Cancel")
+                }
             }
         ) {
             DatePicker(state = pickerState)
