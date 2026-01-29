@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,7 +36,6 @@ import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.ui.theme.FlashRedLight
 
 @Composable
 fun FlashcardFront(
@@ -61,7 +61,7 @@ fun FlashcardFront(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -71,7 +71,7 @@ fun FlashcardFront(
             fontSize = 40.sp,
             lineHeight = 44.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
 
@@ -85,9 +85,9 @@ fun FlashcardFront(
                     text = flashcard.partOfSpeech.uppercase(),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = FlashRed,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .background(FlashRedLight, RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(8.dp))
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 )
                 Spacer(Modifier.width(12.dp))
@@ -95,7 +95,7 @@ fun FlashcardFront(
 
             Box(
                 modifier = Modifier
-                    .background(FlashRedLight, CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
@@ -106,7 +106,7 @@ fun FlashcardFront(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                     contentDescription = "Pronunciation",
-                    tint = FlashRed,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -118,7 +118,7 @@ fun FlashcardFront(
                 text = flashcard.ipa,
                 fontSize = 16.sp,
                 fontStyle = FontStyle.Italic,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
         }
@@ -139,7 +139,7 @@ fun FlashcardBack(
             text = flashcard.word,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = FlashRed,
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
         )
 
@@ -148,7 +148,7 @@ fun FlashcardBack(
         Text(
             text = flashcard.definition,
             fontSize = 18.sp,
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             lineHeight = 26.sp,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -160,7 +160,7 @@ fun FlashcardBack(
                 text = "\"${flashcard.exampleSentence}\"",
                 fontSize = 16.sp,
                 fontStyle = FontStyle.Italic,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 24.sp,
                 modifier = Modifier.padding(horizontal = 16.dp)

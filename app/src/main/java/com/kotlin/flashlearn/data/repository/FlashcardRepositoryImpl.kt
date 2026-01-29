@@ -237,18 +237,20 @@ class FlashcardRepositoryImpl @Inject constructor(
     }
 
     override suspend fun enrichFlashcard(card: Flashcard, force: Boolean): Flashcard {
-        val enriched = enrichFlashcardData(card, force)
-        if (enriched != card) {
-            runCatching {
-                saveFlashcardToFirestore(enriched, card.topicId)
-            }.onFailure {
-                Log.w(
-                    TAG,
-                    "Failed to persist enriched card (likely permission issue): ${it.message}"
-                )
+        return enrichmentSemaphore.withPermit {
+            val enriched = enrichFlashcardData(card, force)
+            if (enriched != card) {
+                runCatching {
+                    saveFlashcardToFirestore(enriched, card.topicId)
+                }.onFailure {
+                    Log.w(
+                        TAG,
+                        "Failed to persist enriched card (likely permission issue): ${it.message}"
+                    )
+                }
             }
+            enriched
         }
-        return enriched
     }
 
     suspend fun enrichFlashcardsParallel(cards: List<Flashcard>): List<Flashcard> {

@@ -20,6 +20,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,13 +81,13 @@ fun CardDetailScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Card Detail", fontSize = 16.sp, fontWeight = FontWeight.SemiBold) },
+                title = { Text("Card Detail", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.Default.ChevronLeft,
                             contentDescription = "Back",
-                            tint = FlashRed
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -95,7 +96,7 @@ fun CardDetailScreen(
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Regenerate Image",
-                            tint = FlashRed
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -106,7 +107,7 @@ fun CardDetailScreen(
             modifier = modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             when {
@@ -153,7 +154,7 @@ private fun CardFlipContent(
                 cameraDistance = 12f * density.density
             }
             .clickable { onFlip() }
-            .background(FlashLightGrey, RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp))
             .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
