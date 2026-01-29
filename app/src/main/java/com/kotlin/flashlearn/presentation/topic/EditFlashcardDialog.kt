@@ -153,6 +153,46 @@ fun EditFlashcardDialog(
                     }
                 }
 
+                // VSTEP Level Dropdown
+                var levelExpanded by remember { mutableStateOf(false) }
+                val levelOptions = listOf("A1", "A2", "B1", "B2", "C1", "C2")
+
+                ExposedDropdownMenuBox(
+                    expanded = levelExpanded,
+                    onExpandedChange = { levelExpanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = uiState.level,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Lvl") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = levelExpanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = FlashRed,
+                            focusedLabelColor = FlashRed,
+                            cursorColor = FlashRed
+                        ),
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = levelExpanded,
+                        onDismissRequest = { levelExpanded = false }
+                    ) {
+                        levelOptions.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    viewModel.onLevelChange(selectionOption)
+                                    levelExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 // Fields
                 var wordDropdownExpanded by remember { mutableStateOf(false) }
                 

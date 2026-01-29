@@ -23,6 +23,7 @@ data class EditFlashcardUiState(
     val exampleSentence: String = "",
     val ipa: String = "",
     val partOfSpeech: String = "",
+    val level: String = "",
     val imageUrl: String = "",
     val wordSuggestions: List<WordSuggestion> = emptyList(),
     val isFetchingDetails: Boolean = false,
@@ -54,6 +55,7 @@ class EditFlashcardViewModel @Inject constructor(
                 exampleSentence = flashcard.exampleSentence,
                 ipa = flashcard.ipa,
                 partOfSpeech = flashcard.partOfSpeech,
+                level = flashcard.level,
                 imageUrl = flashcard.imageUrl,
                 initialFlashcard = flashcard
             )
@@ -79,6 +81,10 @@ class EditFlashcardViewModel @Inject constructor(
 
     fun onPosChange(value: String) {
         _uiState.value = _uiState.value.copy(partOfSpeech = value)
+    }
+
+    fun onLevelChange(value: String) {
+        _uiState.value = _uiState.value.copy(level = value)
     }
 
     fun onImageUrlChange(value: String) {
@@ -202,6 +208,7 @@ class EditFlashcardViewModel @Inject constructor(
             exampleSentence = _uiState.value.exampleSentence,
             ipa = _uiState.value.ipa,
             partOfSpeech = _uiState.value.partOfSpeech,
+            level = _uiState.value.level,
             imageUrl = _uiState.value.imageUrl
         )
     }
