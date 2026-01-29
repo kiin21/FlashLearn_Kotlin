@@ -64,7 +64,7 @@ fun UserPublicProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(
                         text = "Profile",
                         style = MaterialTheme.typography.titleMedium
@@ -95,7 +95,7 @@ fun UserPublicProfileScreen(
                     CircularProgressIndicator(color = FlashRed)
                 }
             }
-            
+
             state.error != null -> {
                 Box(
                     modifier = Modifier
@@ -115,7 +115,7 @@ fun UserPublicProfileScreen(
                     }
                 }
             }
-            
+
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -132,7 +132,7 @@ fun UserPublicProfileScreen(
                             totalUpvotes = state.totalUpvotes
                         )
                     }
-                    
+
                     // Divider
                     item {
                         HorizontalDivider(
@@ -140,7 +140,7 @@ fun UserPublicProfileScreen(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         )
                     }
-                    
+
                     // Section header
                     item {
                         Text(
@@ -150,7 +150,7 @@ fun UserPublicProfileScreen(
                             color = MaterialTheme.colorScheme.onBackground
                         )
                     }
-                    
+
                     // Topics list
                     if (state.topicItems.isEmpty()) {
                         item {
@@ -165,7 +165,7 @@ fun UserPublicProfileScreen(
                             )
                         }
                     }
-                    
+
                     // Bottom spacing
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
@@ -206,9 +206,9 @@ private fun ProfileHeader(
                 color = FlashRed
             )
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // User name
         Text(
             text = userName,
@@ -216,9 +216,9 @@ private fun ProfileHeader(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Stats row
         Row(
             horizontalArrangement = Arrangement.spacedBy(32.dp)

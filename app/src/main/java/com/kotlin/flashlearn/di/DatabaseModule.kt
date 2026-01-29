@@ -6,13 +6,13 @@ import com.kotlin.flashlearn.data.local.FlashLearnDatabase
 import com.kotlin.flashlearn.data.local.dao.FlashcardDao
 import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.local.dao.UserProgressDao
+import com.kotlin.flashlearn.data.local.dao.UserStreakDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import com.kotlin.flashlearn.data.local.dao.UserStreakDao
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -32,23 +32,24 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideFlashcardDao(database: FlashLearnDatabase): FlashcardDao = 
+    fun provideFlashcardDao(database: FlashLearnDatabase): FlashcardDao =
         database.flashcardDao()
 
     @Provides
     @Singleton
-    fun provideTopicDao(database: FlashLearnDatabase): TopicDao = 
+    fun provideTopicDao(database: FlashLearnDatabase): TopicDao =
         database.topicDao()
 
     @Provides
     @Singleton
-    fun provideUserProgressDao(database: FlashLearnDatabase): UserProgressDao = 
+    fun provideUserProgressDao(database: FlashLearnDatabase): UserProgressDao =
         database.userProgressDao()
 
     @Provides
     @Singleton
     fun provideUserStreakDao(database: FlashLearnDatabase): UserStreakDao =
         database.userStreakDao()
+
     @Provides
     @Singleton
     fun provideDailyWordDao(database: FlashLearnDatabase) = database.dailyWordDao()

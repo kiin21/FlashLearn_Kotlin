@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,16 +33,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kotlin.flashlearn.ui.theme.FlashGreen
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
-import androidx.compose.ui.res.stringResource
-import com.kotlin.flashlearn.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -114,7 +111,8 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(pages.size) { iteration ->
-                    val color = if (pagerState.currentPage == iteration) FlashRed else Color.LightGray
+                    val color =
+                        if (pagerState.currentPage == iteration) FlashRed else Color.LightGray
                     Box(
                         modifier = Modifier
                             .padding(4.dp)
@@ -145,7 +143,9 @@ fun OnboardingScreen(
                 )
             ) {
                 Text(
-                    text = if (pagerState.currentPage < pages.size - 1) stringResource(R.string.next) else stringResource(R.string.get_started),
+                    text = if (pagerState.currentPage < pages.size - 1) stringResource(R.string.next) else stringResource(
+                        R.string.get_started
+                    ),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )

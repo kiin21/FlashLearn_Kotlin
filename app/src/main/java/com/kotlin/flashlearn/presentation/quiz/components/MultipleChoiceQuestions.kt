@@ -1,11 +1,11 @@
 package com.kotlin.flashlearn.presentation.quiz.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,12 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.ui.theme.FlashErrorLight
 import com.kotlin.flashlearn.ui.theme.FlashErrorMed
-import com.kotlin.flashlearn.ui.theme.FlashSuccessDark
+import com.kotlin.flashlearn.ui.theme.FlashInfoLight
+import com.kotlin.flashlearn.ui.theme.FlashInfoMed
 import com.kotlin.flashlearn.ui.theme.FlashSuccessLight
 import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
-import com.kotlin.flashlearn.ui.theme.FlashInfoMed
-import com.kotlin.flashlearn.ui.theme.FlashInfoLight
-import com.kotlin.flashlearn.ui.theme.FlashInfoDark
 
 /**
  * Reusable multiple choice options component that manages selection state.

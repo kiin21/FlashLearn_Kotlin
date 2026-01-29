@@ -6,14 +6,14 @@ import org.mindrot.jbcrypt.BCrypt
  * Utility object for password hashing and validation.
  */
 object PasswordUtils {
-    
+
     /**
      * Hash a password using BCrypt.
      */
     fun hashPassword(password: String): String {
         return BCrypt.hashpw(password, BCrypt.gensalt())
     }
-    
+
     /**
      * Verify a password against a BCrypt hash.
      */
@@ -24,7 +24,7 @@ object PasswordUtils {
             false
         }
     }
-    
+
     /**
      * Validate password requirements:
      * - At least 8 characters
@@ -41,7 +41,7 @@ object PasswordUtils {
         if (!password.any { !it.isLetterOrDigit() }) return false
         return true
     }
-    
+
     /**
      * Get password validation error message, or null if valid.
      */

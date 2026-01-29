@@ -36,7 +36,7 @@ fun LinkedAccountsSection(
     onUnlinkAccount: (String) -> Unit,
     isLinkingInProgress: Boolean
 ) {
-     ExpandableProfileSection(
+    ExpandableProfileSection(
         icon = Icons.Default.Link,
         title = stringResource(R.string.linked_accounts),
         subtitle = if (linkedAccounts.isNotEmpty()) "${linkedAccounts.size} connected" else null,
@@ -59,8 +59,16 @@ fun LinkedAccountsSection(
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Google", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text(text = account.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = "Google",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = account.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     IconButton(onClick = { onUnlinkAccount(account.accountId) }) {
                         Icon(
@@ -70,7 +78,10 @@ fun LinkedAccountsSection(
                         )
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(start = 56.dp, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(start = 56.dp, end = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                )
             }
 
             // Link new account button
@@ -81,14 +92,16 @@ fun LinkedAccountsSection(
                     .padding(vertical = 12.dp, horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                 Icon(
+                Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = if (isLinkingInProgress) stringResource(R.string.linking) else stringResource(R.string.link_google_account),
+                    text = if (isLinkingInProgress) stringResource(R.string.linking) else stringResource(
+                        R.string.link_google_account
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold

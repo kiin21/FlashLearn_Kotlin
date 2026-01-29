@@ -27,24 +27,25 @@ class EnrichmentWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val cardId = inputData.getString(KEY_CARD_ID) ?: return Result.failure()
-        
+
         return try {
             val flashcard = flashcardDao.getFlashcardById(cardId) ?: return Result.failure()
-            
+
             var ipa = flashcard.ipa
             var imageUrl = flashcard.imageUrl
-            
+
             if (ipa.isBlank()) {
                 try {
                     val response = freeDictionaryApi.getWordDetails(flashcard.word)
-                    ipa = response.firstOrNull()?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text
-                        ?: response.firstOrNull()?.phonetic
-                        ?: ""
+                    ipa =
+                        response.firstOrNull()?.phonetics?.firstOrNull { !it.text.isNullOrBlank() }?.text
+                            ?: response.firstOrNull()?.phonetic
+                                    ?: ""
                 } catch (e: Exception) {
                     Log.w(TAG, "IPA fetch error: ${e.message}")
                 }
             }
-            
+
             if (imageUrl.isBlank()) {
                 try {
                     val response = pixabayApi.searchImages(
@@ -56,7 +57,7 @@ class EnrichmentWorker @AssistedInject constructor(
                     Log.w(TAG, "Pixabay error: ${e.message}")
                 }
             }
-            
+
             if (ipa != flashcard.ipa || imageUrl != flashcard.imageUrl) {
                 val enrichedCard = flashcard.copy(
                     ipa = ipa,
@@ -66,7 +67,7 @@ class EnrichmentWorker @AssistedInject constructor(
                 flashcardDao.updateFlashcard(enrichedCard)
                 Log.d(TAG, "Enriched: ${flashcard.word}")
             }
-            
+
             Result.success()
         } catch (e: Exception) {
             Log.w(TAG, "Enrichment failed: ${e.message}")

@@ -80,7 +80,7 @@ class LearningSessionViewModel @Inject constructor(
                             previousState = null
                         )
                     }
-                    
+
                     // Enrich the first card
                     sessionCards.firstOrNull()?.let { enrichCard(it) }
                 },
@@ -91,7 +91,11 @@ class LearningSessionViewModel @Inject constructor(
                             error = error.message
                         )
                     }
-                    _uiEvent.send(LearningSessionUiEvent.ShowError(error.message ?: "Failed to load flashcards"))
+                    _uiEvent.send(
+                        LearningSessionUiEvent.ShowError(
+                            error.message ?: "Failed to load flashcards"
+                        )
+                    )
                 }
             )
         }
@@ -102,12 +106,15 @@ class LearningSessionViewModel @Inject constructor(
             viewModelScope.launch {
                 try {
                     // Cast to implementation to access enrichFlashcard if it's not in interface
-                    val enrichedCard = (flashcardRepository as? com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl)?.enrichFlashcard(card) 
-                        ?: return@launch
+                    val enrichedCard =
+                        (flashcardRepository as? com.kotlin.flashlearn.data.repository.FlashcardRepositoryImpl)?.enrichFlashcard(
+                            card
+                        )
+                            ?: return@launch
 
                     _state.update { currentState ->
-                        val updatedQueue = currentState.sessionQueue.map { 
-                            if (it.id == enrichedCard.id) enrichedCard else it 
+                        val updatedQueue = currentState.sessionQueue.map {
+                            if (it.id == enrichedCard.id) enrichedCard else it
                         }
                         currentState.copy(sessionQueue = updatedQueue)
                     }
@@ -137,7 +144,7 @@ class LearningSessionViewModel @Inject constructor(
         val stateToSave = currentState.copy(previousState = null)
 
         val newQueue = currentState.sessionQueue.drop(1)
-        
+
         _state.update {
             it.copy(
                 sessionQueue = newQueue,
@@ -157,7 +164,7 @@ class LearningSessionViewModel @Inject constructor(
         }
 
         checkSessionCompletion(newQueue)
-        
+
         // Enrich next card
         newQueue.firstOrNull()?.let { enrichCard(it) }
     }
@@ -188,7 +195,7 @@ class LearningSessionViewModel @Inject constructor(
         }
 
         checkSessionCompletion(newQueue)
-        
+
         // Enrich next card
         newQueue.firstOrNull()?.let { enrichCard(it) }
     }

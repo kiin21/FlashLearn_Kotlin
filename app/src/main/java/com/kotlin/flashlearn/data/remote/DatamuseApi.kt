@@ -10,7 +10,7 @@ import retrofit2.http.Query
  * Base URL: https://api.datamuse.com
  */
 interface DatamuseApi {
-    
+
     /**
      * Autocomplete suggestions as user types.
      * Example: /sug?s=voca → vocabulary, vocal, vocalize...
@@ -20,7 +20,7 @@ interface DatamuseApi {
         @Query("s") prefix: String,
         @Query("max") max: Int = 10
     ): List<WordSuggestionDto>
-    
+
     /**
      * Get words related to a topic with definitions.
      * Example: /words?topics=environment&md=d → pollution, ecosystem...
@@ -31,7 +31,7 @@ interface DatamuseApi {
         @Query("md") metadata: String = "d",
         @Query("max") max: Int = 20
     ): List<WordWithDefinitionDto>
-    
+
     /**
      * Search words with spelling pattern and get definitions.
      * Example: /words?sp=bio*&md=d → biology, biodiversity...
@@ -42,7 +42,7 @@ interface DatamuseApi {
         @Query("md") metadata: String = "d",
         @Query("max") max: Int = 20
     ): List<WordWithDefinitionDto>
-    
+
     /**
      * Get words with similar meaning.
      * Example: /words?ml=happy&md=d → joyful, cheerful...

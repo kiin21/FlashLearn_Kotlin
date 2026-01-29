@@ -38,7 +38,9 @@ fun ProfileRowNavigation(
     iconBackgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant, // Slightly darker than card
     trailingText: String? = null,
     trailingContent: (@Composable () -> Unit)? = null,
-    contentPadding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(16.dp),
+    contentPadding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(
+        16.dp
+    ),
     onClick: () -> Unit
 ) {
     Card(
@@ -57,21 +59,21 @@ fun ProfileRowNavigation(
                 modifier = Modifier
                     .size(40.dp) // Slightly bigger touch target
                     .background(
-                        if (iconBackgroundColor == Color.Transparent) Color.Transparent else iconBackgroundColor, 
+                        if (iconBackgroundColor == Color.Transparent) Color.Transparent else iconBackgroundColor,
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon, 
-                    contentDescription = text, 
+                    imageVector = icon,
+                    contentDescription = text,
                     tint = iconTint,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
@@ -79,7 +81,7 @@ fun ProfileRowNavigation(
                 color = textColor,
                 modifier = Modifier.weight(1f)
             )
-            
+
             if (trailingContent != null) {
                 trailingContent()
             } else if (trailingText != null) {
@@ -125,9 +127,9 @@ fun ProfileRowInfo(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
@@ -167,15 +169,15 @@ fun ProfileRowSwitch(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon, 
-                    contentDescription = text, 
+                    imageVector = icon,
+                    contentDescription = text,
                     tint = iconTint,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,
@@ -183,7 +185,7 @@ fun ProfileRowSwitch(
                 modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            
+
             Switch(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,

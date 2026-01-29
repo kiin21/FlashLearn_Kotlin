@@ -5,14 +5,36 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,7 +58,7 @@ fun EditFlashcardDialog(
     var ipa by remember { mutableStateOf(flashcard.ipa) }
     var partOfSpeech by remember { mutableStateOf(flashcard.partOfSpeech) }
     var imageUrl by remember { mutableStateOf(flashcard.imageUrl) }
-    
+
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -63,9 +85,9 @@ fun EditFlashcardDialog(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 // Image Picker
                 Box(
                     modifier = Modifier
@@ -95,7 +117,7 @@ fun EditFlashcardDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit, 
+                                imageVector = Icons.Default.Edit,
                                 contentDescription = "Change Image",
                                 tint = Color.White,
                                 modifier = Modifier.size(32.dp)
@@ -104,22 +126,22 @@ fun EditFlashcardDialog(
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                imageVector = Icons.Default.AddPhotoAlternate, 
+                                imageVector = Icons.Default.AddPhotoAlternate,
                                 contentDescription = "Add Image",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(48.dp)
                             )
                             Text(
-                                "Add Image", 
+                                "Add Image",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // Fields
                 OutlinedTextField(
                     value = word,
@@ -133,39 +155,43 @@ fun EditFlashcardDialog(
                         cursorColor = FlashRed
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = ipa,
                         onValueChange = { ipa = it },
                         label = { Text("IPA") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f).padding(end = 4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = FlashRed,
                             focusedLabelColor = FlashRed,
                             cursorColor = FlashRed
                         )
                     )
-                    
+
                     OutlinedTextField(
                         value = partOfSpeech,
                         onValueChange = { partOfSpeech = it },
                         label = { Text("Type (e.g. noun)") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 4.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                             focusedBorderColor = FlashRed,
+                            focusedBorderColor = FlashRed,
                             focusedLabelColor = FlashRed,
                             cursorColor = FlashRed
                         )
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 OutlinedTextField(
                     value = definition,
                     onValueChange = { definition = it },
@@ -173,29 +199,29 @@ fun EditFlashcardDialog(
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                         focusedBorderColor = FlashRed,
+                        focusedBorderColor = FlashRed,
                         focusedLabelColor = FlashRed,
                         cursorColor = FlashRed
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
 
-                 OutlinedTextField(
+                OutlinedTextField(
                     value = example,
                     onValueChange = { example = it },
                     label = { Text("Example Sentence") },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                         focusedBorderColor = FlashRed,
+                        focusedBorderColor = FlashRed,
                         focusedLabelColor = FlashRed,
                         cursorColor = FlashRed
                     )
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
-                
+
                 // Actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -206,7 +232,7 @@ fun EditFlashcardDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
-                        onClick = { 
+                        onClick = {
                             onConfirm(
                                 flashcard.copy(
                                     word = word.trim(),
@@ -216,7 +242,7 @@ fun EditFlashcardDialog(
                                     partOfSpeech = partOfSpeech.trim(),
                                     imageUrl = imageUrl.trim()
                                 )
-                            ) 
+                            )
                         },
                         enabled = isValid,
                         colors = ButtonDefaults.buttonColors(

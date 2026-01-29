@@ -5,16 +5,15 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.kotlin.flashlearn.data.local.Converters
 import com.kotlin.flashlearn.data.local.dao.DailyWordDao
 import com.kotlin.flashlearn.data.local.dao.FlashcardDao
 import com.kotlin.flashlearn.data.local.dao.TopicDao
 import com.kotlin.flashlearn.data.local.dao.UserProgressDao
 import com.kotlin.flashlearn.data.local.dao.UserStreakDao
+import com.kotlin.flashlearn.data.local.entity.DailyWordHistoryEntity
 import com.kotlin.flashlearn.data.local.entity.FlashcardEntity
 import com.kotlin.flashlearn.data.local.entity.TopicEntity
 import com.kotlin.flashlearn.data.local.entity.UserProgressEntity
-import com.kotlin.flashlearn.data.local.entity.DailyWordHistoryEntity
 import com.kotlin.flashlearn.data.local.entity.UserStreakEntity
 
 @Database(

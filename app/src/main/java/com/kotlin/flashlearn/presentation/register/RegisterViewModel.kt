@@ -74,11 +74,11 @@ class RegisterViewModel @Inject constructor(
                     _uiEvent.send(RegisterUiEvent.NavigateToOnboarding)
                 },
                 onFailure = { error ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isLoading = false,
                             generalError = error.message
-                        ) 
+                        )
                     }
                     _uiEvent.send(RegisterUiEvent.ShowError(error.message ?: "Registration failed"))
                 }

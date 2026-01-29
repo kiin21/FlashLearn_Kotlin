@@ -49,9 +49,13 @@ interface FlashcardDao {
      * Check if flashcards for a topic need enrichment (missing IPA or image).
      */
     @Query("SELECT * FROM flashcards WHERE topicId = :topicId AND (ipa = '' OR imageUrl = '') LIMIT :limit")
-    suspend fun getFlashcardsNeedingEnrichment(topicId: String, limit: Int = 5): List<FlashcardEntity>
+    suspend fun getFlashcardsNeedingEnrichment(
+        topicId: String,
+        limit: Int = 5
+    ): List<FlashcardEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT f.id AS id,
                f.word AS word,
                f.level AS level,
@@ -61,6 +65,7 @@ interface FlashcardDao {
         INNER JOIN topics t ON t.id = f.topicId
         WHERE t.isSystemTopic = 1
            OR t.createdBy = :userId
-    """)
+    """
+    )
     suspend fun getDailyWordCandidates(userId: String): List<DailyWordCandidate>
 }

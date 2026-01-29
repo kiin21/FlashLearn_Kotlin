@@ -14,21 +14,21 @@ interface FlashcardRepository {
      * @return List of flashcards belonging to the topic.
      */
     suspend fun getFlashcardsByTopicId(topicId: String): Result<List<Flashcard>>
-    
+
     /**
      * Saves flashcards for a topic (used when creating a new topic with selected words).
      * @param topicId The ID of the topic.
      * @param flashcards List of flashcards to save.
      */
     suspend fun saveFlashcardsForTopic(topicId: String, flashcards: List<Flashcard>): Result<Unit>
-    
+
     /**
      * Marks a flashcard as mastered (user clicked "Got It").
      * @param flashcardId The ID of the flashcard.
      * @param userId The ID of the current user.
      */
     suspend fun markFlashcardAsMastered(flashcardId: String, userId: String): Result<Unit>
-    
+
     /**
      * Marks a flashcard for review (user clicked "Study Again").
      * @param flashcardId The ID of the flashcard.
@@ -37,10 +37,10 @@ interface FlashcardRepository {
     suspend fun markFlashcardForReview(flashcardId: String, userId: String): Result<Unit>
 
     /**
-    * Get flashcard by id.
-    * @param cardId The ID of the flashcard.
-    * @return flashcard data.
-    */
+     * Get flashcard by id.
+     * @param cardId The ID of the flashcard.
+     * @return flashcard data.
+     */
     suspend fun getFlashcardById(cardId: String): Result<Flashcard?>
 
     /**
@@ -63,7 +63,11 @@ interface FlashcardRepository {
      * @param userId The ID of the current user.
      * @param newScore The new proficiency score.
      */
-    suspend fun updateProficiencyScore(flashcardId: String, userId: String, newScore: Int): Result<Unit>
+    suspend fun updateProficiencyScore(
+        flashcardId: String,
+        userId: String,
+        newScore: Int
+    ): Result<Unit>
 
     /**
      * Enriches a flashcard with IPA and Image data.
@@ -95,7 +99,10 @@ interface FlashcardRepository {
      * @param userId The ID of the current user.
      * @return List of unmastered flashcards.
      */
-    suspend fun getUnmasteredFlashcardsByTopicId(topicId: String, userId: String): Result<List<Flashcard>>
+    suspend fun getUnmasteredFlashcardsByTopicId(
+        topicId: String,
+        userId: String
+    ): Result<List<Flashcard>>
 
     /**
      * Gets the progress for a specific topic (mastered count / total count).
@@ -112,7 +119,10 @@ interface FlashcardRepository {
      * @param flashcardIds The list of flashcard IDs to check.
      * @return List of flashcard IDs that are mastered.
      */
-    suspend fun getMasteredFlashcardIdsFromList(userId: String, flashcardIds: List<String>): Result<List<String>>
+    suspend fun getMasteredFlashcardIdsFromList(
+        userId: String,
+        flashcardIds: List<String>
+    ): Result<List<String>>
 
     /**
      * Resets all learning progress for a specific topic.

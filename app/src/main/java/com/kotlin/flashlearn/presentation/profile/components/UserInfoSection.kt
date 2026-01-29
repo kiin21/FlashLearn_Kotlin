@@ -87,7 +87,7 @@ fun UserInfoSection(
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(4.dp))
-        
+
         Box {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -110,7 +110,7 @@ fun UserInfoSection(
                     )
                 }
             }
-            
+
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }

@@ -16,7 +16,7 @@ class DatamuseRepositoryImpl @Inject constructor(
 
     override suspend fun getAutocompleteSuggestions(prefix: String): Result<List<WordSuggestion>> {
         if (prefix.isBlank()) return Result.success(emptyList())
-        
+
         return runCatching {
             datamuseApi.getSuggestions(prefix).map { dto ->
                 WordSuggestion(word = dto.word, score = dto.score)

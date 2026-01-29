@@ -71,6 +71,7 @@ fun SignInScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -176,7 +177,7 @@ fun SignInScreen(
                 text = stringResource(R.string.forgot_password),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.clickable { /* TODO: Implement later */ }
+                modifier = Modifier.clickable { onForgotPasswordClick() }
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -184,7 +185,7 @@ fun SignInScreen(
             // Login Button
             Button(
                 onClick = onLoginClick,
-                enabled = !state.isLoading,
+                enabled = !state.isLoading && !state.isGoogleLoading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -245,7 +246,7 @@ fun SignInScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Google Sign In Button
-            if (state.isLoading) {
+            if (state.isGoogleLoading) {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
@@ -262,7 +263,7 @@ fun SignInScreen(
                         .height(50.dp)
                         .clip(RoundedCornerShape(25.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(25.dp))
-                        .clickable { onSignInClick() },
+                        .clickable(enabled = !state.isLoading && !state.isGoogleLoading) { onSignInClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Row(

@@ -7,11 +7,11 @@ data class User(
     val userId: String = "",
     val loginUsername: String? = null,
     val loginPasswordHash: String? = null,
-    val googleId: String? = null, // Deprecated, kept for backward compat initially
+
     val displayName: String? = null,
     val email: String? = null,
     val photoUrl: String? = null,
-    val linkedProviders: List<String> = emptyList(), // Deprecated
+
     val googleIds: List<String> = emptyList(), // For backend lookup
     val linkedGoogleAccounts: List<LinkedAccount> = emptyList(), // For UI info
     val firebaseUids: List<String> = emptyList(), // Anonymous Firebase Auth UIDs for security rules
