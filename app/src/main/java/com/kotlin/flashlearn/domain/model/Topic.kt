@@ -2,7 +2,7 @@ package com.kotlin.flashlearn.domain.model
 
 /**
  * Domain model representing a vocabulary topic.
- * 
+ *
  * Topic visibility:
  * - System topics (isSystemTopic=true): Visible to everyone
  * - User private topics (isPublic=false): Only visible to creator
@@ -40,7 +40,7 @@ data class Topic(
             else -> false
         }
     }
-    
+
     /**
      * Returns the visibility category for display purposes.
      */

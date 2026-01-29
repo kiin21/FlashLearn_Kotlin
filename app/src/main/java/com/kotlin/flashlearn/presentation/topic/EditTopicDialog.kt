@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +45,7 @@ fun EditTopicDialog(
     var name by remember { mutableStateOf(currentName) }
     var description by remember { mutableStateOf(currentDescription) }
     var imageUrl by remember { mutableStateOf(currentImageUrl) }
-    
+
     // Update local state if currentImageUrl changes (e.g. after regeneration)
     // But wait, onRegenerateImage triggers viewModel update which updates state which updates this dialog? 
     // Yes, but we need to observe it.
@@ -76,33 +75,45 @@ fun EditTopicDialog(
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                Text("Cover Image", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
-                
+
+                Text(
+                    "Cover Image",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = imageUrl,
                         onValueChange = { imageUrl = it },
                         label = { Text("Image URL") },
-                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
                         singleLine = true
                     )
-                    
+
                     if (imageUrl.isNotEmpty()) {
-                         AsyncImage(
+                        AsyncImage(
                             model = imageUrl,
                             contentDescription = null,
-                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop
                         )
                     }
                 }
-                
+
                 OutlinedButton(
                     onClick = onRegenerateImage,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text("Auto-Fetch from Pixabay")
                 }

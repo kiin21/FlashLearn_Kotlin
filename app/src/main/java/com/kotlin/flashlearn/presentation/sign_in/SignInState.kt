@@ -6,6 +6,7 @@ package com.kotlin.flashlearn.presentation.sign_in
  */
 data class SignInState(
     val isLoading: Boolean = false,
+    val isGoogleLoading: Boolean = false,
     val isSignInSuccessful: Boolean = false,
     val uid: String? = null,
     val signInError: String? = null,

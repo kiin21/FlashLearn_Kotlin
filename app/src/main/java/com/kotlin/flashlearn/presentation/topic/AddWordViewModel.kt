@@ -36,24 +36,24 @@ class AddWordViewModel @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    
+
     private val currentUserId: String?
         get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
-    
+
     private val _uiState = MutableStateFlow(AddWordUiState())
     val uiState: StateFlow<AddWordUiState> = _uiState.asStateFlow()
-    
+
     // New flow for search query input
     private val _searchQueryFlow = MutableStateFlow("")
-    
+
     // Local cache for search suggestions
     private val searchCache = mutableMapOf<String, List<WordSuggestion>>()
-    
+
     init {
         loadTopics()
         setupSearchFlow()
     }
-    
+
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     private fun setupSearchFlow() {
         viewModelScope.launch {
@@ -65,7 +65,7 @@ class AddWordViewModel @Inject constructor(
                     // Check cache first
                     if (searchCache.containsKey(query)) {
                         _uiState.value = _uiState.value.copy(
-                            isSearching = false, 
+                            isSearching = false,
                             searchSuggestions = searchCache[query]!!
                         )
                     } else {
@@ -89,7 +89,7 @@ class AddWordViewModel @Inject constructor(
                 }
         }
     }
-    
+
     /**
      * Load all available topics for suggestion dropdown.
      */
@@ -101,21 +101,21 @@ class AddWordViewModel @Inject constructor(
                 }
         }
     }
-    
+
     /**
      * Update new topic name input.
      */
     fun onNewTopicNameChange(name: String) {
         _uiState.value = _uiState.value.copy(newTopicName = name)
     }
-    
+
     /**
      * Update new topic description input.
      */
     fun onNewTopicDescriptionChange(description: String) {
         _uiState.value = _uiState.value.copy(newTopicDescription = description)
     }
-    
+
     /**
      * Select a topic from the dropdown for word suggestions.
      */
@@ -127,33 +127,33 @@ class AddWordViewModel @Inject constructor(
         )
         loadWordsByTopic()
     }
-    
+
     fun toggleTopicDropdown() {
         _uiState.value = _uiState.value.copy(
             showTopicDropdown = !_uiState.value.showTopicDropdown
         )
     }
-    
+
     /**
      * Search for words as user types (autocomplete).
      */
     fun onSearchQueryChange(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
         _searchQueryFlow.value = query
-        
+
         // Clear suggestions if query is too short
         if (query.length < 2) {
-             _uiState.value = _uiState.value.copy(searchSuggestions = emptyList())
+            _uiState.value = _uiState.value.copy(searchSuggestions = emptyList())
         }
     }
-    
+
     /**
      * Get word details with definition when user selects a suggestion.
      */
     fun onSuggestionSelected(word: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingDetails = true)
-            
+
             datamuseRepository.searchWords("$word")
                 .onSuccess { words ->
                     val selectedWord = words.find { it.word.equals(word, ignoreCase = true) }
@@ -176,24 +176,24 @@ class AddWordViewModel @Inject constructor(
                 }
         }
     }
-    
+
     /**
      * Update topic query for manual input.
      */
     fun onTopicQueryChange(topic: String) {
         _uiState.value = _uiState.value.copy(topicQuery = topic)
     }
-    
+
     /**
      * Load vocabulary words related to the selected/entered topic.
      */
     fun loadWordsByTopic() {
         val topic = _uiState.value.topicQuery
         if (topic.isBlank()) return
-        
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingTopicWords = true)
-            
+
             datamuseRepository.getWordsByTopic(topic)
                 .onSuccess { words ->
                     _uiState.value = _uiState.value.copy(
@@ -209,7 +209,7 @@ class AddWordViewModel @Inject constructor(
                 }
         }
     }
-    
+
     /**
      * Toggle word selection for batch add.
      */
@@ -222,7 +222,7 @@ class AddWordViewModel @Inject constructor(
         }
         _uiState.value = _uiState.value.copy(selectedWords = currentSelected)
     }
-    
+
     /**
      * Remove a word from selected words.
      */
@@ -231,7 +231,7 @@ class AddWordViewModel @Inject constructor(
         currentSelected.remove(word)
         _uiState.value = _uiState.value.copy(selectedWords = currentSelected)
     }
-    
+
     /**
      * Create a new topic with selected words and save to database.
      */
@@ -239,35 +239,35 @@ class AddWordViewModel @Inject constructor(
         val topicName = _uiState.value.newTopicName.trim()
         val description = _uiState.value.newTopicDescription.trim()
         val selectedWords = _uiState.value.selectedWords
-        
+
         if (topicName.isBlank()) {
             onError("Please enter a topic name")
             return
         }
-        
+
         if (selectedWords.isEmpty()) {
             onError("Please select at least one word")
             return
         }
-        
+
         val userId = currentUserId
         if (userId.isNullOrBlank()) {
             onError("Please sign in to create topics")
             return
         }
-        
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCreatingTopic = true)
-            
+
             val topicId = UUID.randomUUID().toString()
-            
+
             // Get creator name from AuthRepository (works for username/password users)
             val signedInUser = authRepository.getSignedInUser()
-            val creatorName = signedInUser?.username 
+            val creatorName = signedInUser?.username
                 ?: firebaseAuth.currentUser?.displayName
-                ?: firebaseAuth.currentUser?.email?.substringBefore("@") 
+                ?: firebaseAuth.currentUser?.email?.substringBefore("@")
                 ?: "Anonymous"
-            
+
             val newTopic = Topic(
                 id = topicId,
                 name = topicName,
@@ -277,7 +277,7 @@ class AddWordViewModel @Inject constructor(
                 createdBy = userId,
                 creatorName = creatorName
             )
-            
+
             // Convert VocabularyWord to Flashcard
             val flashcards = selectedWords.map { word ->
                 Flashcard(
@@ -290,7 +290,7 @@ class AddWordViewModel @Inject constructor(
                     exampleSentence = ""
                 )
             }
-            
+
             topicRepository.createTopic(newTopic)
                 .onSuccess { _ ->
                     // Save flashcards to repository
@@ -310,7 +310,7 @@ class AddWordViewModel @Inject constructor(
                 }
         }
     }
-    
+
     fun clearAll() {
         _uiState.value = _uiState.value.copy(
             searchQuery = "",
@@ -319,7 +319,7 @@ class AddWordViewModel @Inject constructor(
             selectedWords = emptySet()
         )
     }
-    
+
     /**
      * Extracts the main keyword from topic name by removing common prefixes.
      */
@@ -335,23 +335,23 @@ data class AddWordUiState(
     val newTopicName: String = "",
     val newTopicDescription: String = "",
     val isCreatingTopic: Boolean = false,
-    
+
     // Topic selection for word suggestions
     val availableTopics: List<Topic> = emptyList(),
     val selectedTopic: Topic? = null,
     val showTopicDropdown: Boolean = false,
-    
+
     // Search mode
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchSuggestions: List<WordSuggestion> = emptyList(),
     val isLoadingDetails: Boolean = false,
-    
+
     // Topic-based word suggestions
     val topicQuery: String = "",
     val isLoadingTopicWords: Boolean = false,
     val topicSuggestions: List<VocabularyWord> = emptyList(),
-    
+
     // Selected words for the new topic
     val selectedWords: Set<VocabularyWord> = emptySet()
 )

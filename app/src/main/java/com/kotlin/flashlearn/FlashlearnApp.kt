@@ -16,7 +16,8 @@ class FlashlearnApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
-    @Inject lateinit var dailyWordScheduler: com.kotlin.flashlearn.workers.DailyWordScheduler
+    @Inject
+    lateinit var dailyWordScheduler: com.kotlin.flashlearn.workers.DailyWordScheduler
 
     override fun onCreate() {
         super.onCreate()

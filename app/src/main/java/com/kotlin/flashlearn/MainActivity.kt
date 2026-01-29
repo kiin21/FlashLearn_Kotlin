@@ -1,9 +1,9 @@
 package com.kotlin.flashlearn
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -13,22 +13,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.kotlin.flashlearn.domain.repository.AuthRepository
-import com.kotlin.flashlearn.notification.DailyReminderPermissionGate
 import com.kotlin.flashlearn.domain.repository.UserRepository
+import com.kotlin.flashlearn.notification.DailyReminderPermissionGate
 import com.kotlin.flashlearn.presentation.navigation.FlashlearnNavHost
 import com.kotlin.flashlearn.ui.theme.FlashlearnTheme
 import com.kotlin.flashlearn.util.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-import androidx.appcompat.app.AppCompatActivity
-
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authRepository: AuthRepository
-    
+
     @Inject
     lateinit var userRepository: UserRepository
 
@@ -69,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                 ThemeManager.MODE_LIGHT -> false
                 else -> isSystemDark
             }
-            
+
             FlashlearnTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

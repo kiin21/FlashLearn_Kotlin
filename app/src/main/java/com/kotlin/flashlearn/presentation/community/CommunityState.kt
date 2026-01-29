@@ -28,7 +28,7 @@ data class CommunityState(
 
 /**
  * Represents a topic item in the Community list with its interaction status.
- * 
+ *
  * @param topic The topic data
  * @param isFavorited Whether the user has saved this topic (private, for "Favorites" tab)
  * @param isUpvoted Whether the user has upvoted this topic (public, affects ranking)

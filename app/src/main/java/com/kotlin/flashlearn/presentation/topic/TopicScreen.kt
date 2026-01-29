@@ -2,7 +2,14 @@ package com.kotlin.flashlearn.presentation.topic
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -10,22 +17,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.Topic
 import com.kotlin.flashlearn.presentation.components.BottomNavBar
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import androidx.compose.ui.res.stringResource
-import com.kotlin.flashlearn.R
 
 @Composable
 fun TopicScreen(
@@ -39,7 +55,7 @@ fun TopicScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val topicWordCounts by viewModel.topicWordCounts.collectAsStateWithLifecycle()
     val topicProgress by viewModel.topicProgress.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(Unit) {
         viewModel.loadTopics()
     }
@@ -85,15 +101,15 @@ fun TopicScreen(
                 onQueryChange = { viewModel.updateSearchQuery(it) },
                 placeholder = stringResource(R.string.search_collections)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             // Filter Chips
             FilterChipRow(
                 activeFilter = uiState.activeFilter,
                 onFilterChange = { viewModel.updateFilter(it) }
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Content
@@ -106,6 +122,7 @@ fun TopicScreen(
                         CircularProgressIndicator(color = FlashRed)
                     }
                 }
+
                 uiState.error != null -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -123,6 +140,7 @@ fun TopicScreen(
                         }
                     }
                 }
+
                 uiState.displayedTopics.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -130,17 +148,23 @@ fun TopicScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = if (uiState.searchQuery.isNotBlank()) 
-                                    stringResource(R.string.no_topics_found_query, uiState.searchQuery) 
+                                text = if (uiState.searchQuery.isNotBlank())
+                                    stringResource(
+                                        R.string.no_topics_found_query,
+                                        uiState.searchQuery
+                                    )
                                 else if (uiState.activeFilter != TopicFilter.ALL)
-                                    stringResource(R.string.no_filtered_topics_yet, stringResource(uiState.activeFilter.resId).lowercase())
-                                else 
+                                    stringResource(
+                                        R.string.no_filtered_topics_yet,
+                                        stringResource(uiState.activeFilter.resId).lowercase()
+                                    )
+                                else
                                     stringResource(R.string.no_topics_yet_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (uiState.searchQuery.isNotBlank() || uiState.activeFilter != TopicFilter.ALL) {
                                 Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(onClick = { 
+                                TextButton(onClick = {
                                     viewModel.updateSearchQuery("")
                                     viewModel.updateFilter(TopicFilter.ALL)
                                 }) {
@@ -150,6 +174,7 @@ fun TopicScreen(
                         }
                     }
                 }
+
                 else -> {
                     TopicList(
                         topics = uiState.displayedTopics,
@@ -208,9 +233,10 @@ private fun FilterChipItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = if (isSelected) FlashRed else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    val backgroundColor =
+        if (isSelected) FlashRed else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     val textColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-    
+
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -245,11 +271,12 @@ fun TopicList(
             val wordCount = topicWordCounts[topic.id] ?: 0
             val isOwner = topic.createdBy != null && topic.createdBy == viewModel.currentUserId
             val isLiked = topic.id in likedTopicIds
-            
+
             // Calculate progress from mastered/total flashcards
             val (masteredCount, totalCount) = topicProgress[topic.id] ?: Pair(0, wordCount)
-            val progress = if (totalCount > 0) masteredCount.toFloat() / totalCount.toFloat() else 0f
-            
+            val progress =
+                if (totalCount > 0) masteredCount.toFloat() / totalCount.toFloat() else 0f
+
             com.kotlin.flashlearn.presentation.components.TopicItem(
                 title = topic.name,
                 description = topic.description,

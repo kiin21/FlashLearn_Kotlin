@@ -46,15 +46,15 @@ class SignInViewModel @Inject constructor(
      * Returns IntentSender to launch the sign-in UI.
      */
     suspend fun signIn(): android.content.IntentSender? {
-        _state.update { it.copy(isLoading = true) }
+        _state.update { it.copy(isGoogleLoading = true) }
         
         return authRepository.signIn().fold(
             onSuccess = { intentSender ->
-                _state.update { it.copy(isLoading = false) }
+                _state.update { it.copy(isGoogleLoading = false) }
                 intentSender
             },
             onFailure = { error ->
-                _state.update { it.copy(isLoading = false) }
+                _state.update { it.copy(isGoogleLoading = false) }
                 _uiEvent.send(SignInUiEvent.ShowError(error.message ?: "Sign in failed"))
                 null
             }
@@ -66,7 +66,7 @@ class SignInViewModel @Inject constructor(
      */
     fun onSignInResult(intent: Intent) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isGoogleLoading = true) }
             
             authRepository.signInWithIntent(intent).fold(
                 onSuccess = { userData ->
@@ -85,10 +85,9 @@ class SignInViewModel @Inject constructor(
                                 displayName = userData.username,
                                 photoUrl = userData.profilePictureUrl,
                                 email = userData.email,
-                                googleId = userData.userId,
+
                                 googleIds = listOf(userData.userId),
-                                linkedGoogleAccounts = listOf(linkedAccount),
-                                linkedProviders = listOf("google.com")
+                                linkedGoogleAccounts = listOf(linkedAccount)
                             )
                             userRepository.createUser(newUser)
                             syncRepository.syncAll(userData.userId)
@@ -96,7 +95,7 @@ class SignInViewModel @Inject constructor(
                             
                             _state.update { 
                                 it.copy(
-                                    isLoading = false,
+                                    isGoogleLoading = false,
                                     isSignInSuccessful = true
                                 ) 
                             }
@@ -107,7 +106,7 @@ class SignInViewModel @Inject constructor(
                             syncScheduler.scheduleDailySync(userData.userId)
                             _state.update { 
                                 it.copy(
-                                    isLoading = false,
+                                    isGoogleLoading = false,
                                     isSignInSuccessful = true
                                 ) 
                             }
@@ -117,7 +116,7 @@ class SignInViewModel @Inject constructor(
                         e.printStackTrace()
                         _state.update { 
                             it.copy(
-                                isLoading = false,
+                                isGoogleLoading = false,
                                 signInError = "Firestore Error: ${e.message}"
                             ) 
                         }
@@ -127,7 +126,7 @@ class SignInViewModel @Inject constructor(
                 onFailure = { error ->
                     _state.update { 
                         it.copy(
-                            isLoading = false,
+                            isGoogleLoading = false,
                             signInError = error.message
                         ) 
                     }

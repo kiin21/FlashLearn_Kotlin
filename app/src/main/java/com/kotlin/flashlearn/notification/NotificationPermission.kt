@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.kotlin.flashlearn.notification.daily.DailyReminderScheduler
-import com.kotlin.flashlearn.presentation.noti.AutoReminderPrefs
 import com.kotlin.flashlearn.notification.exam.ExamReminderScheduler
+import com.kotlin.flashlearn.presentation.noti.AutoReminderPrefs
 import com.kotlin.flashlearn.presentation.noti.ExamReminderPrefs
 
 /**

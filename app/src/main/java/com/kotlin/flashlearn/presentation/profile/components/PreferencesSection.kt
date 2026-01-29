@@ -33,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -69,7 +68,7 @@ fun PreferencesSection(
             Language("vi", R.string.vietnamese, "🇻🇳")
         )
     }
-    
+
     val context = LocalContext.current
     val languageManager = remember {
         // In a real app we'd inject this, but for now we can grab it from Activity/App or Hilt
@@ -86,10 +85,10 @@ fun PreferencesSection(
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        
+
         // --- General Section ---
         ProfileSectionHeader(stringResource(R.string.general), MaterialTheme.colorScheme.primary)
-        
+
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
@@ -106,8 +105,11 @@ fun PreferencesSection(
                     onCheckedChange = { onToggleDarkMode(it) },
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
 
                 // Language Selection
                 ExpandableProfileSection(
@@ -121,7 +123,10 @@ fun PreferencesSection(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { onLanguageChange(language.code) }
-                                    .padding(vertical = 12.dp, horizontal = 16.dp), // Added horizontal padding for expanded items
+                                    .padding(
+                                        vertical = 12.dp,
+                                        horizontal = 16.dp
+                                    ), // Added horizontal padding for expanded items
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
@@ -129,7 +134,7 @@ fun PreferencesSection(
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f)
                                 )
-                                
+
                                 if (language == selectedLanguage) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
@@ -139,7 +144,13 @@ fun PreferencesSection(
                                 }
                             }
                             if (index < languages.size - 1) {
-                                HorizontalDivider(modifier = Modifier.padding(start = 56.dp, end = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(
+                                        start = 56.dp,
+                                        end = 16.dp
+                                    ),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                )
                             }
                         }
                     }
@@ -149,16 +160,16 @@ fun PreferencesSection(
 
         // --- Account Section ---
         ProfileSectionHeader(stringResource(R.string.account), MaterialTheme.colorScheme.primary)
-        
+
         Card(
-             colors = CardDefaults.cardColors(
+            colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
             ),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-             Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                 // Linked Accounts
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                // Linked Accounts
                 LinkedAccountsSection(
                     linkedAccounts = linkedAccounts,
                     onLinkGoogleAccount = onLinkGoogleAccount,
@@ -166,7 +177,10 @@ fun PreferencesSection(
                     isLinkingInProgress = isLinkingInProgress
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
 
                 // Change Password
                 ProfileRowNavigation(
@@ -175,11 +189,11 @@ fun PreferencesSection(
                     onClick = onChangePassword,
                     iconTint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-             }
+            }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // --- Actions Section ---
         // --- Actions Section ---
         Button(
@@ -200,10 +214,10 @@ fun PreferencesSection(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        
+
         // --- Danger Zone ---
         ProfileSectionHeader(stringResource(R.string.danger_zone), FlashRed)
-        
+
         androidx.compose.material3.OutlinedButton(
             onClick = onDeleteAccount,
             modifier = Modifier.fillMaxWidth(),
@@ -215,7 +229,7 @@ fun PreferencesSection(
             shape = RoundedCornerShape(12.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
         ) {
-             Icon(
+            Icon(
                 imageVector = Icons.Default.DeleteOutline,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
@@ -227,7 +241,7 @@ fun PreferencesSection(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        
+
         Spacer(modifier = Modifier.height(32.dp))
     }
 }

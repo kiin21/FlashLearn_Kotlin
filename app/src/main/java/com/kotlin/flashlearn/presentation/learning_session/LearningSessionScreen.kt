@@ -1,8 +1,6 @@
 package com.kotlin.flashlearn.presentation.learning_session
 
 import android.speech.tts.TextToSpeech
-import androidx.compose.runtime.DisposableEffect
-import java.util.Locale
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -27,7 +25,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -36,9 +33,9 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,20 +49,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
 import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
-import androidx.compose.ui.res.stringResource
-import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
+import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
@@ -92,7 +90,14 @@ fun LearningSessionScreen(
     val prefs = remember {
         context.getSharedPreferences("flashlearn_onboarding", android.content.Context.MODE_PRIVATE)
     }
-    var showTutorial by remember { mutableStateOf(!prefs.getBoolean("learning_tutorial_shown", false)) }
+    var showTutorial by remember {
+        mutableStateOf(
+            !prefs.getBoolean(
+                "learning_tutorial_shown",
+                false
+            )
+        )
+    }
     var tutorialStep by rememberSaveable { mutableStateOf(0) }
 
     fun dismissTutorial(markShown: Boolean = true) {
@@ -134,7 +139,9 @@ fun LearningSessionScreen(
             )
         } else {
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
             ) {
                 // Top bar with close button and progress
                 TopBar(
@@ -222,7 +229,9 @@ private fun TopBar(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(4.dp, 60.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp, 60.dp)
     ) {
         // Progress bar
         LinearProgressIndicator(
@@ -267,7 +276,7 @@ private fun TopBar(
                     color = Color.Black
                 )
             }
-            
+
             // Right: Empty space to balance the layout
             Box(modifier = Modifier.weight(1f))
         }
@@ -304,8 +313,9 @@ private fun SwipeableFlashcard(
                     val usLocale = Locale.US
                     val result = ttsInstance.setLanguage(usLocale)
 
-                    if (result == TextToSpeech.LANG_MISSING_DATA || 
-                        result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    if (result == TextToSpeech.LANG_MISSING_DATA ||
+                        result == TextToSpeech.LANG_NOT_SUPPORTED
+                    ) {
                         android.util.Log.e("TTS", "US English not supported")
                     } else {
                         // Explicitly choose an en-US voice
@@ -392,7 +402,7 @@ private fun SwipeableFlashcard(
             val alpha = (offsetX.value.absoluteValue / threshold).coerceIn(0f, 1f)
             val color = if (offsetX.value > 0) Color.Green else Color.Red
             val icon = if (offsetX.value > 0) "✓" else "✕"
-            
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -419,7 +429,7 @@ private fun FlashcardItem(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
-    
+
     // Flip animation
     val rotation by animateFloatAsState(
         targetValue = if (isFlipped) 180f else 0f,
@@ -468,12 +478,14 @@ private fun LearningSessionTutorialDialog(
             Color(0xFFE53935),
             "LEFT"
         )
+
         1 -> Quad(
             "Swipe right if you mastered the word",
             "We’ll count it as completed and move on.",
             Color(0xFF43A047),
             "RIGHT"
         )
+
         else -> Quad(
             "Click card to show definition",
             "Tap to flip between word and meaning.",

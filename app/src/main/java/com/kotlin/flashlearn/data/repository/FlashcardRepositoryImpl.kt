@@ -60,19 +60,19 @@ class FlashcardRepositoryImpl @Inject constructor(
             }.onFailure {
                 Log.w(TAG, "Room cache update failed: ${it.message}")
             }
-            
+
             // Update cache safely
             val currentCache = flashcardCache[topicId]
             if (currentCache != null) {
-                val updatedCache = currentCache.map { 
-                    if (it.id == flashcard.id) flashcard else it 
+                val updatedCache = currentCache.map {
+                    if (it.id == flashcard.id) flashcard else it
                 }
                 flashcardCache[topicId] = updatedCache
             }
-            
+
             Unit
         }.onFailure {
-             if (it is CancellationException) throw it
+            if (it is CancellationException) throw it
         }
     }
 
@@ -186,11 +186,20 @@ class FlashcardRepositoryImpl @Inject constructor(
         status: ProgressStatus
     ): Result<Unit> {
         return runCatching {
+            // Set proficiencyScore based on status to ensure consistency
+            // MASTERED requires score >= 6, REVIEW requires score >= 3
+            val proficiencyScore = when (status) {
+                ProgressStatus.MASTERED -> 6
+                ProgressStatus.REVIEW -> 3
+                ProgressStatus.LEARNING -> 0
+            }
+            
             val progress = UserProgressEntity(
                 id = "${userId}_${flashcardId}",
                 userId = userId,
                 flashcardId = flashcardId,
                 status = status,
+                proficiencyScore = proficiencyScore,
                 updatedAt = System.currentTimeMillis(),
                 syncedToRemote = false
             )
@@ -233,7 +242,10 @@ class FlashcardRepositoryImpl @Inject constructor(
             runCatching {
                 saveFlashcardToFirestore(enriched, card.topicId)
             }.onFailure {
-                Log.w(TAG, "Failed to persist enriched card (likely permission issue): ${it.message}")
+                Log.w(
+                    TAG,
+                    "Failed to persist enriched card (likely permission issue): ${it.message}"
+                )
             }
         }
         return enriched
@@ -403,15 +415,16 @@ class FlashcardRepositoryImpl @Inject constructor(
         return runCatching {
             // Get all flashcards for the topic
             val allFlashcards = getFlashcardsByTopicId(topicId).getOrThrow()
-            
+
             if (allFlashcards.isEmpty()) {
                 return@runCatching emptyList()
             }
-            
+
             // Get IDs of mastered flashcards
             val allFlashcardIds = allFlashcards.map { it.id }
-            val masteredIds = userProgressDao.getMasteredFlashcardIdsFromList(userId, allFlashcardIds).toSet()
-            
+            val masteredIds =
+                userProgressDao.getMasteredFlashcardIdsFromList(userId, allFlashcardIds).toSet()
+
             // Filter out mastered flashcards
             allFlashcards.filter { it.id !in masteredIds }
         }.onFailure {
@@ -428,15 +441,15 @@ class FlashcardRepositoryImpl @Inject constructor(
             // Get all flashcards for the topic
             val allFlashcards = getFlashcardsByTopicId(topicId).getOrThrow()
             val totalCount = allFlashcards.size
-            
+
             if (totalCount == 0) {
                 return@runCatching Pair(0, 0)
             }
-            
+
             // Get count of mastered flashcards
             val allFlashcardIds = allFlashcards.map { it.id }
             val masteredCount = userProgressDao.getMasteredCountForTopic(userId, allFlashcardIds)
-            
+
             Pair(masteredCount, totalCount)
         }.onFailure {
             if (it is CancellationException) throw it
@@ -467,12 +480,12 @@ class FlashcardRepositoryImpl @Inject constructor(
             // Get all flashcards for this topic
             val flashcardsResult = getFlashcardsByTopicId(topicId)
             val flashcards = flashcardsResult.getOrNull() ?: emptyList()
-            
+
             // Delete progress for each flashcard
             flashcards.forEach { flashcard ->
                 userProgressDao.deleteProgress(userId, flashcard.id)
             }
-            
+
             Log.d(TAG, "Reset progress for topic $topicId (${flashcards.size} cards)")
             Unit
         }.onFailure {

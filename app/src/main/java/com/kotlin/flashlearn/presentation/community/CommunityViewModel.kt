@@ -52,10 +52,12 @@ class CommunityViewModel @Inject constructor(
                 _state.update { it.copy(searchQuery = action.query) }
                 loadTopics()
             }
+
             is CommunityAction.OnSortChange -> {
                 _state.update { it.copy(activeSort = action.sort) }
                 loadTopics()
             }
+
             is CommunityAction.OnFilterApply -> {
                 // Apply: copy temp state to active filter, close sheet, reload
                 _state.update { state ->
@@ -63,54 +65,62 @@ class CommunityViewModel @Inject constructor(
                         activeFilter = state.activeFilter.copy(levels = state.tempSelectedLevels),
                         tempSelectedLevels = emptyList(),
                         isFilterSheetVisible = false
-                    ) 
+                    )
                 }
                 loadTopics()
             }
+
             is CommunityAction.OnToggleBookmark -> {
                 toggleBookmark(action.topicId)
             }
+
             is CommunityAction.OnToggleUpvote -> {
                 toggleUpvote(action.topicId)
             }
+
             is CommunityAction.OnTopicClick -> {
                 viewModelScope.launch {
                     _uiEvent.emit(CommunityUiEvent.NavigateToTopicDetail(action.topicId))
                 }
             }
+
             is CommunityAction.OnLevelFilterToggle -> {
                 // Toggle in TEMPORARY state (not applied yet)
                 toggleTempLevelFilter(action.level)
             }
+
             CommunityAction.OnFilterSheetOpen -> {
                 // Copy current active filter to temp state when opening sheet
-                _state.update { 
+                _state.update {
                     it.copy(
                         isFilterSheetVisible = true,
                         tempSelectedLevels = it.activeFilter.levels
-                    ) 
+                    )
                 }
             }
+
             CommunityAction.OnFilterSheetDismiss -> {
                 // Cancel: discard temp state, close sheet
-                _state.update { 
+                _state.update {
                     it.copy(
                         isFilterSheetVisible = false,
                         tempSelectedLevels = emptyList()
-                    ) 
+                    )
                 }
             }
+
             CommunityAction.OnClearFilters -> {
                 // Clear All: immediately apply empty filter and close
-                _state.update { 
+                _state.update {
                     it.copy(
                         activeFilter = CommunityFilter(),
                         tempSelectedLevels = emptyList(),
                         isFilterSheetVisible = false
-                    ) 
+                    )
                 }
                 loadTopics()
             }
+
             CommunityAction.OnRefresh -> {
                 loadTopics()
             }
@@ -127,12 +137,14 @@ class CommunityViewModel @Inject constructor(
                 onSuccess = { topics ->
                     val userId = currentUserId
                     val bookmarkIds = if (userId != null) {
-                        communityInteractionRepository.getBookmarkedTopicIdsOnce(userId).getOrNull() ?: emptyList()
+                        communityInteractionRepository.getBookmarkedTopicIdsOnce(userId).getOrNull()
+                            ?: emptyList()
                     } else {
                         emptyList()
                     }
                     val upvotedIds = if (userId != null) {
-                        communityInteractionRepository.getUpvotedTopicIdsOnce(userId).getOrNull() ?: emptyList()
+                        communityInteractionRepository.getUpvotedTopicIdsOnce(userId).getOrNull()
+                            ?: emptyList()
                     } else {
                         emptyList()
                     }
@@ -143,7 +155,7 @@ class CommunityViewModel @Inject constructor(
                     var filteredTopics = topics.filter { topic ->
                         !topic.isSystemTopic && topic.createdBy != userId
                     }
-                    
+
                     val currentState = _state.value
 
                     // Filter by search query (name, description, creatorName)
@@ -151,23 +163,24 @@ class CommunityViewModel @Inject constructor(
                         val query = currentState.searchQuery.trim()
                         filteredTopics = filteredTopics.filter { topic ->
                             topic.name.contains(query, ignoreCase = true) ||
-                            topic.description.contains(query, ignoreCase = true) ||
-                            topic.creatorName.contains(query, ignoreCase = true)
+                                    topic.description.contains(query, ignoreCase = true) ||
+                                    topic.creatorName.contains(query, ignoreCase = true)
                         }
                     }
 
                     // Filter by level (OR logic - show topic if it has ANY matching level)
                     if (currentState.activeFilter.levels.isNotEmpty()) {
-                        val selectedLevelNames = currentState.activeFilter.levels.map { it.displayName }
+                        val selectedLevelNames =
+                            currentState.activeFilter.levels.map { it.displayName }
                         filteredTopics = filteredTopics.filter { topic ->
                             // Check if topic's wordLevels contains any selected level
-                            topic.wordLevels.any { wordLevel -> 
-                                wordLevel in selectedLevelNames 
+                            topic.wordLevels.any { wordLevel ->
+                                wordLevel in selectedLevelNames
                             } ||
-                            // Fallback: check topic name for level keywords
-                            selectedLevelNames.any { level ->
-                                topic.name.contains(level, ignoreCase = true)
-                            }
+                                    // Fallback: check topic name for level keywords
+                                    selectedLevelNames.any { level ->
+                                        topic.name.contains(level, ignoreCase = true)
+                                    }
                         }
                     }
 
@@ -176,6 +189,7 @@ class CommunityViewModel @Inject constructor(
                         CommunitySortOption.UPVOTES -> {
                             filteredTopics.sortedByDescending { it.upvoteCount }
                         }
+
                         CommunitySortOption.NEWEST -> {
                             filteredTopics.sortedByDescending { it.createdAt }
                         }
@@ -190,22 +204,26 @@ class CommunityViewModel @Inject constructor(
                         )
                     }
 
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             topics = topicItems,
                             isLoading = false
-                        ) 
+                        )
                     }
                 },
                 onFailure = { error ->
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isLoading = false,
                             error = error.message ?: "Failed to load topics"
-                        ) 
+                        )
                     }
                     viewModelScope.launch {
-                        _uiEvent.emit(CommunityUiEvent.ShowError(error.message ?: "Failed to load topics"))
+                        _uiEvent.emit(
+                            CommunityUiEvent.ShowError(
+                                error.message ?: "Failed to load topics"
+                            )
+                        )
                     }
                 }
             )
@@ -246,7 +264,11 @@ class CommunityViewModel @Inject constructor(
                     _uiEvent.emit(CommunityUiEvent.ShowSuccess(message))
                 },
                 onFailure = { error ->
-                    _uiEvent.emit(CommunityUiEvent.ShowError(error.message ?: "Failed to save topic"))
+                    _uiEvent.emit(
+                        CommunityUiEvent.ShowError(
+                            error.message ?: "Failed to save topic"
+                        )
+                    )
                 }
             )
         }

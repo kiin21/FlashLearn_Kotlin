@@ -6,13 +6,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.kotlin.flashlearn.notification.NotificationHelper
 import com.kotlin.flashlearn.presentation.noti.ExamDatePrefs
+import com.kotlin.flashlearn.utils.DateUtils
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
-import com.kotlin.flashlearn.utils.DateUtils
 
 @HiltWorker
 class ExamReminderWorker @AssistedInject constructor(

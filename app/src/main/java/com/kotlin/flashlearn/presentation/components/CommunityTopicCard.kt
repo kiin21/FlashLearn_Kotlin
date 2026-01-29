@@ -38,7 +38,7 @@ import java.util.Locale
 
 /**
  * Topic card for Community screen.
- * 
+ *
  * Design (Separate Upvote/Favorite):
  * - 👍 ThumbUp button: Upvote (public voting, affects ranking)
  * - 🔖 Bookmark button: Favorite (private save, for "Favorites" tab)
@@ -55,7 +55,7 @@ fun CommunityTopicCard(
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
-    
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -84,9 +84,9 @@ fun CommunityTopicCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 // Creator name (clickable)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -106,13 +106,13 @@ fun CommunityTopicCard(
                         fontWeight = FontWeight.Medium
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 // Tags (Word levels from flashcards + Category)
                 val categoryTag = extractCategoryFromName(topic.name)
                 val hasLevels = topic.wordLevels.isNotEmpty()
-                
+
                 if (hasLevels || categoryTag != null) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -122,16 +122,16 @@ fun CommunityTopicCard(
                         topic.wordLevels.forEach { level ->
                             TopicTag(text = level)
                         }
-                        
+
                         // Category tag
                         if (categoryTag != null) {
                             TopicTag(text = categoryTag)
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 // Stats row: Upvote count with clickable icon
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // Upvote button + count
@@ -153,9 +153,9 @@ fun CommunityTopicCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             // Right side - Bookmark button (Save to Favorites)
             IconButton(
                 onClick = onFavoriteClick,

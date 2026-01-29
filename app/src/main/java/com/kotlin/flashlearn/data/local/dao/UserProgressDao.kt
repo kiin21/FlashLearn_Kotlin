@@ -64,5 +64,8 @@ interface UserProgressDao {
      * @return List of flashcard IDs that are mastered
      */
     @Query("SELECT flashcardId FROM user_progress WHERE userId = :userId AND flashcardId IN (:flashcardIds) AND status = 'MASTERED'")
-    suspend fun getMasteredFlashcardIdsFromList(userId: String, flashcardIds: List<String>): List<String>
+    suspend fun getMasteredFlashcardIdsFromList(
+        userId: String,
+        flashcardIds: List<String>
+    ): List<String>
 }

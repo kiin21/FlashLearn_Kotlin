@@ -3,26 +3,26 @@ package com.kotlin.flashlearn.widget
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.*
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.kotlin.flashlearn.MainActivity
+import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.utils.DateKey
 import dagger.hilt.android.EntryPointAccessors
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.glance.action.clickable
-import com.kotlin.flashlearn.R
 
 class DailyWordWidget : GlanceAppWidget() {
 

@@ -42,16 +42,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import com.kotlin.flashlearn.R
-import com.kotlin.flashlearn.ui.theme.FlashRed
-import com.kotlin.flashlearn.ui.theme.FlashRedLight
 
 @Composable
 fun RegisterScreen(
@@ -102,9 +99,9 @@ fun RegisterScreen(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Logo and title centered
             Image(
                 painter = painterResource(id = R.mipmap.ic_launcher),
@@ -135,7 +132,14 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
                 isError = state.usernameError != null,
-                supportingText = state.usernameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                supportingText = state.usernameError?.let {
+                    {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline
@@ -153,14 +157,23 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
                 isError = state.passwordError != null,
-                supportingText = state.passwordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                supportingText = state.passwordError?.let {
+                    {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
+                            contentDescription = if (passwordVisible) stringResource(R.string.hide_password) else stringResource(
+                                R.string.show_password
+                            ),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -190,14 +203,23 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(28.dp),
                 singleLine = true,
                 isError = state.confirmPasswordError != null,
-                supportingText = state.confirmPasswordError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+                supportingText = state.confirmPasswordError?.let {
+                    {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                         Icon(
                             imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (confirmPasswordVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password),
+                            contentDescription = if (confirmPasswordVisible) stringResource(R.string.hide_password) else stringResource(
+                                R.string.show_password
+                            ),
                             tint = Color.Gray
                         )
                     }
