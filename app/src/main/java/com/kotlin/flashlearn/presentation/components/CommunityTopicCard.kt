@@ -52,6 +52,7 @@ fun CommunityTopicCard(
     onFavoriteClick: () -> Unit,
     onUpvoteClick: () -> Unit,
     onCreatorClick: () -> Unit,
+    onOriginalTopicClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val topic = item.topic
@@ -105,6 +106,18 @@ fun CommunityTopicCard(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
+                    
+                    // Attribution for cloned topics
+                    if (!topic.originalCreator.isNullOrBlank() && !topic.clonedFrom.isNullOrBlank()) {
+                        Text(
+                            text = " · Based on ${topic.originalCreator}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable { onOriginalTopicClick(topic.clonedFrom!!) }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
