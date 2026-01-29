@@ -43,9 +43,32 @@ class AddWordViewModel @Inject constructor(
     private val existingTopicId: String? = savedStateHandle.get<String>("topicId")?.takeIf { it != "new" }
 
     private val _uiState = MutableStateFlow(AddWordUiState(
-        isEditMode = !existingTopicId.isNullOrBlank()
+        isEditMode = !existingTopicId.isNullOrBlank(),
+        currentStep = if (!existingTopicId.isNullOrBlank()) 1 else 0
     ))
     val uiState: StateFlow<AddWordUiState> = _uiState.asStateFlow()
+
+    // Step management
+    fun nextStep() {
+        val current = _uiState.value.currentStep
+        if (current < 1) { // Assuming 2 steps: 0 and 1
+            _uiState.value = _uiState.value.copy(currentStep = current + 1)
+        }
+    }
+
+    fun prevStep() {
+        val current = _uiState.value.currentStep
+        when (current) {
+            3 -> _uiState.value = _uiState.value.copy(currentStep = 1) // Search -> Method
+            2 -> _uiState.value = _uiState.value.copy(currentStep = 1) // Manual -> Method
+            1 -> _uiState.value = _uiState.value.copy(currentStep = 0) // Method -> Info
+            // 0 is handled by screen's onBack
+        }
+    }
+
+    fun setStep(step: Int) {
+        _uiState.value = _uiState.value.copy(currentStep = step.coerceIn(0, 3))
+    }
 
     // New flow for search query input
     private val _searchQueryFlow = MutableStateFlow("")
@@ -423,5 +446,8 @@ data class AddWordUiState(
     val manualIpa: String = "",
     val manualPartOfSpeech: String = "",
     val manualImageUri: String? = null,
-    val isManualEntryExpanded: Boolean = true // Default to expanded/visible
+    val isManualEntryExpanded: Boolean = true, // Default to expanded/visible
+
+    // Wizard Step State
+    val currentStep: Int = 0 // 0: Info, 1: Methods, 2: Manual, 3: Search
 )

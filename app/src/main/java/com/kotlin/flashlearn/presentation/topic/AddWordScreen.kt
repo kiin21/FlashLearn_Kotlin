@@ -3,6 +3,7 @@ package com.kotlin.flashlearn.presentation.topic
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,9 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -65,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -116,6 +121,13 @@ fun AddWordScreen(
         if (markShown) prefs.edit().putBoolean("topic_tutorial_shown", true).apply()
     }
 
+    fun handleBack() {
+        if (uiState.currentStep > 0) {
+            viewModel.prevStep()
+        } else {
+            onBack()
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -129,7 +141,7 @@ fun AddWordScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { handleBack() }) {
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             tint = FlashRed,
@@ -140,370 +152,157 @@ fun AddWordScreen(
             )
         },
         bottomBar = {
-            // Sticky Create Topic Button
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.createTopic(
-                            onSuccess = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(context.getString(R.string.topic_created_success))
-                                }
-                                onWordAdded()
-                            },
-                            onError = { error ->
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(error)
-                                }
-                            }
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = (uiState.isEditMode || uiState.newTopicName.isNotBlank()) &&
-                            uiState.selectedWords.isNotEmpty() &&
-                            !uiState.isCreatingTopic
+            // Show "Create Topic" button only if words are selected, AND we are past the Info step (or in Edit Mode)
+            if (uiState.selectedWords.isNotEmpty() && (uiState.currentStep > 0 || uiState.isEditMode)) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    if (uiState.isCreatingTopic) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White
-                        )
-                    } else {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (uiState.isEditMode) "Add ${uiState.selectedWords.size} words" else stringResource(
-                                R.string.create_topic_words,
-                                uiState.selectedWords.size
+                    Button(
+                        onClick = {
+                            viewModel.createTopic(
+                                onSuccess = {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(context.getString(R.string.topic_created_success))
+                                    }
+                                    onWordAdded()
+                                },
+                                onError = { error ->
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(error)
+                                    }
+                                }
                             )
-                        )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = !uiState.isCreatingTopic
+                    ) {
+                        if (uiState.isCreatingTopic) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (uiState.isEditMode) "Save Changes" else stringResource(
+                                    R.string.create_topic_words,
+                                    uiState.selectedWords.size
+                                )
+                            )
+                        }
                     }
                 }
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Topic Name Section
-            if (!uiState.isEditMode) {
-                item {
-                    Text(
-                        text = stringResource(R.string.topic_name),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = uiState.newTopicName,
-                        onValueChange = { viewModel.onNewTopicNameChange(it) },
-                        placeholder = { Text(stringResource(R.string.enter_topic_name)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
-                }
-
-                // Topic Description (Optional)
-                item {
-                    Text(
-                        text = stringResource(R.string.description_optional),
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedTextField(
-                        value = uiState.newTopicDescription,
-                        onValueChange = { viewModel.onNewTopicDescriptionChange(it) },
-                        placeholder = { Text(stringResource(R.string.add_description)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        minLines = 2,
-                        maxLines = 3
-                    )
-                }
-            }
-
-            // Selected Words Preview
-            if (uiState.selectedWords.isNotEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(R.string.selected_words, uiState.selectedWords.size),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(uiState.selectedWords.toList()) { word ->
-                            SelectedWordChip(
-                                word = word,
-                                onRemove = { viewModel.removeSelectedWord(word) }
-                            )
+        Box(modifier = Modifier.padding(padding)) {
+            when (uiState.currentStep) {
+                0 -> TopicInfoStep(
+                    name = uiState.newTopicName,
+                    onNameChange = viewModel::onNewTopicNameChange,
+                    description = uiState.newTopicDescription,
+                    onDescriptionChange = viewModel::onNewTopicDescriptionChange,
+                    onNext = { viewModel.nextStep() }
+                )
+                1 -> MethodSelectionStep(
+                    onManualSelect = { viewModel.setStep(2) },
+                    onSearchSelect = { viewModel.setStep(3) }
+                )
+                2 -> {
+                    // Manual Entry Step
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        PersistentWordList(
+                            selectedWords = uiState.selectedWords,
+                            onRemove = { word -> viewModel.removeSelectedWord(word) }
+                        )
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                Text("Manual Entry", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            }
+                            item {
+                                ManualEntryForm(
+                                    uiState = uiState,
+                                    onWordChange = viewModel::onManualWordChange,
+                                    onDefinitionChange = viewModel::onManualDefinitionChange,
+                                    onExampleChange = viewModel::onManualExampleChange,
+                                    onIpaChange = viewModel::onManualIpaChange,
+                                    onPosChange = viewModel::onManualPartOfSpeechChange,
+                                    onImageUriChange = viewModel::onManualImageUriChange,
+                                    onAdd = viewModel::addManualCard,
+                                    isExpanded = true,
+                                    onToggleExpand = {}
+                                )
+                            }
                         }
                     }
                 }
-            }
-
-
-            // Manual Entry Section (New - Top Priority)
-            item {
-                ManualEntryForm(
-                    uiState = uiState,
-                    onWordChange = viewModel::onManualWordChange,
-                    onDefinitionChange = viewModel::onManualDefinitionChange,
-                    onExampleChange = viewModel::onManualExampleChange,
-                    onIpaChange = viewModel::onManualIpaChange,
-                    onPosChange = viewModel::onManualPartOfSpeechChange,
-                    onImageUriChange = viewModel::onManualImageUriChange,
-                    onAdd = viewModel::addManualCard,
-                    isExpanded = uiState.isManualEntryExpanded,
-                    onToggleExpand = viewModel::toggleManualEntryExpanded
-                )
-            }
-
-            // Divider
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "  ${stringResource(R.string.or)}  ",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                }
-            }
-
-            // Search Section
-            item {
-                Text(
-                    text = stringResource(R.string.search_for_word),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChange(it) },
-                    placeholder = { Text(stringResource(R.string.type_to_search)) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(
-                        onSearch = { focusManager.clearFocus() }
-                    )
-                )
-            }
-
-            // Search Suggestions
-            if (uiState.isSearching) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = FlashRed
+                3 -> {
+                    // Search Step
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        PersistentWordList(
+                            selectedWords = uiState.selectedWords,
+                            onRemove = { word -> viewModel.removeSelectedWord(word) }
                         )
-                    }
-                }
-            } else if (uiState.searchSuggestions.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = FlashLightGrey)
-                    ) {
-                        Column {
-                            uiState.searchSuggestions.take(8).forEach { suggestion ->
-                                Text(
-                                    text = suggestion.word,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { viewModel.onSuggestionSelected(suggestion.word) }
-                                        .padding(16.dp),
-                                    fontWeight = FontWeight.Medium,
-                                    color = FlashResultText
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                Text("Search Dictionary", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            }
+                            item {
+                                OutlinedTextField(
+                                    value = uiState.searchQuery,
+                                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                                    placeholder = { Text(stringResource(R.string.type_to_search)) },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
                                 )
-                                if (suggestion != uiState.searchSuggestions.take(8).last()) {
-                                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+                            }
+                            if (uiState.isSearching) {
+                                item { Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() } }
+                            } else if (uiState.searchSuggestions.isNotEmpty()) {
+                                item {
+                                    Card(
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color.Black),
+                                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                                    ) {
+                                        uiState.searchSuggestions.forEach { suggestion ->
+                                            Text(
+                                                text = suggestion.word,
+                                                modifier = Modifier.fillMaxWidth().clickable { viewModel.onSuggestionSelected(suggestion.word) }.padding(16.dp),
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.White
+                                            )
+                                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-
-            // Divider
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "  ${stringResource(R.string.or)}  ",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                    HorizontalDivider(modifier = Modifier.weight(1f))
-                }
-            }
-
-            // Topic Selection Section
-            item {
-                Text(
-                    text = stringResource(R.string.get_words_by_topic),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Topic Dropdown
-                if (uiState.availableTopics.isNotEmpty()) {
-                    ExposedDropdownMenuBox(
-                        expanded = uiState.showTopicDropdown,
-                        onExpandedChange = { viewModel.toggleTopicDropdown() }
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.selectedTopic?.name
-                                ?: stringResource(R.string.choose_topic),
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = uiState.showTopicDropdown) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = if (uiState.selectedTopic != null) FlashRed.copy(
-                                    alpha = 0.1f
-                                ) else Color.Transparent
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = uiState.showTopicDropdown,
-                            onDismissRequest = { viewModel.toggleTopicDropdown() }
-                        ) {
-                            uiState.availableTopics.forEach { topic ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Column {
-                                            Text(topic.name, fontWeight = FontWeight.Medium)
-                                            if (topic.description.isNotBlank()) {
-                                                Text(
-                                                    topic.description,
-                                                    fontSize = 12.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 1
-                                                )
-                                            }
-                                        }
-                                    },
-                                    onClick = { viewModel.onTopicSelected(topic) }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = stringResource(R.string.or_enter_manually),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = uiState.topicQuery,
-                        onValueChange = { viewModel.onTopicQueryChange(it) },
-                        placeholder = { Text(stringResource(R.string.topic_query_placeholder)) },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true
-                    )
-                    Button(
-                        onClick = {
-                            focusManager.clearFocus()
-                            viewModel.loadWordsByTopic()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = FlashRed),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.height(56.dp)
-                    ) {
-                        Text(stringResource(R.string.get_button))
-                    }
-                }
-            }
-
-            // Topic Word Suggestions
-            if (uiState.isLoadingTopicWords) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = FlashRed)
-                    }
-                }
-            } else if (uiState.topicSuggestions.isNotEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(
-                            R.string.available_words,
-                            uiState.topicSuggestions.size
-                        ),
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
-                    )
-                }
-
-                items(uiState.topicSuggestions.filter { it.definition.isNotBlank() }) { word ->
-                    TopicWordCard(
-                        word = word,
-                        isSelected = uiState.selectedWords.contains(word),
-                        onToggle = { viewModel.toggleWordSelection(word) }
-                    )
-                }
-            }
-
-            // Bottom spacing for list items above the sticky button
-            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
     if (showTopicTutorial) {
@@ -699,6 +498,46 @@ fun ManualEntryForm(
                     enabled = uiState.manualWord.isNotBlank() && uiState.manualDefinition.isNotBlank()
                 ) {
                     Text("Add to List")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PersistentWordList(
+    selectedWords: Set<VocabularyWord>,
+    onRemove: (VocabularyWord) -> Unit
+) {
+    if (selectedWords.isNotEmpty()) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = FlashRed.copy(alpha = 0.08f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Selected Words (${selectedWords.size})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = FlashRed
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(selectedWords.toList()) { word ->
+                        SelectedWordChip(word = word, onRemove = { onRemove(word) })
+                    }
                 }
             }
         }
@@ -1119,5 +958,203 @@ private fun MockTextArea(
         contentAlignment = Alignment.TopStart
     ) {
         Text(text = placeholder, color = Color(0xFF9CA3AF))
+
     }
 }
+
+@Composable
+fun TopicInfoStep(
+    name: String,
+    onNameChange: (String) -> Unit,
+    description: String,
+    onDescriptionChange: (String) -> Unit,
+    onNext: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(R.string.create_new_topic),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = { Text(stringResource(R.string.topic_name)) },
+            placeholder = { Text(stringResource(R.string.enter_topic_name)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = description,
+            onValueChange = onDescriptionChange,
+            label = { Text(stringResource(R.string.description_optional)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            minLines = 3,
+            maxLines = 5
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            enabled = name.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(containerColor = FlashRed)
+        ) {
+            Text("Next: Add Words", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun MethodSelectionStep(
+    onManualSelect: () -> Unit,
+    onSearchSelect: () -> Unit
+) {
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "Choose method",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 32.dp),
+            pageSpacing = 16.dp,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            val (title, icon, color, desc) = when (page) {
+                0 -> Quad(
+                    "Manual Entry",
+                    Icons.Default.Edit,
+                    Color(0xFFE53935), // Red
+                    "Create your own cards with custom definitions and images."
+                )
+                else -> Quad(
+                    "Search Dictionary",
+                    Icons.Default.Search,
+                    Color(0xFF1E88E5), // Blue
+                    "Search our database for words and definitions."
+                )
+            }
+
+            MethodSlide(
+                title = title,
+                icon = icon,
+                color = color,
+                description = desc,
+                onClick = {
+                    when (page) {
+                        0 -> onManualSelect()
+                        1 -> onSearchSelect()
+                    }
+                },
+                pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+            )
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun MethodSlide(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    description: String,
+    onClick: () -> Unit,
+    pageOffset: Float
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                val pageOffsetAbs = Math.abs(pageOffset)
+                // Scale down slightly when not focused
+                val scale = androidx.compose.ui.util.lerp(1f, 0.85f, pageOffsetAbs)
+                scaleX = scale
+                scaleY = scale
+                alpha = androidx.compose.ui.util.lerp(1f, 0.5f, pageOffsetAbs)
+                
+                // Rotate based on position
+                rotationZ = pageOffset * -10f
+            }
+            .clickable { onClick() },
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = color),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+            
+            Box(
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.White)
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Text(
+                    text = "Select",
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+// Helper data class with unique name
+data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
