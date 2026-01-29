@@ -91,6 +91,9 @@ class TopicDetailViewModel @Inject constructor(
                     isSelectionMode = false,
                     selectedCardIds = emptySet()
                 )
+                
+                // Start background enrichment for missing data
+                backgroundEnrichCards(flashcards)
             },
             onFailure = { e ->
                 _state.value = _state.value.copy(
@@ -460,6 +463,41 @@ class TopicDetailViewModel @Inject constructor(
                         error = e.message ?: "Failed to reset progress"
                     )
                 }
+        }
+    }
+
+    /**
+     * Enriches cards with missing images or IPA in the background.
+     * Updates state progressively as each card is enriched.
+     */
+    private fun backgroundEnrichCards(cards: List<Flashcard>) {
+        val cardsToEnrich = cards.filter { it.imageUrl.isBlank() || it.ipa.isBlank() }
+        if (cardsToEnrich.isEmpty()) return
+
+        viewModelScope.launch {
+            cardsToEnrich.forEach { card ->
+                launch { // Parallelize enrichment
+                    try {
+                        val enrichedCard = flashcardRepository.enrichFlashcard(card)
+                        if (enrichedCard != card) {
+                            // Update the card in our local state lists
+                            val currentCards = _state.value.cards.map {
+                                if (it.id == enrichedCard.id) enrichedCard else it
+                            }
+                            val currentDisplayed = _state.value.displayedCards.map {
+                                if (it.id == enrichedCard.id) enrichedCard else it
+                            }
+                            
+                            _state.value = _state.value.copy(
+                                cards = currentCards,
+                                displayedCards = currentDisplayed
+                            )
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BackgroundEnrich", "Failed for ${card.word}: ${e.message}")
+                    }
+                }
+            }
         }
     }
 }

@@ -19,6 +19,9 @@ import com.kotlin.flashlearn.domain.repository.UserRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -35,8 +38,14 @@ class AuthRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : AuthRepository {
 
-    // In-memory current user for username/password auth (Firebase Auth handles Google users)
-    private var currentUserData: UserData? = null
+    private val _sessionState = MutableStateFlow<UserData?>(null)
+    override val sessionState: StateFlow<UserData?> = _sessionState.asStateFlow()
+
+    private var currentUserData: UserData?
+        get() = _sessionState.value
+        set(value) {
+            _sessionState.value = value
+        }
 
     override suspend fun signIn(): Result<IntentSender?> {
         return runCatching {
@@ -116,18 +125,21 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override fun getSignedInUser(): UserData? {
-        // First check in-memory user (for username/password auth)
+        // First check in-memory user
         currentUserData?.let { return it }
 
         // Fallback to Firebase Auth user (for Google auth)
         val firebaseUser = auth.currentUser ?: return null
 
-        return UserData(
+        val userData = UserData(
             userId = firebaseUser.uid,
             username = firebaseUser.displayName,
             profilePictureUrl = firebaseUser.photoUrl?.toString(),
             email = firebaseUser.email
         )
+        // Store in session state for consistency
+        currentUserData = userData
+        return userData
     }
 
     override suspend fun registerWithUsername(
@@ -326,30 +338,30 @@ class AuthRepositoryImpl @Inject constructor(
 
         android.util.Log.d("RestoreSession", "Firebase user found: ${firebaseUser.uid}")
 
-        // Check if this Google account is linked to a username/password account
-        val linkedUser = try {
-            userRepository.getUserByGoogleId(firebaseUser.uid)
+        // 1. Try finding by Google ID (linked account or Google sign-in)
+        val firestoreUser = try {
+            userRepository.getUserByGoogleId(firebaseUser.uid) 
+                ?: userRepository.getUser(firebaseUser.uid) // fallback to direct ID lookup
         } catch (e: Exception) {
-            android.util.Log.e("RestoreSession", "Failed to check linked user: ${e.message}")
+            android.util.Log.e("RestoreSession", "Failed to fetch Firestore user: ${e.message}")
             null
         }
 
-        return if (linkedUser != null) {
+        return if (firestoreUser != null) {
             android.util.Log.d(
                 "RestoreSession",
-                "Found linked user: ${linkedUser.userId}, username: ${linkedUser.loginUsername}"
+                "Found Firestore user: ${firestoreUser.userId}"
             )
-            // Use the linked user's data (master username/password account)
             val userData = UserData(
-                userId = linkedUser.userId,
-                username = linkedUser.loginUsername ?: linkedUser.displayName,
-                profilePictureUrl = linkedUser.photoUrl,
-                email = linkedUser.email
+                userId = firestoreUser.userId,
+                username = firestoreUser.loginUsername ?: firestoreUser.displayName,
+                profilePictureUrl = firestoreUser.photoUrl,
+                email = firestoreUser.email
             )
             currentUserData = userData
             userData
         } else {
-            android.util.Log.d("RestoreSession", "No linked user, using Firebase user directly")
+            android.util.Log.d("RestoreSession", "No Firestore user found, using Firebase user directly")
             // Pure Google user - use Firebase user data
             val userData = UserData(
                 userId = firebaseUser.uid,

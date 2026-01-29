@@ -59,7 +59,6 @@ import com.kotlin.flashlearn.R
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.presentation.components.FlashcardBack
 import com.kotlin.flashlearn.presentation.components.FlashcardFront
-import com.kotlin.flashlearn.ui.theme.FlashLightGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
 import kotlinx.coroutines.launch
@@ -116,7 +115,7 @@ fun LearningSessionScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         if (showTutorial) {
             LearningSessionTutorialDialog(
@@ -189,7 +188,7 @@ fun LearningSessionScreen(
                         Text(
                             text = stringResource(R.string.no_flashcards_available),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -211,7 +210,7 @@ fun LearningSessionScreen(
                             Icon(
                                 imageVector = Icons.Default.Undo,
                                 contentDescription = "Undo",
-                                tint = Color.Gray
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -259,7 +258,7 @@ private fun TopBar(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.close),
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -273,7 +272,7 @@ private fun TopBar(
                     text = progressText,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -441,7 +440,7 @@ private fun FlashcardItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(FlashLightGrey)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .height(500.dp)
             .then(if (onFlip != null) Modifier.clickable { onFlip() } else Modifier)
             .graphicsLayer {
@@ -499,7 +498,7 @@ private fun LearningSessionTutorialDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(18.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -523,7 +522,7 @@ private fun LearningSessionTutorialDialog(
                                 }
                             }
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.surface)
                             .padding(14.dp)
                     ) {
                         Column(
@@ -540,7 +539,7 @@ private fun LearningSessionTutorialDialog(
                                 text = "Business\norganization",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Black
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Box(
@@ -590,7 +589,7 @@ private fun LearningSessionTutorialDialog(
                     text = title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))

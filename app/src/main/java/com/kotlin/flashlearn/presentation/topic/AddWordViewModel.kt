@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.kotlin.flashlearn.domain.model.Flashcard
 import com.kotlin.flashlearn.domain.model.Topic
+import com.kotlin.flashlearn.domain.model.VSTEPLevel
 import com.kotlin.flashlearn.domain.model.VocabularyWord
 import com.kotlin.flashlearn.domain.model.WordSuggestion
 import com.kotlin.flashlearn.domain.repository.AuthRepository
 import com.kotlin.flashlearn.domain.repository.DatamuseRepository
+import com.kotlin.flashlearn.domain.repository.DictionaryRepository
 import com.kotlin.flashlearn.domain.repository.FlashcardRepository
 import com.kotlin.flashlearn.domain.repository.TopicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddWordViewModel @Inject constructor(
     private val datamuseRepository: DatamuseRepository,
+    private val dictionaryRepository: DictionaryRepository,
     private val topicRepository: TopicRepository,
     private val flashcardRepository: FlashcardRepository,
     private val authRepository: AuthRepository,
@@ -40,59 +43,157 @@ class AddWordViewModel @Inject constructor(
     private val currentUserId: String?
         get() = authRepository.getSignedInUser()?.userId ?: firebaseAuth.currentUser?.uid
 
-    private val _uiState = MutableStateFlow(AddWordUiState())
+    private val existingTopicId: String? = savedStateHandle.get<String>("topicId")?.takeIf { it != "new" }
+
+    private val _uiState = MutableStateFlow(AddWordUiState(
+        isEditMode = !existingTopicId.isNullOrBlank(),
+        currentStep = if (!existingTopicId.isNullOrBlank()) 1 else 0
+    ))
     val uiState: StateFlow<AddWordUiState> = _uiState.asStateFlow()
 
+    // Step management
+    fun nextStep() {
+        val current = _uiState.value.currentStep
+        if (current < 1) { // Now only 2 steps: 0 (Info) and 1 (Manual)
+            _uiState.value = _uiState.value.copy(currentStep = current + 1)
+        }
+    }
+
+    fun prevStep() {
+        val current = _uiState.value.currentStep
+        if (current > 0) {
+            _uiState.value = _uiState.value.copy(currentStep = current - 1)
+        }
+    }
+
+    fun setStep(step: Int) {
+        _uiState.value = _uiState.value.copy(currentStep = step.coerceIn(0, 1))
+    }
+
     // New flow for search query input
-    private val _searchQueryFlow = MutableStateFlow("")
+    private val _manualWordFlow = MutableStateFlow("")
 
     // Local cache for search suggestions
     private val searchCache = mutableMapOf<String, List<WordSuggestion>>()
 
     init {
         loadTopics()
-        setupSearchFlow()
+        setupManualWordFlow()
+        setupAutocompleteSuggestionsFlow()
     }
 
     @OptIn(kotlinx.coroutines.FlowPreview::class)
-    private fun setupSearchFlow() {
+    private fun setupManualWordFlow() {
         viewModelScope.launch {
-            _searchQueryFlow
-                .debounce(250) // Wait 250ms for no new changes
-                .filter { it.length >= 2 } // Only search if query has at least 2 chars
-                .distinctUntilChanged() // Only call API if query is different from previous
-                .collectLatest { query ->
-                    // Check cache first
-                    if (searchCache.containsKey(query)) {
-                        _uiState.value = _uiState.value.copy(
-                            isSearching = false,
-                            searchSuggestions = searchCache[query]!!
-                        )
-                    } else {
-                        // Call API
-                        _uiState.value = _uiState.value.copy(isSearching = true)
-                        datamuseRepository.getAutocompleteSuggestions(query)
-                            .onSuccess { suggestions ->
-                                searchCache[query] = suggestions
-                                _uiState.value = _uiState.value.copy(
-                                    isSearching = false,
-                                    searchSuggestions = suggestions
-                                )
-                            }
-                            .onFailure {
-                                _uiState.value = _uiState.value.copy(
-                                    isSearching = false,
-                                    searchSuggestions = emptyList()
-                                )
-                            }
-                    }
+            _manualWordFlow
+                .debounce(500)
+                .filter { it.length >= 2 }
+                .distinctUntilChanged()
+                .collectLatest { word ->
+                    fetchWordDetails(word)
                 }
         }
     }
 
-    /**
-     * Load all available topics for suggestion dropdown.
-     */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun setupAutocompleteSuggestionsFlow() {
+        viewModelScope.launch {
+            _manualWordFlow
+                .debounce(250) // Faster for suggestions
+                .filter { it.length >= 2 }
+                .distinctUntilChanged()
+                .collectLatest { query ->
+                    fetchAutocompleteSuggestions(query)
+                }
+        }
+    }
+
+    private fun fetchAutocompleteSuggestions(query: String) {
+        viewModelScope.launch {
+            // Check cache first
+            if (searchCache.containsKey(query)) {
+                _uiState.value = _uiState.value.copy(
+                    wordSuggestions = searchCache[query]!!
+                )
+            } else {
+                datamuseRepository.getAutocompleteSuggestions(query)
+                    .onSuccess { suggestions ->
+                        searchCache[query] = suggestions
+                        _uiState.value = _uiState.value.copy(
+                            wordSuggestions = suggestions
+                        )
+                    }
+                    .onFailure {
+                        _uiState.value = _uiState.value.copy(
+                            wordSuggestions = emptyList()
+                        )
+                    }
+            }
+        }
+    }
+
+    private fun fetchWordDetails(word: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isFetchingDetails = true)
+            
+            dictionaryRepository.getWordExtendedDetails(word)
+                .onSuccess { result ->
+                    _uiState.value = _uiState.value.copy(
+                        manualDefinition = result.definition,
+                        manualPartOfSpeech = result.partOfSpeech.lowercase().trim(),
+                        manualIpa = result.ipa,
+                        manualExample = result.example,
+                        isFetchingDetails = false
+                    )
+                    
+                    // If POS is still missing, try to fill it from Datamuse
+                    if (result.partOfSpeech.isBlank()) {
+                        fillMissingPosFromDatamuse(word)
+                    }
+                }
+                .onFailure {
+                    // Fallback to Datamuse if dictionary fails
+                    datamuseRepository.searchWords(word)
+                        .onSuccess { results ->
+                            val match = results.firstOrNull { it.word.equals(word, ignoreCase = true) }
+                                ?: results.firstOrNull()
+                            
+                            if (match != null) {
+                                _uiState.value = _uiState.value.copy(
+                                    manualDefinition = match.definition,
+                                    manualPartOfSpeech = match.partOfSpeech.lowercase().trim(),
+                                    manualIpa = match.ipa.ifBlank { "Not found" },
+                                    isFetchingDetails = false
+                                )
+                            } else {
+                                _uiState.value = _uiState.value.copy(
+                                    manualIpa = "Not found",
+                                    isFetchingDetails = false
+                                )
+                            }
+                        }
+                        .onFailure {
+                            _uiState.value = _uiState.value.copy(
+                                manualIpa = "Not found",
+                                isFetchingDetails = false
+                            )
+                        }
+                }
+        }
+    }
+
+    private fun fillMissingPosFromDatamuse(word: String) {
+        viewModelScope.launch {
+            datamuseRepository.searchWords(word).onSuccess { results ->
+                val match = results.firstOrNull { it.word.equals(word, ignoreCase = true) } ?: results.firstOrNull()
+                if (match != null && match.partOfSpeech.isNotBlank()) {
+                    _uiState.value = _uiState.value.copy(
+                        manualPartOfSpeech = match.partOfSpeech.lowercase().trim()
+                    )
+                }
+            }
+        }
+    }
     private fun loadTopics() {
         viewModelScope.launch {
             topicRepository.getPublicTopics()
@@ -132,49 +233,6 @@ class AddWordViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             showTopicDropdown = !_uiState.value.showTopicDropdown
         )
-    }
-
-    /**
-     * Search for words as user types (autocomplete).
-     */
-    fun onSearchQueryChange(query: String) {
-        _uiState.value = _uiState.value.copy(searchQuery = query)
-        _searchQueryFlow.value = query
-
-        // Clear suggestions if query is too short
-        if (query.length < 2) {
-            _uiState.value = _uiState.value.copy(searchSuggestions = emptyList())
-        }
-    }
-
-    /**
-     * Get word details with definition when user selects a suggestion.
-     */
-    fun onSuggestionSelected(word: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoadingDetails = true)
-
-            datamuseRepository.searchWords("$word")
-                .onSuccess { words ->
-                    val selectedWord = words.find { it.word.equals(word, ignoreCase = true) }
-                    if (selectedWord != null) {
-                        // Add to selected words
-                        val currentSelected = _uiState.value.selectedWords.toMutableSet()
-                        currentSelected.add(selectedWord)
-                        _uiState.value = _uiState.value.copy(
-                            isLoadingDetails = false,
-                            selectedWords = currentSelected,
-                            searchSuggestions = emptyList(),
-                            searchQuery = ""
-                        )
-                    } else {
-                        _uiState.value = _uiState.value.copy(isLoadingDetails = false)
-                    }
-                }
-                .onFailure {
-                    _uiState.value = _uiState.value.copy(isLoadingDetails = false)
-                }
-        }
     }
 
     /**
@@ -239,8 +297,9 @@ class AddWordViewModel @Inject constructor(
         val topicName = _uiState.value.newTopicName.trim()
         val description = _uiState.value.newTopicDescription.trim()
         val selectedWords = _uiState.value.selectedWords
+        val isEditMode = _uiState.value.isEditMode
 
-        if (topicName.isBlank()) {
+        if (!isEditMode && topicName.isBlank()) {
             onError("Please enter a topic name")
             return
         }
@@ -259,24 +318,40 @@ class AddWordViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCreatingTopic = true)
 
-            val topicId = UUID.randomUUID().toString()
+            // Determine Topic ID
+            val topicId = if (isEditMode && !existingTopicId.isNullOrBlank()) {
+                existingTopicId
+            } else {
+                UUID.randomUUID().toString()
+            }
 
-            // Get creator name from AuthRepository (works for username/password users)
-            val signedInUser = authRepository.getSignedInUser()
-            val creatorName = signedInUser?.username
-                ?: firebaseAuth.currentUser?.displayName
-                ?: firebaseAuth.currentUser?.email?.substringBefore("@")
-                ?: "Anonymous"
+            // Create Topic Object only if NOT in edit mode
+            if (!isEditMode) {
+                // Get creator name from AuthRepository
+                val signedInUser = authRepository.getSignedInUser()
+                val creatorName = signedInUser?.username
+                    ?: firebaseAuth.currentUser?.displayName
+                    ?: firebaseAuth.currentUser?.email?.substringBefore("@")
+                    ?: "Anonymous"
 
-            val newTopic = Topic(
-                id = topicId,
-                name = topicName,
-                description = description.ifBlank { "Custom vocabulary collection" },
-                isSystemTopic = false,
-                isPublic = false,
-                createdBy = userId,
-                creatorName = creatorName
-            )
+                val newTopic = Topic(
+                    id = topicId,
+                    name = topicName,
+                    description = description.ifBlank { "Custom vocabulary collection" },
+                    isSystemTopic = false,
+                    isPublic = false,
+                    createdBy = userId,
+                    creatorName = creatorName
+                )
+
+                topicRepository.createTopic(newTopic)
+                    .onFailure { error ->
+                        _uiState.value = _uiState.value.copy(isCreatingTopic = false)
+                        onError(error.message ?: "Failed to create topic")
+                        return@launch
+                    }
+                    // If success, continue to save flashcards
+            }
 
             // Convert VocabularyWord to Flashcard
             val flashcards = selectedWords.map { word ->
@@ -284,37 +359,30 @@ class AddWordViewModel @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     topicId = topicId,
                     word = word.word.replaceFirstChar { it.uppercase() },
-                    pronunciation = "",
+                    pronunciation = word.ipa,
                     partOfSpeech = word.partOfSpeech.uppercase(),
                     definition = word.definition,
-                    exampleSentence = ""
+                    exampleSentence = word.example,
+                    imageUrl = word.imageUrl ?: "",
+                    level = _uiState.value.selectedLevel.name
                 )
             }
 
-            topicRepository.createTopic(newTopic)
-                .onSuccess { _ ->
-                    // Save flashcards to repository
-                    flashcardRepository.saveFlashcardsForTopic(topicId, flashcards)
-                        .onSuccess {
-                            _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                            onSuccess()
-                        }
-                        .onFailure { error ->
-                            _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                            onError(error.message ?: "Failed to save flashcards")
-                        }
+            // Save flashcards to repository
+            flashcardRepository.saveFlashcardsForTopic(topicId, flashcards)
+                .onSuccess {
+                    _uiState.value = _uiState.value.copy(isCreatingTopic = false)
+                    onSuccess()
                 }
                 .onFailure { error ->
                     _uiState.value = _uiState.value.copy(isCreatingTopic = false)
-                    onError(error.message ?: "Failed to create topic")
+                    onError(error.message ?: "Failed to save flashcards")
                 }
         }
     }
 
     fun clearAll() {
         _uiState.value = _uiState.value.copy(
-            searchQuery = "",
-            searchSuggestions = emptyList(),
             topicSuggestions = emptyList(),
             selectedWords = emptySet()
         )
@@ -328,6 +396,58 @@ class AddWordViewModel @Inject constructor(
         val withoutPrefix = topicName.replace(levelPrefixPattern, "")
         return withoutPrefix.ifBlank { topicName }
     }
+
+    // Manual Entry Functions
+    fun onManualWordChange(value: String) { 
+        _uiState.value = _uiState.value.copy(manualWord = value)
+        _manualWordFlow.value = value
+    }
+    fun onManualDefinitionChange(value: String) { _uiState.value = _uiState.value.copy(manualDefinition = value) }
+    fun onManualExampleChange(value: String) { _uiState.value = _uiState.value.copy(manualExample = value) }
+    fun onManualIpaChange(value: String) { _uiState.value = _uiState.value.copy(manualIpa = value) }
+    fun onManualPartOfSpeechChange(value: String) { _uiState.value = _uiState.value.copy(manualPartOfSpeech = value) }
+    fun onManualImageUriChange(value: String?) { _uiState.value = _uiState.value.copy(manualImageUri = value) }
+
+    fun addManualCard() {
+        val state = _uiState.value
+        if (state.manualWord.isBlank() || state.manualDefinition.isBlank()) return
+
+        val newWord = VocabularyWord(
+            word = state.manualWord.trim(),
+            definition = state.manualDefinition.trim(),
+            score = 0,
+            tags = listOf("manual"),
+            partOfSpeech = state.manualPartOfSpeech.trim(),
+            ipa = state.manualIpa.trim(),
+            example = state.manualExample.trim(),
+            imageUrl = state.manualImageUri
+        )
+
+        val currentSelected = state.selectedWords.toMutableSet()
+        currentSelected.add(newWord)
+
+        _uiState.value = _uiState.value.copy(
+            selectedWords = currentSelected,
+            manualWord = "",
+            manualDefinition = "",
+            manualExample = "",
+            manualIpa = "",
+            manualPartOfSpeech = "",
+            manualImageUri = null,
+            // Keep expanded to allow adding more
+            isManualEntryExpanded = true
+        )
+    }
+
+    fun toggleManualEntryExpanded() {
+        _uiState.value = _uiState.value.copy(
+            isManualEntryExpanded = !_uiState.value.isManualEntryExpanded
+        )
+    }
+
+    fun updateManualLevel(level: VSTEPLevel) {
+        _uiState.value = _uiState.value.copy(selectedLevel = level)
+    }
 }
 
 data class AddWordUiState(
@@ -335,17 +455,17 @@ data class AddWordUiState(
     val newTopicName: String = "",
     val newTopicDescription: String = "",
     val isCreatingTopic: Boolean = false,
+    val isEditMode: Boolean = false,
 
     // Topic selection for word suggestions
     val availableTopics: List<Topic> = emptyList(),
     val selectedTopic: Topic? = null,
     val showTopicDropdown: Boolean = false,
 
-    // Search mode
-    val searchQuery: String = "",
+    // Search mode - Deprecated in favor of auto-fetch in manual entry
     val isSearching: Boolean = false,
     val searchSuggestions: List<WordSuggestion> = emptyList(),
-    val isLoadingDetails: Boolean = false,
+    val isFetchingDetails: Boolean = false,
 
     // Topic-based word suggestions
     val topicQuery: String = "",
@@ -353,5 +473,19 @@ data class AddWordUiState(
     val topicSuggestions: List<VocabularyWord> = emptyList(),
 
     // Selected words for the new topic
-    val selectedWords: Set<VocabularyWord> = emptySet()
+    val selectedWords: Set<VocabularyWord> = emptySet(),
+
+    // Manual Entry State
+    val manualWord: String = "",
+    val manualDefinition: String = "",
+    val manualExample: String = "",
+    val manualIpa: String = "",
+    val manualPartOfSpeech: String = "",
+    val manualImageUri: String? = null,
+    val isManualEntryExpanded: Boolean = true, // Default to expanded/visible
+    val wordSuggestions: List<WordSuggestion> = emptyList(), // Autocomplete suggestions
+    val selectedLevel: VSTEPLevel = VSTEPLevel.B1, // Default VSTEP level
+
+    // Wizard Step State
+    val currentStep: Int = 0 // 0: Info, 1: Manual Entry
 )

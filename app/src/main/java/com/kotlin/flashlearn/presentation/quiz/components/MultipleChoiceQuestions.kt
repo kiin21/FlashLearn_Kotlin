@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.ui.theme.FlashErrorLight
@@ -150,7 +149,7 @@ fun MultipleChoiceOptions(
                                 .offset(x = 6.dp, y = (-6).dp)
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -169,7 +168,7 @@ fun MultipleChoiceOptions(
                                 .offset(x = 6.dp, y = (-6).dp)
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.surface),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(

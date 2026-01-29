@@ -24,7 +24,7 @@ fun LetterTile(
     OutlinedCard(
         onClick = onClick,
         modifier = modifier,
-        border = BorderStroke(2.dp, FlashRedDarkest),
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
         colors = CardDefaults.outlinedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -37,7 +37,7 @@ fun LetterTile(
             text = letter,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = FlashRedDarkest,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
     }
@@ -61,7 +61,7 @@ fun LetterTilePreview(
             text = "Word",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = FlashRedDarkest,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
     }

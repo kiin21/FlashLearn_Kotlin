@@ -93,9 +93,9 @@ fun QuizScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Session complete", style = MaterialTheme.typography.titleLarge)
+                    Text("Session complete", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Preparing summary...", style = MaterialTheme.typography.bodyMedium)
+                    Text("Preparing summary...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 state.currentQuestion?.let { question ->
@@ -228,7 +228,8 @@ fun QuestionContent(
                 Text(
                     text = "${currentIndex + 1}/$totalQuestions",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

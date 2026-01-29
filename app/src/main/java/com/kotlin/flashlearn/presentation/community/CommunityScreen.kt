@@ -33,6 +33,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,7 +59,6 @@ import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import kotlinx.coroutines.flow.collectLatest
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 
 /**
  * Community screen displaying shared public topics.
@@ -254,6 +254,9 @@ fun CommunityScreen(
                                             item.topic.createdBy?.let { userId ->
                                                 onNavigateToUserProfile(userId)
                                             }
+                                        },
+                                        onOriginalTopicClick = { originalTopicId ->
+                                            onNavigateToTopicDetail(originalTopicId)
                                         }
                                     )
                                 }

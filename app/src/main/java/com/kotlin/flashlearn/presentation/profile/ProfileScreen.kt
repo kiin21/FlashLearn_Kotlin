@@ -51,7 +51,6 @@ fun ProfileScreen(
     onUnlinkGoogleAccount: (String) -> Unit = {},
     onUpdateEmail: (String) -> Unit = {},
     onUpdateProfilePicture: (android.net.Uri) -> Unit = {},
-    onDeleteAccount: () -> Unit = {},
     onChangePassword: (oldPassword: String, newPassword: String, onResult: (success: Boolean, error: String?) -> Unit) -> Unit = { _, _, _ -> },
     onLanguageChange: (String) -> Unit = {},
     themeManager: com.kotlin.flashlearn.util.ThemeManager,
@@ -61,7 +60,6 @@ fun ProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     rememberCoroutineScope()
     var showUnlinkDialog by remember { mutableStateOf<String?>(null) } // Store account ID to unlink
-    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showProfilePictureDialog by remember { mutableStateOf(false) }
 
@@ -115,27 +113,6 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showUnlinkDialog = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
-    if (showDeleteAccountDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showDeleteAccountDialog = false },
-            title = { Text(stringResource(R.string.delete_account_title)) },
-            text = { Text(stringResource(R.string.delete_account_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteAccountDialog = false
-                    onDeleteAccount()
-                }) {
-                    Text(stringResource(R.string.delete), color = FlashRed)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteAccountDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -217,7 +194,6 @@ fun ProfileScreen(
                 onLinkGoogleAccount = onLinkGoogleAccount,
                 onUnlinkAccount = { accountId -> showUnlinkDialog = accountId },
                 onSignOut = onSignOut,
-                onDeleteAccount = { showDeleteAccountDialog = true },
                 isDarkMode = isDarkMode,
                 onToggleDarkMode = onToggleDarkMode
             )

@@ -1,6 +1,7 @@
 package com.kotlin.flashlearn.presentation.community
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -161,7 +162,8 @@ fun UserPublicProfileScreen(
                             UserTopicCard(
                                 item = item,
                                 onClick = { onTopicClick(item.topic.id) },
-                                onUpvoteClick = { onUpvoteClick(item.topic.id) }
+                                onUpvoteClick = { onUpvoteClick(item.topic.id) },
+                                onOriginalTopicClick = { originalId -> onTopicClick(originalId) }
                             )
                         }
                     }
@@ -281,7 +283,8 @@ private fun StatItem(
 private fun UserTopicCard(
     item: UserProfileTopicItem,
     onClick: () -> Unit,
-    onUpvoteClick: () -> Unit
+    onUpvoteClick: () -> Unit,
+    onOriginalTopicClick: (String) -> Unit = {}
 ) {
     val topic = item.topic
 
@@ -384,6 +387,17 @@ private fun UserTopicCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
+                    )
+                }
+                
+                // Attribution for cloned topics
+                if (!topic.originalCreator.isNullOrBlank() && !topic.clonedFrom.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Based on ${topic.originalCreator}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        modifier = Modifier.clickable { onOriginalTopicClick(topic.clonedFrom!!) }
                     )
                 }
             }

@@ -29,10 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.kotlin.flashlearn.ui.theme.FlashErrorLight
 import com.kotlin.flashlearn.ui.theme.FlashErrorMed
 import com.kotlin.flashlearn.ui.theme.FlashSuccessDark
-import com.kotlin.flashlearn.ui.theme.FlashSuccessLight
 import com.kotlin.flashlearn.ui.theme.FlashSuccessMed
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +48,7 @@ fun AnswerNotificationSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = { /* Prevent dismissal by swipe/tap outside - force user to click Continue */ },
-        containerColor = if (isCorrect) FlashSuccessLight else FlashErrorLight,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null
     ) {
         Column(

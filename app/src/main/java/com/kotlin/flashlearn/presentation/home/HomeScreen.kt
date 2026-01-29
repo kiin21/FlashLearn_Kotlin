@@ -1,7 +1,6 @@
 package com.kotlin.flashlearn.presentation.home
 
 import android.speech.tts.TextToSpeech
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,13 +35,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,13 +72,11 @@ import com.kotlin.flashlearn.ui.theme.FlashDarkGrey
 import com.kotlin.flashlearn.ui.theme.FlashGrey
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import com.kotlin.flashlearn.ui.theme.FlashRedLight
-import com.kotlin.flashlearn.utils.DateUtils
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import androidx.compose.runtime.*
-import java.util.Calendar
 
 @Composable
 fun HomeScreen(

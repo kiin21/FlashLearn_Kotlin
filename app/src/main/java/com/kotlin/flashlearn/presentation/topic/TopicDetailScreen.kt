@@ -1,18 +1,25 @@
 package com.kotlin.flashlearn.presentation.topic
 
 import android.speech.tts.TextToSpeech
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,12 +36,14 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,8 +61,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -68,11 +78,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -86,6 +98,7 @@ import com.kotlin.flashlearn.presentation.components.FilterBottomSheet
 import com.kotlin.flashlearn.presentation.components.SearchBar
 import com.kotlin.flashlearn.ui.theme.FlashRed
 import java.util.Locale
+import kotlin.math.roundToInt
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,6 +108,8 @@ fun TopicDetailScreen(
     state: TopicDetailState,
     onBack: () -> Unit,
     onNavigateToCardDetail: (String) -> Unit,
+    onAddCard: () -> Unit,
+    onAddTopic: () -> Unit,
     onStudyNow: () -> Unit,
     onTakeQuiz: (QuizConfig) -> Unit,
     onToggleSelectionMode: () -> Unit,
@@ -143,7 +158,7 @@ fun TopicDetailScreen(
         }
         tts = textToSpeech
         onDispose {
-            textToSpeech?.shutdown()
+            textToSpeech.shutdown()
         }
     }
 
@@ -401,24 +416,15 @@ fun TopicDetailScreen(
                 )
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { /* Add new card */ },
-                containerColor = FlashRed,
-                shape = CircleShape
-            ) { Icon(Icons.Default.Add, contentDescription = null) }
-        },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        }
     ) { padding ->
 
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             // Header
             // Header
             if (!state.imageUrl.isBlank()) {
@@ -584,13 +590,16 @@ fun TopicDetailScreen(
                 }
 
                 else -> {
-                    androidx.compose.foundation.lazy.LazyColumn {
+                    androidx.compose.foundation.lazy.LazyColumn(
+                        contentPadding = PaddingValues(bottom = 100.dp)
+                    ) {
                         items(state.displayedCards.size) { index ->
                             val card = state.displayedCards[index]
                             CardItem(
                                 word = card.word,
                                 type = card.partOfSpeech,
                                 ipa = card.ipa,
+                                level = card.level,
                                 imageUrl = card.imageUrl,
                                 isSelectionMode = state.isSelectionMode,
                                 isSelected = state.selectedCardIds.contains(card.id),
@@ -618,6 +627,19 @@ fun TopicDetailScreen(
                     }
                 }
             }
+        }
+        
+        if (state.isOwner) {
+            ExpandableDraggableFab(
+                onAddCard = onAddCard,
+                onAddTopic = onAddTopic,
+                showAddTopic = false, // Never show "Creates New Topic" in Detail Screen
+                showAddCard = true,   // Only show "Add Card"
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(32.dp)
+            )
+        }
         }
     }
 
@@ -652,6 +674,7 @@ fun CardItem(
     word: String,
     type: String,
     ipa: String,
+    level: String = "",
     imageUrl: String,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
@@ -748,11 +771,28 @@ fun CardItem(
                         )
                     }
                 }
-                Text(
-                    type,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        type,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (level.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = level,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = FlashRed,
+                            modifier = Modifier
+                                .background(
+                                    FlashRed.copy(alpha = 0.1f),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
 
             if (!isSelectionMode) {
@@ -1068,6 +1108,126 @@ private fun FilterButton(
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
+                )
+            }
+    }
+    }
+}
+
+@Composable
+fun ExpandableDraggableFab(
+    onAddCard: () -> Unit,
+    onAddTopic: () -> Unit,
+    showAddTopic: Boolean = true,
+    showAddCard: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+
+    Box(
+        modifier = modifier
+            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    offsetX += dragAmount.x
+                    offsetY += dragAmount.y
+                }
+            },
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Sub-items
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn() + scaleIn(),
+                exit = fadeOut() + scaleOut()
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Add Topic Item
+                    if (showAddTopic) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shadowElevation = 2.dp,
+                                onClick = {
+                                    isExpanded = false
+                                    onAddTopic()
+                                }
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.add_new_topic),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    isExpanded = false
+                                    onAddTopic()
+                                },
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ) {
+                                Icon(Icons.Default.LibraryAdd, contentDescription = null)
+                            }
+                        }
+                    }
+
+                    // Add Card Item
+                    if (showAddCard) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shadowElevation = 2.dp,
+                                onClick = {
+                                    isExpanded = false
+                                    onAddCard()
+                                }
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.add_new_card),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    isExpanded = false
+                                    onAddCard()
+                                },
+                                containerColor = FlashRed,
+                                contentColor = Color.White
+                            ) {
+                                Icon(Icons.Default.Style, contentDescription = null)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Main Toggle Button
+            FloatingActionButton(
+                onClick = { isExpanded = !isExpanded },
+                containerColor = FlashRed,
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.Close else Icons.Default.Add,
+                    contentDescription = if (isExpanded) "Close" else stringResource(R.string.add_new_topic),
+                    tint = Color.White
                 )
             }
         }

@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.kotlin.flashlearn.domain.model.QuizQuestion
 import com.kotlin.flashlearn.presentation.quiz.components.CheckAnswerButton
 import com.kotlin.flashlearn.presentation.quiz.components.LetterTile
-import com.kotlin.flashlearn.ui.theme.FlashRedDarkest
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -130,7 +129,7 @@ fun SentenceBuilderView(
                                     }
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp),
-                                border = BorderStroke(2.dp, FlashRedDarkest),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
                                 colors = CardDefaults.outlinedCardColors(
                                     containerColor = MaterialTheme.colorScheme.surface
                                 ),
@@ -140,7 +139,7 @@ fun SentenceBuilderView(
                                     text = word,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
-                                    color = FlashRedDarkest,
+                                    color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(
                                         horizontal = 16.dp,
                                         vertical = 12.dp
