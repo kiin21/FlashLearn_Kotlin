@@ -16,6 +16,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.ai.client.generativeai.GenerativeModel
+import com.kotlin.flashlearn.BuildConfig
+import com.kotlin.flashlearn.domain.model.Flashcard
+import com.kotlin.flashlearn.domain.repository.DictionaryRepository
+import org.json.JSONObject
 
 /**
  * Filter options for Topic Screen.
@@ -36,7 +41,8 @@ class TopicViewModel @Inject constructor(
     private val flashcardRepository: FlashcardRepository,
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository,
-    private val firebaseAuth: FirebaseAuth
+    private val firebaseAuth: FirebaseAuth,
+    private val dictionaryRepository: DictionaryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TopicUiState())
@@ -224,10 +230,93 @@ class TopicViewModel @Inject constructor(
             }
         }
     }
+
+    fun createTopicWithPrompt(prompt: String, onNavigateToTopicDetail: (String) -> Unit) {
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        if (apiKey.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Gemini API Key is missing.")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isGenerating = true, error = null)
+
+            try {
+                // 1. Call Gemini
+                val generativeModel = GenerativeModel(
+                    modelName = "gemini-2.5-flash",
+                    apiKey = apiKey
+                )
+
+                val promptText = """
+                    Analyze the following prompt and generate a topic name and a list of English vocabulary words related to it.
+                    Prompt: "$prompt"
+                    Return ONLY valid JSON in the following format:
+                    {
+                        "topicName": "Name of the topic",
+                        "words": ["word1", "word2", "word3"]
+                    }
+                """.trimIndent()
+
+                val response = generativeModel.generateContent(promptText)
+                val responseText = response.text ?: throw Exception("Empty response from Gemini")
+
+                // Clean up markdown code blocks if present
+                val jsonString = responseText.replace("```json", "").replace("```", "").trim()
+
+                val json = JSONObject(jsonString)
+                val topicName = json.getString("topicName")
+                val wordsArray = json.getJSONArray("words")
+                val words = List(wordsArray.length()) { wordsArray.getString(it) }
+
+                // 2. Create Topic
+                val userId = currentUserId
+                val newTopic = Topic(
+                    id = java.util.UUID.randomUUID().toString(),
+                    name = topicName,
+                    description = "Created with AI from prompt",
+                    createdBy = userId,
+                    creatorName = if (userId != null) userRepository.getUser(userId)?.displayName ?: "Unknown" else "Unknown",
+                    isPublic = false,
+                    isSystemTopic = false
+                )
+
+                val topicResult = topicRepository.createTopic(newTopic)
+                if (topicResult.isFailure) throw topicResult.exceptionOrNull()!!
+                val createdTopic = topicResult.getOrThrow()
+
+                // 3. Create Flashcards
+                val flashcards = words.mapNotNull { word ->
+                    dictionaryRepository.getWordExtendedDetails(word).getOrNull()?.let { vocab ->
+                        Flashcard(
+                            id = java.util.UUID.randomUUID().toString(),
+                            topicId = createdTopic.id,
+                            word = vocab.word,
+                            pronunciation = vocab.ipa,
+                            partOfSpeech = vocab.partOfSpeech,
+                            definition = vocab.definition,
+                            exampleSentence = vocab.example,
+                            ipa = vocab.ipa
+                        )
+                    }
+                }
+
+                flashcardRepository.saveFlashcardsForTopic(createdTopic.id, flashcards)
+
+                _uiState.value = _uiState.value.copy(isGenerating = false)
+                onNavigateToTopicDetail(createdTopic.id)
+                loadTopics() // Refresh list
+
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isGenerating = false, error = e.message ?: "Failed to create topic with AI")
+            }
+        }
+    }
 }
 
 data class TopicUiState(
     val isLoading: Boolean = false,
+    val isGenerating: Boolean = false,
     val allTopics: List<Topic> = emptyList(),
     val systemTopics: List<Topic> = emptyList(),
     val myTopics: List<Topic> = emptyList(),

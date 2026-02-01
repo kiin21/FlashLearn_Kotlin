@@ -95,6 +95,9 @@ android {
         // Gmail SMTP
         buildConfigField("String", "GMAIL_EMAIL", "\"${props.getProperty('GMAIL_EMAIL', '')}\"")
         buildConfigField("String", "GMAIL_APP_PASSWORD", "\"${props.getProperty('GMAIL_APP_PASSWORD', '')}\"")
+
+        // Gemini SDK
+        buildConfigField("String", "GEMINI_API_KEY", "\"${props.getProperty('GEMINI_API_KEY', '')}\"")
     }
 }
 
@@ -180,4 +183,7 @@ dependencies {
     androidTestImplementation libs.androidx.ui.test.junit4
     debugImplementation libs.androidx.ui.tooling
     debugImplementation libs.androidx.ui.test.manifest
+
+    // Gemini SDK
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 }

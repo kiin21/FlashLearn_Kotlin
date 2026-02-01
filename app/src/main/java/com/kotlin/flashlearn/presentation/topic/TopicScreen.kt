@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material3.Button
@@ -71,131 +72,150 @@ fun TopicScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val topicWordCounts by viewModel.topicWordCounts.collectAsStateWithLifecycle()
     val topicProgress by viewModel.topicProgress.collectAsStateWithLifecycle()
+    var showPromptDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadTopics()
     }
 
-    Scaffold(
-        floatingActionButton = {
-            ExpandableDraggableFab(
-                onAddTopic = onNavigateToAddTopic,
-                showAddTopic = true,
-                modifier = Modifier
-                    .padding(16.dp)
-            )
-        },
-        bottomBar = {
-            BottomNavBar(
-                currentRoute = "topic",
-                onNavigate = { route ->
-                    when (route) {
-                        "home" -> onNavigateToHome()
-                        "profile" -> onNavigateToProfile()
-                        "community" -> onNavigateToCommunity()
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            // Header
-            TopicHeader()
-            Spacer(modifier = Modifier.height(12.dp))
+    if (showPromptDialog) {
+        TopicPromptDialog(
+            onDismiss = { showPromptDialog = false },
+            onCreate = { prompt ->
+                showPromptDialog = false
+                viewModel.createTopicWithPrompt(prompt, onNavigateToTopicDetail)
+            }
+        )
+    }
 
-            // Search Bar (reusable component)
-            SearchBar(
-                query = uiState.searchQuery,
-                onQueryChange = { viewModel.updateSearchQuery(it) },
-                placeholder = stringResource(R.string.search_collections)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Filter Chips
-            FilterChipRow(
-                activeFilter = uiState.activeFilter,
-                onFilterChange = { viewModel.updateFilter(it) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Content
-            when {
-                uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = FlashRed)
-                    }
-                }
-
-                uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.error ?: stringResource(R.string.unknown_error),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.loadTopics() }) {
-                                Text(stringResource(R.string.retry))
-                            }
+    if (uiState.isGenerating) {
+        GeneratingTopicScreen()
+    } else {
+        Scaffold(
+            floatingActionButton = {
+                ExpandableDraggableFab(
+                    onAddTopicManual = onNavigateToAddTopic,
+                    onAddTopicPrompt = { showPromptDialog = true },
+                    showAddTopic = true,
+                    modifier = Modifier
+                        .padding(16.dp)
+                )
+            },
+            bottomBar = {
+                BottomNavBar(
+                    currentRoute = "topic",
+                    onNavigate = { route ->
+                        when (route) {
+                            "home" -> onNavigateToHome()
+                            "profile" -> onNavigateToProfile()
+                            "community" -> onNavigateToCommunity()
                         }
                     }
-                }
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .padding(16.dp)
+            ) {
+                // Header
+                TopicHeader()
+                Spacer(modifier = Modifier.height(12.dp))
 
-                uiState.displayedTopics.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = if (uiState.searchQuery.isNotBlank())
-                                    stringResource(
-                                        R.string.no_topics_found_query,
-                                        uiState.searchQuery
-                                    )
-                                else if (uiState.activeFilter != TopicFilter.ALL)
-                                    stringResource(
-                                        R.string.no_filtered_topics_yet,
-                                        stringResource(uiState.activeFilter.resId).lowercase()
-                                    )
-                                else
-                                    stringResource(R.string.no_topics_yet_hint),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (uiState.searchQuery.isNotBlank() || uiState.activeFilter != TopicFilter.ALL) {
+                // Search Bar (reusable component)
+                SearchBar(
+                    query = uiState.searchQuery,
+                    onQueryChange = { viewModel.updateSearchQuery(it) },
+                    placeholder = stringResource(R.string.search_collections)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Filter Chips
+                FilterChipRow(
+                    activeFilter = uiState.activeFilter,
+                    onFilterChange = { viewModel.updateFilter(it) }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Content
+                when {
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = FlashRed)
+                        }
+                    }
+
+                    uiState.error != null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = uiState.error ?: stringResource(R.string.unknown_error),
+                                    color = MaterialTheme.colorScheme.error
+                                )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(onClick = {
-                                    viewModel.updateSearchQuery("")
-                                    viewModel.updateFilter(TopicFilter.ALL)
-                                }) {
-                                    Text(stringResource(R.string.clear_filters), color = FlashRed)
+                                Button(onClick = { viewModel.loadTopics() }) {
+                                    Text(stringResource(R.string.retry))
                                 }
                             }
                         }
                     }
-                }
 
-                else -> {
-                    TopicList(
-                        topics = uiState.displayedTopics,
-                        topicWordCounts = topicWordCounts,
-                        topicProgress = topicProgress,
-                        likedTopicIds = uiState.likedTopicIds,
-                        onTopicClick = onNavigateToTopicDetail,
-                        viewModel = viewModel
-                    )
+                    uiState.displayedTopics.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = if (uiState.searchQuery.isNotBlank())
+                                        stringResource(
+                                            R.string.no_topics_found_query,
+                                            uiState.searchQuery
+                                        )
+                                    else if (uiState.activeFilter != TopicFilter.ALL)
+                                        stringResource(
+                                            R.string.no_filtered_topics_yet,
+                                            stringResource(uiState.activeFilter.resId).lowercase()
+                                        )
+                                    else
+                                        stringResource(R.string.no_topics_yet_hint),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (uiState.searchQuery.isNotBlank() || uiState.activeFilter != TopicFilter.ALL) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    TextButton(onClick = {
+                                        viewModel.updateSearchQuery("")
+                                        viewModel.updateFilter(TopicFilter.ALL)
+                                    }) {
+                                        Text(
+                                            stringResource(R.string.clear_filters),
+                                            color = FlashRed
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        TopicList(
+                            topics = uiState.displayedTopics,
+                            topicWordCounts = topicWordCounts,
+                            topicProgress = topicProgress,
+                            likedTopicIds = uiState.likedTopicIds,
+                            onTopicClick = onNavigateToTopicDetail,
+                            viewModel = viewModel
+                        )
+                    }
                 }
             }
         }
@@ -307,7 +327,8 @@ fun TopicList(
 
 @Composable
 fun ExpandableDraggableFab(
-    onAddTopic: () -> Unit,
+    onAddTopicManual: () -> Unit,
+    onAddTopicPrompt: () -> Unit,
     showAddTopic: Boolean = true,
     modifier: Modifier = Modifier
 ) {
@@ -343,6 +364,7 @@ fun ExpandableDraggableFab(
                 ) {
                     // Add Topic Item
                     if (showAddTopic) {
+                        // Create with Prompt
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -350,25 +372,67 @@ fun ExpandableDraggableFab(
                                 shadowElevation = 2.dp,
                                 onClick = {
                                     isExpanded = false
-                                    onAddTopic()
+                                    onAddTopicPrompt()
                                 }
                             ) {
                                 Text(
-                                    text = stringResource(R.string.add_new_topic),
+                                    text = "Create with Prompt",
                                     style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    modifier = Modifier.padding(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp
+                                    )
                                 )
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             androidx.compose.material3.SmallFloatingActionButton(
                                 onClick = {
                                     isExpanded = false
-                                    onAddTopic()
+                                    onAddTopicPrompt()
+                                },
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            ) {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = "Create with Prompt"
+                                )
+                            }
+                        }
+
+                        // Create Manually
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            androidx.compose.material3.Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shadowElevation = 2.dp,
+                                onClick = {
+                                    isExpanded = false
+                                    onAddTopicManual()
+                                }
+                            ) {
+                                Text(
+                                    text = "Create Manually",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp
+                                    )
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            androidx.compose.material3.SmallFloatingActionButton(
+                                onClick = {
+                                    isExpanded = false
+                                    onAddTopicManual()
                                 },
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                             ) {
-                                Icon(Icons.Default.LibraryAdd, contentDescription = null) // Using LibraryAdd as "Add Topic" icon
+                                Icon(
+                                    Icons.Default.LibraryAdd,
+                                    contentDescription = null
+                                ) // Using LibraryAdd as "Add Topic" icon
                             }
                         }
                     }
