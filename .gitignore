@@ -15,4 +15,5 @@ app/google-services.json
 .firebase
 .cache
 *.cache
+local.properties
 /scripts
